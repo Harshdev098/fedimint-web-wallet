@@ -6,7 +6,7 @@ import { setError, setJoinResult, setJoining, setFederationId } from '../redux/s
 import WalletContext from '../context/wallet'
 import LoadingContext from '../context/loader'
 import Alerts from './Alerts'
-import { JoinFederation as JoinFederationService } from '../services/Federation'
+import { JoinFederation as JoinFederationService } from '../services/FederationService'
 import QrScanner from 'qr-scanner'
 import NProgress from 'nprogress'
 
@@ -18,10 +18,10 @@ export default function AddFederation({ setJoinForm }: { setJoinForm: React.Disp
     const videoRef = useRef<HTMLVideoElement | null>(null)
     const scannerRef = useRef<QrScanner | null>(null)
     const navigate = useNavigate()
-    const wallet = useContext(WalletContext)
+    const {wallet} = useContext(WalletContext)
     const { setLoading } = useContext(LoadingContext)
     const dispatch = useDispatch<AppDispatch>()
-    const { joining,joinError,joinResult } = useSelector((state: RootState) => state.activeFederation)
+    const { joining, joinError, joinResult } = useSelector((state: RootState) => state.activeFederation)
 
     const handleJoinFederation = async (e: React.FormEvent, qrData?: string): Promise<void> => {
         e.preventDefault()
@@ -48,7 +48,6 @@ export default function AddFederation({ setJoinForm }: { setJoinForm: React.Disp
             const result = await JoinFederationService(code, walletName.current?.value || '', wallet)
             dispatch(setJoinResult(result.message))
             dispatch(setFederationId(result.federationID))
-            dispatch(setJoinResult(''))
             navigate('/wallet')
         } catch (err) {
             dispatch(setError(`${err}`))
@@ -56,6 +55,7 @@ export default function AddFederation({ setJoinForm }: { setJoinForm: React.Disp
             dispatch(setJoining(false))
             NProgress.done()
             setLoading(false)
+            setJoinForm(false)
         }
     }
 
@@ -69,11 +69,13 @@ export default function AddFederation({ setJoinForm }: { setJoinForm: React.Disp
                         if (result?.data) {
                             console.log("the result from qr is ", result.data)
                             await handleJoinFederation({ preventDefault: () => { } } as React.FormEvent, result.data)
+                            scannerRef.current?.destroy()
+                            scannerRef.current = null;
                         }
                     },
                     { returnDetailedScanResult: true }
                 )
-                scannerRef.current.start().then(() => { // start scanning
+                scannerRef.current.start().then(() => {
                     console.log("Camera started successfully");
                 }).catch((err) => {
                     console.error("Camera access denied:", err);
@@ -101,7 +103,7 @@ export default function AddFederation({ setJoinForm }: { setJoinForm: React.Disp
                 <div className="addFedBox">
                     <input ref={inviteCode} type="text" placeholder="Enter federation invite code" required />
                     <input ref={walletName} type="text" placeholder="Wallet client name" />
-                    <button onClick={handleJoinFederation} disabled={joining}>{joining ? 'Joining...': 'Add Federation'}</button>
+                    <button onClick={handleJoinFederation} disabled={joining}>{joining ? 'Joining...' : 'Add Federation'}</button>
                 </div>
 
                 <div className="divider"><p>Or</p></div>

@@ -4,7 +4,7 @@ import { Link } from 'react-router'
 import { setFederationId } from '../redux/slices/ActiveFederation'
 import { useState, useContext, useEffect } from 'react'
 import WalletContext from '../context/wallet'
-import { fetchBalance } from '../services/Balance'
+import { fetchBalance } from '../services/BalanceService'
 import NProgress from 'nprogress'
 import LoadingContext from '../context/loader'
 import { setBalance, setError } from '../redux/slices/Balance'
@@ -14,7 +14,7 @@ import AddFederation from './AddFederation'
 export default function Header() {
     const dispatch = useDispatch()
     const [joinForm, setJoinForm] = useState(false)
-    const wallet = useContext(WalletContext)
+    const {wallet} = useContext(WalletContext)
     const { setLoading } = useContext(LoadingContext)
     const [fedName, setFedName] = useState<string | null>(null)
     const { hamburger, setHamburger } = useContext(HamburgerContext)

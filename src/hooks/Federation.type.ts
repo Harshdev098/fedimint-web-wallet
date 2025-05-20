@@ -10,6 +10,7 @@ export type FederationMetaData = {
     federation_name: string;
     welcome_message: string;
     invite_code: string;
+    federation_expiry_timestamp:number | null;
 }
 
 export type FederationConfig = {
@@ -31,4 +32,9 @@ export type JoinFedResponse = {
     success: boolean,
     message: string,
     federationID: FederationID
+}
+
+export type PreviewFederationResponse={
+    config:{global:FederationConfig},
+    federationID:string,
 }

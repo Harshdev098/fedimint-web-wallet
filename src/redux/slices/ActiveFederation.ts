@@ -6,7 +6,8 @@ const initialState = {
     joining: false,
     joinResult: '',
     joinError: '',
-    federationId: ''
+    federationId: '',
+    newJoin:false
 }
 
 // Todo: handling mulitple joins
@@ -26,10 +27,13 @@ export const ActiveFederationSlice = createSlice({
         },
         setFederationId:(state,action:PayloadAction<FederationID>)=>{
             state.federationId=action.payload
+        },
+        setNewJoin:(state,action:PayloadAction<boolean>)=>{
+            state.newJoin=action.payload
         }
     }
 })
 
-export const { setJoining, setJoinResult, setError,setFederationId } = ActiveFederationSlice.actions
+export const { setJoining, setJoinResult, setError,setFederationId,setNewJoin } = ActiveFederationSlice.actions
 
 export default ActiveFederationSlice.reducer;

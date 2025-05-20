@@ -2,7 +2,7 @@ import { useEffect, useContext } from 'react';
 import WalletContext from '../context/wallet';
 import { useDispatch, useSelector } from 'react-redux';
 import type { RootState, AppDispatch } from '../redux/store';
-import { fetchFederationDetails } from '../services/Federation';
+import { fetchFederationDetails } from '../services/FederationService';
 import {
     setFederationDetails,
     setFederationMetaData,
@@ -12,7 +12,7 @@ import LoadingContext from '../context/loader'
 import NProgress from 'nprogress'
 
 export default function Modules() {
-    const wallet = useContext(WalletContext);
+    const {wallet} = useContext(WalletContext);
     const dispatch = useDispatch<AppDispatch>();
     const { Details } = useSelector((state: RootState) => state.federationdetails);
     const { setLoading } = useContext(LoadingContext)
@@ -29,6 +29,9 @@ export default function Modules() {
                 dispatch(setFederationMetaData(result.meta));
             } catch (err) {
                 dispatch(setError('An error occurred'));
+                setTimeout(() => {
+                    dispatch(setError(''))
+                }, 3000);
             }finally{
                 NProgress.done()
                 setLoading(false)

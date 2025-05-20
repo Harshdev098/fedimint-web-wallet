@@ -10,7 +10,7 @@ export const fetchBalance = async (wallet: Wallet): Promise<BalanceResponse> => 
         console.log("balance", value)
         return value;
     } catch (err) {
-        console.log("Failed to fetch balance")
-        throw new Error('An error occured while fetching ')
+        console.log("Failed to fetch balance",err)
+        throw new Error(`An error occured ${err}`)
     }
 }
