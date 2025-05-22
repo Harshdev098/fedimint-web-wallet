@@ -13,6 +13,7 @@ import WalletContext from '../context/wallet'
 import Alerts from './Alerts'
 import { setBalance } from '../redux/slices/Balance'
 import { downloadQRCode } from '../services/DownloadQR';
+import type { LnPayState } from '@fedimint/core-web';
 
 
 export default function LighningPayment() {
@@ -43,6 +44,27 @@ export default function LighningPayment() {
             const result = await CreateInvoice(wallet, amountValue, (description.current?.value ?? '').trim());
             console.log('Create invoice result:', result);
             dispatch(setInvoice(result));
+            const unsubscribe = wallet?.lightning.subscribeLnReceive(
+                result.operationId,
+                (state) => {
+                    if (state === "funded") {
+                        alert("Payment received!");
+                        const unsubscribeBalance = wallet.balance.subscribeBalance((mSats) => {
+                            console.log("Balance updated:", mSats);
+                            dispatch(setBalance(mSats));
+                            unsubscribeBalance?.();
+                        });
+                    } else if (typeof state === 'object' && 'canceled' in state) {
+                        alert(`Payment cancelled: ${state.canceled.reason}`)
+                    }
+                },
+                (error) => {
+                    console.error("Error in subscription:", error);
+                    throw new Error("An error occured! Payment cancelled")
+                }
+            );
+
+            setTimeout(() => unsubscribe?.(), 60000);
         } catch (err) {
             console.error('Create Invoice Error:', err);
             const errorMessage = err instanceof Error ? err.message : 'Failed to create invoice';
@@ -71,19 +93,27 @@ export default function LighningPayment() {
                 throw new Error('Please enter an invoice');
             }
             const result = await PayInvoice(wallet, invoiceValue || '');
-            console.log('Pay invoice result:', result);
-            if (!result.success) {
-                throw new Error(result.error || 'Payment failed');
-            }
-            const unsubscribe = wallet?.balance.subscribeBalance((mSats) => {
-                console.log('Balance updated:', mSats)
-                dispatch(setBalance(mSats))
-            })
+            const unsubscribe= wallet.lightning.subscribeLnPay(result.id,
+                (state: LnPayState) => {
+                    if (typeof state === 'object' && 'status' in state && state.status === 'success') {
+                        alert("payment sended!")
+                        const unsubscribeBalance = wallet.balance.subscribeBalance((mSats) => {
+                            console.log("Balance updated:", mSats);
+                            dispatch(setBalance(mSats));
+                            unsubscribeBalance?.();
+                        });
+                    }else if(state==='canceled'){
+                        alert("payment cancelled")
+                    }
+                },
+                (error) => {
+                    console.error("Error in subscription:", error);
+                    throw new Error("An error occured! Payment cancelled")
+                }
+            )
             dispatch(setPayInvoiceResult(result));
 
-            if (unsubscribe) {
-                unsubscribe();
-            }
+            setTimeout(() => unsubscribe?.(), 60000);
         } catch (err) {
             console.error('handlePayInvoice error:', err);
             const errorMessage = err instanceof Error ? err.message : 'Failed to pay invoice';
@@ -191,11 +221,11 @@ export default function LighningPayment() {
                             <input type="text" placeholder='Enter the Invoice' ref={invoice} required />
                             <button type='submit' disabled={status}>Pay Invoice</button>
                         </form>
-                        {payInvoiceResult?.success && (
+                        {payInvoiceResult && (
                             <div className='createInvoiceResult'>
                                 <div className='qrCode'>
-                                    <p><b>PreImage:</b> {payInvoiceResult.data?.preimage}</p>
-                                    <p style={{ margin: '12px' }}><b>Fees Paid:</b> {payInvoiceResult.data?.feeMsats}</p>
+                                    {/* <p><b>PreImage:</b> {payInvoiceResult.}</p> */}
+                                    <p style={{ margin: '12px' }}><b>Fees Paid:</b> {payInvoiceResult.fee}</p>
                                 </div>
                             </div>
                         )}

@@ -20,9 +20,8 @@ export type CreateInvoiceResponse = {
 }
 
 export type InvoicePaymentResponse = {
-  success: boolean;
-  data?: { preimage: string; feeMsats: number };
-  error?: string;
+  id:string,
+  fee:number
 };
 
 export type OutgoingLightningPayment = {
@@ -53,3 +52,8 @@ export type WalletSummary = {
   unconfirmed_peg_out_utxos: TxOutputSummary[];
   unconfirmed_change_utxos: TxOutputSummary[];
 };
+
+export type PeginResponse={
+  deposit_address:string,
+  operation_id:string
+}

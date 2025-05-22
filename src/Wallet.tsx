@@ -4,6 +4,7 @@ import FederationDetails from './pages/FederationDetails'
 import WalletContent from './Components/WalletContent'
 import Modules from './pages/Modules'
 import EcashSetting from './pages/EcashSetting'
+import OnChain from './pages/OnChain'
 
 export default function Wallet() {
   return (
@@ -17,7 +18,7 @@ export default function Wallet() {
         <Route path='/guardian'  />
         <Route path='/history'  />
         <Route path='/profile'  />
-        <Route path='/pegin'  />
+        <Route path='/onchain' element={<OnChain /> }  />
       </Route>
     </Routes>
   )

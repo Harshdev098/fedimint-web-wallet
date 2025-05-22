@@ -21,7 +21,7 @@ export default function Sidebar() {
                             <li><Link to={'/wallet/profile'}><i className="fa-solid fa-user"></i>Profile</Link></li>
                             <li><Link to={'/wallet/federation'}><i className="fa-solid fa-landmark"></i>Federation</Link></li>
                             <li><Link to={'/wallet/history'}><i className="fa-solid fa-clock-rotate-left"></i>Transactions</Link></li>
-                            <li><Link to={'/wallet/pegin'}><i className="fa-solid fa-money-bill-transfer"></i>Withdraw/Deposit</Link></li>
+                            <li><Link to={'/wallet/onchain'}><i className="fa-solid fa-money-bill-transfer"></i>Withdraw/Deposit</Link></li>
                             <li><Link to={'/wallet/ecash'}><i className="fa-solid fa-wallet"></i>ECashes</Link></li>
                             <li><Link to={'/wallet/guardian'}><i className="fa-solid fa-shield"></i>Guardians</Link></li>
                             <li><Link to={'/wallet/modules'}><i className="fa-solid fa-puzzle-piece"></i>Modules</Link></li>
