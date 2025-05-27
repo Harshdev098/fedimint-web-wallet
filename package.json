@@ -10,7 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@fedimint/core-web": "^0.0.10",
+    "@fedimint/core-web": "canary",
     "@reduxjs/toolkit": "^2.8.0",
     "nprogress": "^0.2.0",
     "qr-scanner": "^1.4.2",

@@ -52,7 +52,7 @@ export default function Balance() {
                     <button>Balance</button>
                 </div>
                 <div className='BalanceSectionValue'>
-                    <span>{balance} sat</span>
+                    <span>{balance/100} sat</span>
                 </div>
                 <div style={{ marginBottom: '20px' }}>
                     <span><Link to={'/wallet/federation'}>Federation Details</Link> | <Link to={'/wallet/ecash'}>Ecashes</Link></span>

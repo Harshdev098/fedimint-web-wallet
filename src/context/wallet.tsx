@@ -6,7 +6,7 @@ import webLoader from '../assets/web-loader.gif'
 
 const wallet = new FedimintWallet();
 wallet.setLogLevel('debug');
-wallet.open()
+// wallet.open()
 
 interface WalletContextType {
     wallet: Wallet;
@@ -21,6 +21,7 @@ const WalletContext = createContext<WalletContextType>({
 });
 
 export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    // wallet.open()
     const [loader, setLoader] = useState(true);
     const [walletStatus, setWalletStatus] = useState<'open' | 'closed' | 'opening'>("closed");
     const navigate = useNavigate();
@@ -36,16 +37,24 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             const activeFederation = localStorage.getItem('activeFederation');
             if (activeFederation) {
                 setWalletStatus('opening');
-                wallet.open();
-                await wallet.waitForOpen();
-                console.log("Wallet opened, status:", wallet.isOpen() ? 'open' : 'closed');
-                if (wallet.isOpen()) {
-                    setWalletStatus('open');
+                try {
+                    await wallet.open(); 
+                    if (wallet.isOpen()) {
+                        console.log("Wallet opened successfully");
+                        setWalletStatus('open');
+                        setLoader(false);
+                        navigate('/wallet');
+                    } else {
+                        console.log("Wallet failed to open");
+                        setWalletStatus('closed');
+                        setLoader(false);
+                        navigate('/');
+                    }
+                } catch (error) {
+                    console.error("Error opening wallet:", error);
+                    setWalletStatus('closed');
                     setLoader(false);
-                    navigate('/wallet');
-                } else {
-                    console.log("Wallet failed to open after joining");
-                    navigate('/')
+                    navigate('/');
                 }
             } else {
                 console.log("No active federation or invite code, wallet closed");
@@ -59,6 +68,12 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     useEffect(() => {
         checkFedStatus();
     }, []);
+
+    useEffect(() => {
+        wallet.waitForOpen().then(() => {
+            setWalletStatus('open')
+        })
+    }, [wallet])
 
     if (loader) {
         return (

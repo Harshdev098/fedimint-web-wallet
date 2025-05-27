@@ -945,7 +945,6 @@ footer div i:hover {
 
 .modules-section {
     padding: 2rem;
-    background-color: #f9fafb;
     min-height: 100vh;
 }
 
@@ -963,8 +962,8 @@ footer div i:hover {
 }
 
 .module-card {
-    background-color: #fff;
-    border: 1px solid #ddd;
+    background-color: #f7f5f5;
+    border: 1px solid #d4d3d3;
     border-radius: 12px;
     padding: 1.25rem;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
@@ -1280,11 +1279,12 @@ h2 {
   background: linear-gradient(145deg, #ffffff 0%, #ebedef 100%);
   border: none;
   border-radius: 12px;
-  padding: 20px;
+  padding: 34px;
   text-align: center;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   cursor: pointer;
   position: relative;
+  border: 1.2px solid rgb(216, 215, 215);
   overflow: hidden;
 }
 
@@ -1315,7 +1315,7 @@ h2 {
 }
 
 .note-value {
-  font-size: 1.2rem;
+  font-size: 1.3rem;
   font-weight: 600;
   color: #1a3c6d;
   margin-bottom: 8px;

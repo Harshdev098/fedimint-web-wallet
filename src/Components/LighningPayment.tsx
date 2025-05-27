@@ -46,10 +46,10 @@ export default function LighningPayment() {
             dispatch(setInvoice(result));
             const unsubscribe = wallet?.lightning.subscribeLnReceive(
                 result.operationId,
-                (state) => {
+                async(state) => {
                     if (state === "funded") {
                         alert("Payment received!");
-                        const unsubscribeBalance = wallet.balance.subscribeBalance((mSats) => {
+                        const unsubscribeBalance = await wallet.balance.subscribeBalance((mSats) => {
                             console.log("Balance updated:", mSats);
                             dispatch(setBalance(mSats));
                             unsubscribeBalance?.();
@@ -94,10 +94,10 @@ export default function LighningPayment() {
             }
             const result = await PayInvoice(wallet, invoiceValue || '');
             const unsubscribe= wallet.lightning.subscribeLnPay(result.id,
-                (state: LnPayState) => {
+                async(state: LnPayState) => {
                     if (typeof state === 'object' && 'status' in state && state.status === 'success') {
                         alert("payment sended!")
-                        const unsubscribeBalance = wallet.balance.subscribeBalance((mSats) => {
+                        const unsubscribeBalance = await wallet.balance.subscribeBalance((mSats) => {
                             console.log("Balance updated:", mSats);
                             dispatch(setBalance(mSats));
                             unsubscribeBalance?.();
