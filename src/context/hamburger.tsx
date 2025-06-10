@@ -6,11 +6,11 @@ const HamburgerContext = createContext<{
 }>({ hamburger: false, setHamburger: () => {} });
 
 export const HamburgerProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [hamburger, setHamburger] = useState(() => window.innerWidth <= 850);
+  const [hamburger, setHamburger] = useState(() => window.innerWidth <= 870);
 
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth <= 850) {
+      if (window.innerWidth <= 870) {
         setHamburger(true);
       } else {
         setHamburger(false);

@@ -6,7 +6,7 @@ export const SpendEcash=async(wallet:Wallet,amount:number) : Promise<MintSpendNo
         const result = await wallet.mint.spendNotes(amount);
         console.log("result in spend ecash is ",result)
         if (result) {
-            return result.notes;
+            return {notes:result.notes,operationId:result.operation_id};
         } else {
             throw new Error(`No value returned or invalid response`);
         }

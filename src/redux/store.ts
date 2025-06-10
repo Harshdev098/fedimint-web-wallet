@@ -6,6 +6,7 @@ import MintSlice from "./slices/Mint";
 import LightningSlice from "./slices/LightningPayment";
 import WalletSlice from "./slices/WalletSlice";
 import OnchainSlice from "./slices/OnchainSlice";
+import NotificationSlice from "./slices/NotificationSlice";
 
 
 export const store=configureStore({
@@ -16,7 +17,8 @@ export const store=configureStore({
         mint: MintSlice,
         Lightning:LightningSlice,
         wallet:WalletSlice,
-        onchain:OnchainSlice
+        onchain:OnchainSlice,
+        notifications:NotificationSlice
     }
 })
 

@@ -15,7 +15,7 @@ import type { PreviewFederationResponse } from '../hooks/Federation.type'
 
 
 export default function JoinFederation() {
-    const inviteCode = useRef<HTMLInputElement | null>(null)
+    const [inviteCode,setInviteCode] =useState<string>('')
     const walletName = useRef<HTMLInputElement | null>(null)
     const videoRef = useRef<HTMLVideoElement | null>(null)
     const scannerRef = useRef<QrScanner | null>(null)
@@ -28,17 +28,13 @@ export default function JoinFederation() {
     const dispatch = useDispatch<AppDispatch>()
     const { joining, joinError, joinResult } = useSelector((state: RootState) => state.activeFederation)
 
-    const handleJoinFederation = async (e: React.FormEvent, qrData?: string): Promise<void> => {
-        e.preventDefault()
-
-        const code = inviteCode.current?.value?.trim() || qrData
-        if (!code) return; // invitecode should not be empty
+    const handleJoinFederation = async (): Promise<void> => {
 
         dispatch(setJoining(true))
         try {
             NProgress.start()
             setLoading(true)
-            const result = await JoinFederationService(code, walletName.current?.value || '', wallet)
+            const result = await JoinFederationService(inviteCode, walletName.current?.value || 'fm-default', wallet)
             dispatch(setJoinResult(result.message))
             dispatch(setFederationId(result.federationID))
             setWalletStatus('open')
@@ -57,16 +53,18 @@ export default function JoinFederation() {
         }
     }
 
-    const handlepreviewFederation = async () => {
+    const handlepreviewFederation = async (e: React.FormEvent) => {
+        e.preventDefault()
         try {
-            if (!(inviteCode.current?.value)) {
+            if (!(inviteCode)) {
                 throw new Error('please enter inviteCode')
             }
             NProgress.start()
             setLoading(true)
-            const result = await previewFederation(wallet, inviteCode.current?.value)
+            const result = await previewFederation(wallet, inviteCode)
             console.log("result is ",result)
             setPreviewFederationData(result)
+            setOpenPreviewFederation(true)
         } catch (err) {
             dispatch(setError(`${err}`))
             setTimeout(() => {
@@ -87,7 +85,8 @@ export default function JoinFederation() {
                     async (result) => {
                         if (result?.data) {
                             console.log("the result from qr is ", result.data)
-                            await handleJoinFederation({ preventDefault: () => { } } as React.FormEvent, result.data)
+                            setInviteCode(result.data)
+                            await handlepreviewFederation({ preventDefault: () => { } } as React.FormEvent)
                             scannerRef.current?.destroy()
                             scannerRef.current = null;
                         }
@@ -125,7 +124,7 @@ export default function JoinFederation() {
                             <div className="previewRow"><strong>Federation ID:</strong> {previewFederationData.federationID}</div>
                             <div className="previewRow"><strong>Name:</strong> {previewFederationData.config.global.meta.federation_name}</div>
                             <div className="previewRow"><strong>Consensus Version:</strong> Major: {previewFederationData.config.global.consensus_version.major} Minor: {previewFederationData.config.global.consensus_version.minor}</div>
-                            {/* <div className="previewRow"><strong>Public API:</strong> {previewFederationData.config.global.broadcast_public_keys}</div> */}
+                            <button style={{width:'100%',padding:'8px',backgroundColor:'black',color:'white',borderRadius:'10px',cursor:'pointer',fontSize:'16px'}} onClick={()=>{handleJoinFederation()}}>Join</button>
                         </div>
                     </div>
                 )}
@@ -142,13 +141,12 @@ export default function JoinFederation() {
                                 <button onClick={() => { setMethod('qr') }} style={{ backgroundColor: method === 'qr' ? 'white' : 'rgb(222, 221, 241)' }}>QR Code</button>
                             </div>
 
-                            {method === 'code' ? (<form onSubmit={handleJoinFederation} className="JoinFedForm">
+                            {method === 'code' ? (<form onSubmit={handlepreviewFederation} className="JoinFedForm">
                                 <label>Invite Code</label>
-                                <input type="text" placeholder='Federation Invite Code' ref={inviteCode} required />
+                                <input type="text" placeholder='Federation Invite Code' onChange={(e)=>{setInviteCode(e.target.value)}} required />
                                 <label>Wallet name</label>
                                 <input type="text" placeholder='Wallet name' ref={walletName} />
                                 <button type='submit' disabled={joining}>{joining ? 'Joining...' : 'Continue'}</button>
-                                <button type='button' onClick={() => { handlepreviewFederation(); setOpenPreviewFederation(true) }}>Want a preview of federation?</button>
                             </form>) : (
                                 <form onSubmit={handleJoinWithQR}>
                                     <video ref={videoRef} width={'100%'}></video>

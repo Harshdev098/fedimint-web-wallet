@@ -38,3 +38,13 @@ export type PreviewFederationResponse={
     config:{global:FederationConfig},
     federationID:string,
 }
+
+export type Transactions={
+    timeStamp:string,
+    PaymentType:string,
+    type:string,
+    amount: string,
+    OperationId:string,
+    Outcome:string,
+    gateway:string
+}

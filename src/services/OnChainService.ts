@@ -3,7 +3,7 @@
 
 // export const PegIn=async(wallet:Wallet) : Promise<PeginResponse>=>{
 //     try{
-//         const result=await wallet.wallet.pegin({})
+//         const result=await wallet.wallet.generateAddress({})
 //         console.log("result from pegin is ",result)
 //         if(result){
 //             return result;
@@ -16,7 +16,7 @@
 
 // export const PegOut=async(wallet:Wallet,address:string,amount:number)=>{
 //     try{
-//         const result=await wallet.wallet.pegout(amount,address)
+//         const result=await wallet.wallet.withdraw(amount,address)
 //         console.log('pegout result ',result)
 //         if(result){
 //             return result;

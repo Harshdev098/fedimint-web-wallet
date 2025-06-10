@@ -22,13 +22,16 @@ export const PayInvoice = async (wallet: Wallet, invoice: string): Promise<Invoi
     try {
         const { fee, payment_type } = await wallet.lightning.payInvoice(invoice);
         console.log("Invoice pay response:", fee, payment_type);
-        let id= '';
+        let payType, id = '';
         if ('lightning' in payment_type) {
-            id= payment_type.lightning
-        }else{
-            throw new Error("Payment is of internal type")
+            id = payment_type.lightning
+            payType = 'lightning'
+        } else {
+            id = payment_type.internal
+            payType = 'internal'
+            console.log("internal payment ", payment_type.internal)
         }
-        return {id,fee};
+        return { id, fee, payType };
     } catch (err) {
         console.error('PayInvoice error:', err);
         throw new Error(`Payment failed ${err}`)

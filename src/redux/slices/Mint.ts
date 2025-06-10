@@ -7,7 +7,7 @@ interface MintState {
     SpendEcashError: string,
     RedeemEcashResult: string | null,
     RedeemEcashError: string,
-    ParseEcashResult:number | null,
+    ParseEcashResult:string | null,
     ParseEcashError:string,
     NotesByDenomonation:NotesByDenomonationResponse
 }
@@ -25,7 +25,7 @@ const MintSlice = createSlice({
     name: 'Mint',
     initialState,
     reducers: {
-        setSpendResult: (state, action: PayloadAction<MintSpendNotesResponse>) => {
+        setSpendResult: (state, action: PayloadAction<MintSpendNotesResponse | null>) => {
             state.SpendEcashResult = action.payload;
         },
         setSpendError: (state, action: PayloadAction<string>) => {
@@ -37,7 +37,7 @@ const MintSlice = createSlice({
         setRedeemError: (state, action: PayloadAction<string>) => {
             state.RedeemEcashError = action.payload
         },
-        setParseEcashResult:(state,action:PayloadAction<number | null>)=>{
+        setParseEcashResult:(state,action:PayloadAction<string | null>)=>{
             state.ParseEcashResult=action.payload
         },
         setParseEcashError:(state,action:PayloadAction<string>)=>{

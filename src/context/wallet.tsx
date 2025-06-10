@@ -6,7 +6,6 @@ import webLoader from '../assets/web-loader.gif'
 
 const wallet = new FedimintWallet();
 wallet.setLogLevel('debug');
-// wallet.open()
 
 interface WalletContextType {
     wallet: Wallet;
@@ -21,59 +20,45 @@ const WalletContext = createContext<WalletContextType>({
 });
 
 export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    // wallet.open()
     const [loader, setLoader] = useState(true);
     const [walletStatus, setWalletStatus] = useState<'open' | 'closed' | 'opening'>("closed");
     const navigate = useNavigate();
 
     const checkFedStatus = useCallback(async () => {
+        const walletName = localStorage.getItem('walletName')
+
         if (wallet.isOpen()) {
-            console.log("Wallet is open");
+            console.log("Wallet is already open");
             setWalletStatus('open');
             setLoader(false);
             navigate('/wallet');
-        } else {
-            console.log("Wallet not open, checking active federation");
-            const activeFederation = localStorage.getItem('activeFederation');
-            if (activeFederation) {
-                setWalletStatus('opening');
-                try {
-                    await wallet.open(); 
-                    if (wallet.isOpen()) {
-                        console.log("Wallet opened successfully");
-                        setWalletStatus('open');
-                        setLoader(false);
-                        navigate('/wallet');
-                    } else {
-                        console.log("Wallet failed to open");
-                        setWalletStatus('closed');
-                        setLoader(false);
-                        navigate('/');
-                    }
-                } catch (error) {
-                    console.error("Error opening wallet:", error);
-                    setWalletStatus('closed');
-                    setLoader(false);
-                    navigate('/');
-                }
+            return;
+        }
+        console.log("opening the wallet")
+        setWalletStatus('opening');
+        try {
+            await wallet.open(walletName || '');
+            if (wallet.isOpen()) {
+                console.log("Wallet opened successfully");
+                setWalletStatus('open');
+                setLoader(false);
+                navigate('/wallet');
             } else {
-                console.log("No active federation or invite code, wallet closed");
                 setWalletStatus('closed');
                 setLoader(false);
                 navigate('/');
             }
+        } catch (error) {
+            console.error("Error opening or rejoining wallet:", error);
+            setWalletStatus('closed');
+            setLoader(false);
+            navigate('/');
         }
-    }, [navigate]);
-
-    useEffect(() => {
-        checkFedStatus();
     }, []);
 
     useEffect(() => {
-        wallet.waitForOpen().then(() => {
-            setWalletStatus('open')
-        })
-    }, [wallet])
+        checkFedStatus();
+    }, [checkFedStatus]);
 
     if (loader) {
         return (

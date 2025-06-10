@@ -18,53 +18,56 @@ export default function OnChain() {
     // const dispatch = useDispatch<AppDispatch>()
     const { pegin, peginError, pegout, pegoutError } = useSelector((state: RootState) => state.onchain)
 
-    const handlePeginTransaction = async () => {
-        // try {
-        //     NProgress.start()
-        //     setLoading(true)
-        //     const result = await PegIn(wallet)
-        //     dispatch(setPegin(result))
-        // } catch (err) {
-        //     console.log(`${err}`)
-        //     dispatch(setPeginError(`${err}`))
-        //     setTimeout(() => {
-        //         dispatch(setPeginError(''))
-        //     }, 3000);
-        // } finally {
-        //     NProgress.done()
-        //     setLoading(false)
-        // }
-    }
+    // const handlePeginTransaction = async () => {
+    //     try {
+    //         NProgress.start()
+    //         setLoading(true)
+    //         const result = await PegIn(wallet)
+    //         dispatch(setPegin(result))
+    //     } catch (err) {
+    //         console.log(`${err}`)
+    //         dispatch(setPeginError(`${err}`))
+    //         setTimeout(() => {
+    //             dispatch(setPeginError(''))
+    //         }, 3000);
+    //     } finally {
+    //         NProgress.done()
+    //         setLoading(false)
+    //     }
+    // }
 
-    const handlePegoutTransaction = async (e: React.FormEvent) => {
-        e.preventDefault()
-        // if (!address.current?.value || !amount.current?.value) {
-        //     alert("Please enter both address and amount");
-        //     return;
-        // }
-        // try {
-        //     NProgress.start()
-        //     setLoading(true)
-        //     const result = await PegOut(wallet, address.current.value.trim(), Number(amount.current.value));
-        //     if (result) {
-        //         dispatch(setPegout(result))
-        //     } else {
-        //         dispatch(setPegoutError('PegOut did not return a valid result'));
-        //         setTimeout(() => {
-        //             dispatch(setPegoutError(''));
-        //         }, 3000);
-        //     }
-        // } catch (err) {
-        //     console.error("PegOut failed:", err);
-        //     dispatch(setPegoutError(`${err}`))
-        //     setTimeout(() => {
-        //         dispatch(setPegoutError(''))
-        //     }, 3000);
-        // } finally {
-        //     NProgress.done()
-        //     setLoading(false)
-        // }
-    }
+    // const handlePegoutTransaction = async (e: React.FormEvent) => {
+    //     e.preventDefault()
+    //     if (!address.current?.value || !amount.current?.value) {
+    //         alert("Please enter both address and amount");
+    //         return;
+    //     }
+    //     try {
+    //         NProgress.start()
+    //         setLoading(true)
+    //         const result = await PegOut(wallet, address.current.value.trim(), Number(amount.current.value));
+    //         if (result) {
+    //             dispatch(setPegout(result))
+    //             setTimeout(() => {
+    //                 dispatch(setPegout(null))
+    //             }, 3000);
+    //         } else {
+    //             dispatch(setPegoutError('PegOut did not return a valid result'));
+    //             setTimeout(() => {
+    //                 dispatch(setPegoutError(''));
+    //             }, 3000);
+    //         }
+    //     } catch (err) {
+    //         console.error("PegOut failed:", err);
+    //         dispatch(setPegoutError(`${err}`))
+    //         setTimeout(() => {
+    //             dispatch(setPegoutError(''))
+    //         }, 3000);
+    //     } finally {
+    //         NProgress.done()
+    //         setLoading(false)
+    //     }
+    // }
 
     return (
         <section className='onchainTx'>
@@ -90,7 +93,7 @@ export default function OnChain() {
                     {onchainType ? (
                         <div className='depositSection'>
                             <h2>Get Your Deposit Address</h2>
-                            <button className='actionBtn' onClick={() => { handlePeginTransaction() }}>Get Address</button>
+                            <button className='actionBtn' onClick={() => { }}>Get Address</button>
                             {pegin && <div>
                                 <p>You can deposit your bitcoin on this generated address</p>
                                 <div className='copyWrapper'>
@@ -107,7 +110,7 @@ export default function OnChain() {
                             </div>}
                         </div>
                     ) : (
-                        <form className='withdrawForm' onSubmit={handlePegoutTransaction}>
+                        <form className='withdrawForm' >
                             <input type='text' placeholder='Enter the on-chain address' ref={address} />
                             <input type='number' inputMode='numeric' placeholder='Enter amount' ref={amount} />
                             <button type='submit' className='actionBtn'>Withdraw</button>

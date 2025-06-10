@@ -3,7 +3,8 @@ import QrScanner from "qr-scanner";
 import receiveIcon from '../assets/recieve-icon.png'
 import sendIcon from '../assets/send-icon.png'
 import QRCode from 'react-qr-code'
-import { setInvoice, setInvoiceError, setPayInvoiceError, setPayInvoiceResult } from '../redux/slices/LightningPayment'
+import { setInvoice, setInvoiceError, setPayInvoiceError, setPayInvoiceResult, setPayStatus } from '../redux/slices/LightningPayment'
+import { createNotification } from '../redux/slices/NotificationSlice';
 import { useSelector, useDispatch } from 'react-redux'
 import type { RootState, AppDispatch } from '../redux/store'
 import { CreateInvoice, PayInvoice } from '../services/LightningPaymentService'
@@ -18,6 +19,7 @@ import type { LnPayState } from '@fedimint/core-web';
 
 export default function LighningPayment() {
     const [status, setStatus] = useState<boolean>(false)
+    // const [invoicePayAmount, setInvoicePayAmount] = useState<number>(0)
     const amount = useRef<HTMLInputElement>(null)
     const description = useRef<HTMLInputElement>(null)
     const invoice = useRef<HTMLInputElement>(null)
@@ -29,7 +31,17 @@ export default function LighningPayment() {
     const { wallet } = useContext(WalletContext)
     const { setLoading } = useContext(LoadingContext)
     const dispatch = useDispatch<AppDispatch>()
-    const { Invoice, InvoiceError, payInvoiceResult, payInvoiceError } = useSelector((state: RootState) => state.Lightning)
+    const { Invoice, InvoiceError, payInvoiceResult, payInvoiceError, payStatus } = useSelector((state: RootState) => state.Lightning)
+
+    const subscribeBalanceChange = () => {
+        const unsubscribeBalance = wallet.balance.subscribeBalance((mSats) => {
+            console.log('Balance updated:', mSats);
+            dispatch(setBalance(mSats));
+            setTimeout(() => {
+                unsubscribeBalance?.();
+            }, 10000);
+        });
+    }
 
     const handleCreateInvoice = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -37,25 +49,24 @@ export default function LighningPayment() {
         setStatus(true);
         setLoading(true);
         const amountValue = Number((amount.current?.value)?.trim())
+
         try {
             if (!amountValue || amountValue <= 0) {
                 throw new Error('Amount must be greater than 0');
             }
-            const result = await CreateInvoice(wallet, amountValue, (description.current?.value ?? '').trim());
+            const result = await CreateInvoice(wallet, amountValue * 1000, (description.current?.value ?? '').trim());
             console.log('Create invoice result:', result);
             dispatch(setInvoice(result));
             const unsubscribe = wallet?.lightning.subscribeLnReceive(
                 result.operationId,
-                async(state) => {
+                async (state) => {
+                    const date = (new Date()).toDateString()
+                    const time = (new Date()).toTimeString()
                     if (state === "funded") {
-                        alert("Payment received!");
-                        const unsubscribeBalance = await wallet.balance.subscribeBalance((mSats) => {
-                            console.log("Balance updated:", mSats);
-                            dispatch(setBalance(mSats));
-                            unsubscribeBalance?.();
-                        });
+                        dispatch(createNotification({ type: 'Payment', data: 'Payment Recieved', date: date, time: time, OperationId:result.operationId }))
+                        subscribeBalanceChange()
                     } else if (typeof state === 'object' && 'canceled' in state) {
-                        alert(`Payment cancelled: ${state.canceled.reason}`)
+                        dispatch(createNotification({ type: 'Payment', data: `Payment Canceled ${state.canceled.reason}`, date: date, time: time, OperationId:result.operationId }))
                     }
                 },
                 (error) => {
@@ -64,7 +75,9 @@ export default function LighningPayment() {
                 }
             );
 
-            setTimeout(() => unsubscribe?.(), 60000);
+            setTimeout(() => {
+                unsubscribe?.();
+            }, 300000);
         } catch (err) {
             console.error('Create Invoice Error:', err);
             const errorMessage = err instanceof Error ? err.message : 'Failed to create invoice';
@@ -89,31 +102,54 @@ export default function LighningPayment() {
         setLoading(true);
         const invoiceValue = (invoice.current?.value)?.trim() || QRData
         try {
-            if (!invoice.current?.value) {
+            if (!invoiceValue) {
                 throw new Error('Please enter an invoice');
             }
+            let unsubscribe: (() => void) | undefined;
+
             const result = await PayInvoice(wallet, invoiceValue || '');
-            const unsubscribe= wallet.lightning.subscribeLnPay(result.id,
-                async(state: LnPayState) => {
-                    if (typeof state === 'object' && 'status' in state && state.status === 'success') {
-                        alert("payment sended!")
-                        const unsubscribeBalance = await wallet.balance.subscribeBalance((mSats) => {
-                            console.log("Balance updated:", mSats);
-                            dispatch(setBalance(mSats));
-                            unsubscribeBalance?.();
-                        });
-                    }else if(state==='canceled'){
-                        alert("payment cancelled")
-                    }
-                },
-                (error) => {
-                    console.error("Error in subscription:", error);
-                    throw new Error("An error occured! Payment cancelled")
-                }
-            )
             dispatch(setPayInvoiceResult(result));
 
-            setTimeout(() => unsubscribe?.(), 60000);
+            if (result.payType === 'lightning') {
+                unsubscribe = wallet.lightning.subscribeLnPay(result.id,
+                    (state: LnPayState) => {
+                        const date = new Date().toDateString();
+                        const time = new Date().toTimeString();
+
+                        if (state === 'created') {
+                            console.log("status created")
+                            dispatch(setPayStatus(state))
+                        } else if (state === 'canceled') {
+                            dispatch(createNotification({ type: 'Payment', data: 'Payment Cancelled', date, time, OperationId:result.id }));
+                            dispatch(setPayStatus(state))
+                        } else if (typeof state === 'object') {
+                            if ('success' in state) {
+                                dispatch(createNotification({ type: 'Payment', data: 'Payment Succeeded', date, time, OperationId:result.id }));
+                                subscribeBalanceChange();
+                                dispatch(setPayStatus('success'))
+                            } else if ('funded' in state) {
+                                dispatch(createNotification({ type: 'Payment', data: 'Payment Funded', date, time, OperationId:result.id }));
+                                dispatch(setPayStatus('funded'))
+                            } else if ('waiting_for_refund' in state) {
+                                dispatch(createNotification({ type: 'Payment', data: 'Waiting for Refund', date, time, OperationId:result.id }));
+                                dispatch(setPayStatus('waiting_for_refund'))
+                            } else if ('refunded' in state) {
+                                dispatch(createNotification({ type: 'Payment', data: 'Payment Refunded', date, time, OperationId:result.id }));
+                                dispatch(setPayStatus('refunded'))
+                            } else if ('unexpected_error' in state) {
+                                dispatch(createNotification({ type: 'Payment', data: 'Unexpected Error Occurred', date, time, OperationId:result.id }));
+                                dispatch(setPayStatus('unexpected_error'))
+                            }
+                        }
+                    },
+                    (error) => {
+                        console.error("Error in subscription:", error);
+                        throw new Error("An error occured! Payment cancelled")
+                    }
+                )
+            }
+
+            setTimeout(() => unsubscribe?.(), 300000);
         } catch (err) {
             console.error('handlePayInvoice error:', err);
             const errorMessage = err instanceof Error ? err.message : 'Failed to pay invoice';
@@ -125,10 +161,6 @@ export default function LighningPayment() {
             NProgress.done();
             setLoading(false);
             setStatus(false);
-            if (invoice.current) {
-                invoice.current.value = '';
-            }
-            setOpenSendBox(false)
         }
     };
 
@@ -184,7 +216,7 @@ export default function LighningPayment() {
                         </button>
                         <h2>Create Invoice</h2>
                         <form onSubmit={handleCreateInvoice}>
-                            <input type="number" inputMode='numeric' placeholder='Enter the amount' ref={amount} required />
+                            <input type="number" inputMode='numeric' placeholder='Enter amount in sats' ref={amount} required />
                             <input type="text" placeholder='Enter the description' ref={description} />
                             <button type='submit' disabled={status}>Create</button>
                         </form>
@@ -213,7 +245,7 @@ export default function LighningPayment() {
             {openSendBox && (
                 <div className="modalOverlay">
                     <div className='payInvoice'>
-                        <button type='button' className='closeBtn' onClick={() => setOpenSendBox(false)}>
+                        <button type='button' className='closeBtn' onClick={() => { setOpenSendBox(false); dispatch(setPayInvoiceResult(null)) }}>
                             <i className="fa-solid fa-xmark"></i>
                         </button>
                         <h2>Pay Invoice</h2>
@@ -222,11 +254,12 @@ export default function LighningPayment() {
                             <button type='submit' disabled={status}>Pay Invoice</button>
                         </form>
                         {payInvoiceResult && (
-                            <div className='createInvoiceResult'>
-                                <div className='qrCode'>
-                                    {/* <p><b>PreImage:</b> {payInvoiceResult.}</p> */}
-                                    <p style={{ margin: '12px' }}><b>Fees Paid:</b> {payInvoiceResult.fee}</p>
-                                </div>
+                            <div className="invoiceDetailGroupModern">
+                                {/* <div className="invoiceDetailCard"><b>Amount:</b> {invoicePayAmount} sat</div> */}
+                                <div className="invoiceDetailCard"><b>Pay Type:</b> {payInvoiceResult.payType}</div>
+                                <div className="invoiceDetailCard"><b>Fees Paid:</b> {payInvoiceResult.fee} msat</div>
+                                {/* <div className="invoiceDetailCard"><b>Total Amount:</b> {(invoicePayAmount + payInvoiceResult.fee / 1000)} sat</div> */}
+                                <div className="invoiceDetailCard"><b>Status:</b> {payStatus}</div>
                             </div>
                         )}
                     </div>

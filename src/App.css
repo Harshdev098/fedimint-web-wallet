@@ -57,7 +57,7 @@ nav {
 
 .Result {
     text-align: center;
-    position: absolute;
+    position: fixed;
     left: 50%;
     transform: translateX(-50%);
     top: 80px;
@@ -65,23 +65,17 @@ nav {
     color: #155724;
     z-index: 10;
     font-weight: bold;
-    border: #c3e6cb;
+    border: 1.4px solid #c3e6cb;
     background-color: #d4edda;
     padding: 8px 14px;
     border-radius: 4px;
     width: fit-content;
-}
-.Result button{
-    color: #155724;
-    background-color: #d4edda;
-    float: right;
-    font-size: 20px;
-    border: none;
+    box-sizing: border-box;
 }
 
 .Error {
     text-align: center;
-    position: absolute;
+    position: fixed;
     left: 50%;
     background-color: #f8d7da;
     transform: translateX(-50%);
@@ -94,12 +88,40 @@ nav {
     padding: 8px 14px;
     border: 1.4px solid #f5c6cb;
     width: fit-content;
+    box-sizing: border-box;
 }
 
-.Result p,
-.Error p {
-    padding: 0px;
-    margin: 0px;
+@media (max-width: 768px) {
+    .Result, .Error {
+        position: fixed;
+        top: 50px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 90%;
+        max-width: 350px;
+        margin: 0 auto;
+        z-index: 1000;
+        padding: 4px 15px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+}
+
+.Result button {
+    color: #155724;
+    background-color: #d4edda;
+    float: right;
+    font-size: 20px;
+    border: none;
+    cursor: pointer;
+}
+
+.Error button {
+    color: #721c24;
+    background-color: #f8d7da;
+    float: right;
+    font-size: 20px;
+    border: none;
+    cursor: pointer;
 }
 
 .JoinFedSection {
@@ -107,7 +129,7 @@ nav {
     justify-content: center;
     align-items: center;
     flex: 1;
-    height: 80vh;
+    min-height: 80vh;
 }
 
 .JoinFedDiv {
@@ -499,6 +521,12 @@ footer div i:hover {
     z-index: 2;
 }
 
+@media (max-width:995px) {
+    .sidebarContainer{
+        width: 32vw;
+    }
+}
+
 @media (max-width:620px) {
     .sidebarContainer{
         overflow: auto;
@@ -603,8 +631,12 @@ footer div i:hover {
     transition: background 0.3s ease;
     cursor: pointer;
 }
+.sidebarList ul li.active {
+    background-color: rgba(255, 255, 255, 0.1);
+}
 
-.sidebarList ul li a {
+.sidebarList ul li a,
+.sidebarList ul li.active a {
     color: white;
     font-size: 1.1rem;
     display: block;
@@ -660,6 +692,19 @@ footer div i:hover {
 .hamburgerMenuIcon i:hover {
     transform: scale(1.1);
 }
+.hamburgerNotificationBadge {
+    position: absolute;
+    top: 24px;
+    left: 40px;
+    background-color: #bb2828;
+    color: white;
+    font-size: 15px;
+    padding: 0px 6px;
+    border-radius: 50%;
+    font-weight: bold;
+    z-index: 999;
+}
+
 
 .walletHeaderContent {
     display: flex;
@@ -1153,6 +1198,33 @@ footer div i:hover {
     background: #0d75d9;
 }
 
+.invoiceDetailGroupModern {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 20px;
+    padding: 0 10px;
+    justify-content: center;
+}
+
+.invoiceDetailCard {
+    background-color: #eef2f7;
+    color: #2c3e50;
+    padding: 6px 12px;
+    border-radius: 999px; /* pill shape */
+    font-size: 13.5px;
+    font-weight: 500;
+    display: inline-block;
+    box-shadow: none;
+    border: 1px solid #d0d7de;
+    transition: all 0.2s ease-in-out;
+}
+
+.invoiceDetailCard:hover {
+    background-color: #e1eaf3;
+    border-color: #a3b4c3;
+}
+
 
 .createInvoiceResult {
     margin-top: 20px;
@@ -1463,4 +1535,90 @@ h2 {
     .actionBtn {
         font-size: 0.95rem;
     }
+}
+
+/* notifications and transactio history styling  */
+
+.notifications-container {
+    margin: 20px auto;
+    width: 92%;
+    padding: 24px;
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #333;
+    box-sizing: border-box;
+}
+.notifications-container input{
+    padding: 10px;
+    font-size: 17px;
+    border: none;
+    background-color: rgb(228, 228, 228);
+    margin: 22px;
+    max-width: 360px;
+    border-radius: 20px;
+    width: 30vw;
+}
+.notifications-title {
+    font-size: 28px;
+    margin-bottom: 10px;
+    color: #2c3e50;
+}
+
+.notifications-info {
+    font-size: 14px;
+    margin-bottom: 20px;
+    color: #666;
+}
+
+.notifications-table-wrapper {
+    overflow-x: auto;
+}
+
+.notifications-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.notifications-table th,
+.notifications-table td {
+    padding: 12px 16px;
+    text-align: left;
+}
+
+.notifications-table thead {
+    background-color: #f4f6f8;
+    border-bottom: 2px solid #ccc;
+    border-radius: 4px 4px 0px 0px;
+}
+
+.notifications-table tbody tr {
+    transition: background 0.3s;
+}
+
+.notifications-table tbody tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+.notifications-table tbody tr:hover {
+    background-color: #eef5ff;
+}
+
+.pagination-btn {
+    margin: 12px;
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+}
+
+.pagination-btn button{
+    padding: 8px 16px;
+    /* margin: 10px; */
+    background-color: black;
+    color: white;
+    font-size: 17px;
+    cursor: pointer;
+    border: none;
+    border-radius: 6px;
 }

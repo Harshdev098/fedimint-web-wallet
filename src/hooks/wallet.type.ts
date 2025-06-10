@@ -4,7 +4,10 @@ export type Wallet = FedimintWallet
 
 export type BalanceResponse = number | undefined
 
-export type MintSpendNotesResponse = string
+export type MintSpendNotesResponse = {
+  notes:string,
+  operationId:string
+}
 
 export type MintRedeemStates =
   | 'Created'
@@ -21,19 +24,14 @@ export type CreateInvoiceResponse = {
 
 export type InvoicePaymentResponse = {
   id:string,
-  fee:number
+  fee:number,
+  payType:string
 };
 
 export type OutgoingLightningPayment = {
   contract_id: string;
   fee: number;
 };
-
-export type LnPayState =
-  | { state: 'Pending' }
-  | { state: 'Succeeded'; preimage: string; feeMsats: number }
-  | { state: 'Failed'; error: string }
-  | { state: 'Timeout' };
 
 export type NotesByDenomonationResponse= Record<string,number>
 
@@ -56,4 +54,10 @@ export type WalletSummary = {
 export type PeginResponse={
   deposit_address:string,
   operation_id:string
+}
+
+export type ParsedInvoice={
+  amount:number,
+  expiry:string,
+  memo:string
 }

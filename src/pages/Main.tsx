@@ -6,6 +6,7 @@ import WalletContext from '../context/wallet';
 import { useDispatch, useSelector } from 'react-redux';
 import type { RootState, AppDispatch } from '../redux/store';
 import { setFederationDetails, setFederationMetaData, setError } from '../redux/slices/FederationDetails';
+import { setFederationId } from '../redux/slices/ActiveFederation';
 import { setNewJoin } from '../redux/slices/ActiveFederation';
 import Alerts from '../Components/Alerts';
 import LoadingContext from '../context/loader';
@@ -13,7 +14,7 @@ import NProgress from 'nprogress';
 import Header from '../Components/Header';
 
 export default function Main() {
-    const {wallet,walletStatus} = useContext(WalletContext);
+    const { wallet, walletStatus } = useContext(WalletContext);
     const dispatch = useDispatch<AppDispatch>();
     const { Details, metaData, error } = useSelector((state: RootState) => state.federationdetails);
     const { setLoading } = useContext(LoadingContext);
@@ -21,20 +22,23 @@ export default function Main() {
 
     useEffect(() => {
         const handleFederationDetails = async () => {
-            console.log("wallet status in federation details ",walletStatus)
+            console.log("wallet status in federation details ", walletStatus)
             const activeFederation = localStorage.getItem('activeFederation');
             try {
                 NProgress.start();
                 setLoading(true);
-                const FederationID = federationId || activeFederation;
-                if (FederationID) {
-                    const result = await fetchFederationDetails(wallet, FederationID);
-                    console.log("Federation Details:", result);
-                    dispatch(setFederationDetails(result.details));
-                    dispatch(setFederationMetaData(result.meta));
-                    console.log("new join is ",newJoin)
-                    console.log("welcome message",result.meta.welcome_message)
+                let FederationID = federationId || activeFederation;
+                if (!FederationID) {
+                    FederationID=await wallet.federation.getFederationId()
+                    localStorage.setItem('activeFederation',FederationID)
+                    dispatch(setFederationId(FederationID))
                 }
+                const result = await fetchFederationDetails(wallet, FederationID);
+                console.log("Federation Details:", result);
+                dispatch(setFederationDetails(result.details));
+                dispatch(setFederationMetaData(result.meta));
+                console.log("new join is ", newJoin)
+                console.log("welcome message", result.meta.welcome_message)
             } catch (err) {
                 console.error("Error fetching federation details:", err);
                 dispatch(setError(`${err}`));
@@ -47,7 +51,7 @@ export default function Main() {
             }
         };
 
-        if (walletStatus==='open' && (!Details || !metaData)) {
+        if (walletStatus === 'open' && (!Details || !metaData)) {
             handleFederationDetails();
         }
     }, [walletStatus, federationId, Details, metaData, dispatch, setLoading]);
@@ -55,14 +59,14 @@ export default function Main() {
     return (
         walletStatus === 'open' && (
             <main className='MainWalletContainer'>
-                    {error && <Alerts Error={error} Result='' />}
-                    {metaData?.welcome_message && newJoin === true && <Alerts Error='' Result={metaData.welcome_message} onDismiss={()=>{dispatch(setNewJoin(false))}} />}
-                    {metaData?.federation_expiry_timestamp && (
-                        <Alerts
-                            Error=''
-                            Result={`${metaData.welcome_message} federation Expiry time: ${new Date(metaData.federation_expiry_timestamp * 1000).toLocaleString()}`}
-                        />
-                    )}
+                {error && <Alerts Error={error} Result='' />}
+                {metaData?.welcome_message && newJoin === true && <Alerts Error='' Result={metaData.welcome_message} onDismiss={() => { dispatch(setNewJoin(false)) }} />}
+                {metaData?.federation_expiry_timestamp && (
+                    <Alerts
+                        Error=''
+                        Result={`${metaData.welcome_message} federation Expiry time: ${new Date(metaData.federation_expiry_timestamp * 1000).toLocaleString()}`}
+                    />
+                )}
                 <Sidebar />
                 <section className='WalletContentSection'>
                     <Header />

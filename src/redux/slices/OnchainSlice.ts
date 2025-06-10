@@ -26,7 +26,7 @@ export const OnchainSlice=createSlice({
         setPeginError:(state,action:PayloadAction<string>)=>{
             state.peginError=action.payload
         },
-        setPegout:(state,action:PayloadAction<{ operation_id: string; }>)=>{
+        setPegout:(state,action:PayloadAction<{ operation_id: string; } | null>)=>{
             state.pegout=action.payload
         },
         setPegoutError:(state,action:PayloadAction<string>)=>{

@@ -14,12 +14,14 @@ import AddFederation from './AddFederation'
 export default function Header() {
     const dispatch = useDispatch()
     const [joinForm, setJoinForm] = useState(false)
-    const {wallet} = useContext(WalletContext)
+    const { wallet } = useContext(WalletContext)
     const { setLoading } = useContext(LoadingContext)
     const [fedName, setFedName] = useState<string | null>(null)
     const { hamburger, setHamburger } = useContext(HamburgerContext)
     const { federationId } = useSelector((state: RootState) => state.activeFederation)
     const { metaData } = useSelector((state: RootState) => state.federationdetails)
+    const notifications=useSelector((state:RootState)=>state.notifications)
+
 
     // Todo: Use LoadingContext when handling multiple federations
     const federationName = () => {
@@ -61,6 +63,9 @@ export default function Header() {
             <header className={`walletHeader`}>
                 <div className="hamburgerMenuIcon" onClick={() => setHamburger(!hamburger)}>
                     <i className={`fa-solid ${hamburger ? 'fa-bars' : 'fa-xmark closeSidebar'}`}></i>
+                    {notifications.count > 0 && (
+                        <span className="hamburgerNotificationBadge">{notifications.count}</span>
+                    )}
                 </div>
                 <div className='walletHeaderContent'>
                     <div className='federationSelector'>
