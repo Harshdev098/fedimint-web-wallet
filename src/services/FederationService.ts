@@ -12,6 +12,7 @@ export const JoinFederation = async (inviteCode: string, walletName: string, wal
             console.log("Federation ID:", federationId);
             localStorage.setItem('activeFederation', federationId);
             localStorage.setItem('walletName', walletName);
+            localStorage.setItem('joinDate',new Date().toDateString())
             return {
                 success: true,
                 message: `Joined federation ${federationId}`,

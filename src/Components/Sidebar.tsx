@@ -25,9 +25,9 @@ export default function Sidebar() {
                                 <i className="fa-solid fa-house"></i>Home
                             </Link>
                         </li>
-                        <li className={isActive('/wallet/profile') ? 'active' : ''}>
-                            <Link to='/wallet/profile' onClick={() => window.innerWidth <= 870 && setHamburger(true)}>
-                                <i className="fa-solid fa-user"></i>Profile
+                        <li className={isActive('/wallet/settings') ? 'active' : ''}>
+                            <Link to='/wallet/settings' onClick={() => window.innerWidth <= 870 && setHamburger(true)}>
+                                <i className="fa-solid fa-gear"></i>Settings
                             </Link>
                         </li>
                         <li className={isActive('/wallet/notifications') ? 'active' : ''}>

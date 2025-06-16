@@ -15,11 +15,13 @@ import Alerts from './Alerts'
 import { setBalance } from '../redux/slices/Balance'
 import { downloadQRCode } from '../services/DownloadQR';
 import type { LnPayState } from '@fedimint/core-web';
+import { convertToSats } from '../services/BalanceService';
+import { Link } from 'react-router';
 
 
 export default function LighningPayment() {
     const [status, setStatus] = useState<boolean>(false)
-    // const [invoicePayAmount, setInvoicePayAmount] = useState<number>(0)
+    const [convertedAmountInSat,setConvertedAmountInSat]=useState<number | null>(null)
     const amount = useRef<HTMLInputElement>(null)
     const description = useRef<HTMLInputElement>(null)
     const invoice = useRef<HTMLInputElement>(null)
@@ -32,6 +34,7 @@ export default function LighningPayment() {
     const { setLoading } = useContext(LoadingContext)
     const dispatch = useDispatch<AppDispatch>()
     const { Invoice, InvoiceError, payInvoiceResult, payInvoiceError, payStatus } = useSelector((state: RootState) => state.Lightning)
+    const { currency } =useSelector((state:RootState)=>state.balance)
 
     const subscribeBalanceChange = () => {
         const unsubscribeBalance = wallet.balance.subscribeBalance((mSats) => {
@@ -48,13 +51,13 @@ export default function LighningPayment() {
         NProgress.start();
         setStatus(true);
         setLoading(true);
-        const amountValue = Number((amount.current?.value)?.trim())
-
         try {
-            if (!amountValue || amountValue <= 0) {
+            if (!convertedAmountInSat || convertedAmountInSat <= 0) {
                 throw new Error('Amount must be greater than 0');
             }
-            const result = await CreateInvoice(wallet, amountValue * 1000, (description.current?.value ?? '').trim());
+            // const amountValue = await convertToSats(convertedAmount,currency)
+            console.log("amount value is",convertedAmountInSat*1000)
+            const result = await CreateInvoice(wallet, convertedAmountInSat*1000, (description.current?.value ?? '').trim());
             console.log('Create invoice result:', result);
             dispatch(setInvoice(result));
             const unsubscribe = wallet?.lightning.subscribeLnReceive(
@@ -196,6 +199,10 @@ export default function LighningPayment() {
         }
     }, [openVideo])
 
+    const handleConversion = async(e: React.ChangeEvent<HTMLInputElement>) => {
+        const amount=await convertToSats(Number((e.target.value).trim()),currency)
+        setConvertedAmountInSat(amount)
+    }
 
     return (
         <>
@@ -211,12 +218,16 @@ export default function LighningPayment() {
             {openRecieveBox && (
                 <div className="modalOverlay">
                     <div className='createInvoice'>
-                        <button type='button' className='closeBtn' onClick={() => { setOpenRecieveBox(false); dispatch(setInvoice(null)) }}>
+                        <button type='button' className='closeBtn' onClick={() => { setOpenRecieveBox(false); dispatch(setInvoice(null));setConvertedAmountInSat(0) }}>
                             <i className="fa-solid fa-xmark"></i>
                         </button>
                         <h2>Create Invoice</h2>
+                        <p style={{marginTop:'0px',textAlign:'center'}}>You can change the currency from <Link to={'/settings'} style={{color:'#0f61b9',textDecoration:'none'}}><i className="fa-solid fa-gear"></i> Settings</Link></p>
                         <form onSubmit={handleCreateInvoice}>
-                            <input type="number" inputMode='numeric' placeholder='Enter amount in sats' ref={amount} required />
+                            <label htmlFor='amountvalue'>Enter amount in {currency}:</label>
+                            <input type="number" id='amountvalue' inputMode='numeric' placeholder={`Enter amount in ${currency}`} ref={amount} onChange={handleConversion} required />
+                            <span style={{color:'green'}}>Entered amount in sats: {convertedAmountInSat}</span>
+                            <label>Enter description:</label>
                             <input type="text" placeholder='Enter the description' ref={description} />
                             <button type='submit' disabled={status}>Create</button>
                         </form>
@@ -250,7 +261,8 @@ export default function LighningPayment() {
                         </button>
                         <h2>Pay Invoice</h2>
                         <form onSubmit={handlePayInvoice}>
-                            <input type="text" placeholder='Enter the Invoice' ref={invoice} required />
+                            <label htmlFor='invoice'>Enter the invoice:</label>
+                            <input type="text" id='invoice' placeholder='Enter the Invoice' ref={invoice} required />
                             <button type='submit' disabled={status}>Pay Invoice</button>
                         </form>
                         {payInvoiceResult && (

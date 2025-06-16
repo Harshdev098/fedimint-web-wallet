@@ -10,6 +10,7 @@ export type FederationMetaData = {
     federation_name: string;
     welcome_message: string;
     invite_code: string;
+    pinned_message:string;
     federation_expiry_timestamp:number | null;
 }
 
@@ -39,12 +40,7 @@ export type PreviewFederationResponse={
     federationID:string,
 }
 
-export type Transactions={
-    timeStamp:string,
-    PaymentType:string,
-    type:string,
-    amount: string,
-    OperationId:string,
-    Outcome:string,
-    gateway:string
-}
+export type EpochTime = {
+  secs_since_epoch: number;
+  nanos_since_epoch: number;
+};

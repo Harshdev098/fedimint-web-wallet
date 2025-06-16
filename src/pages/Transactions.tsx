@@ -1,11 +1,11 @@
-// import { useEffect, useState } from 'react';
+// import { useEffect, useState, useCallback } from 'react';
 // import { useContext } from 'react';
 // import WalletContext from '../context/wallet';
-import type { Transactions } from '../hooks/Federation.type';
-// import { Link } from 'react-router';
 // import Alerts from '../Components/Alerts';
 // import NProgress from 'nprogress';
 // import LoadingContext from '../context/loader';
+// import type { Transactions } from '@fedimint/core-web';
+// import type { EpochTime } from '../hooks/Federation.type';
 
 export default function Transactions() {
     // const { wallet } = useContext(WalletContext);
@@ -21,56 +21,20 @@ export default function Transactions() {
     // const limit = 4;
     // const [hasMore, setHasMore] = useState(true);
 
+
     // const fetchOperations = async (page: number, reset = false) => {
     //     try {
     //         NProgress.start();
     //         setLoading(true);
-    //         (window as any).wallet = wallet;
 
     //         const lastSeenParam = reset ? null : lastSeen;
-    //         console.log('Calling listOperations:', { limit, lastSeen: lastSeenParam, page });
+    //         console.log('Calling listTransactions:', { limit, lastSeen: lastSeenParam, page });
 
-    //         // const operations = await wallet.federation.listOperations(limit, lastSeenParam);
-    //         const operations = await wallet.federation.listOperations();
-    //         console.log("operations are ", operations)
+    //         const transactions = await wallet.federation.listTransactions();
+    //         console.log("transactions are ", transactions)
 
-    //         const mappedTransactions: Transactions[] = Array.isArray(operations)
-    //             ? operations.map(([key, op]: any) => {
-    //                 const creationTime = key?.creation_time;
-    //                 const operationId = key?.operation_id;
-    //                 const moduleKind = op?.operation_module_kind || 'unknown';
-    //                 const meta = op?.meta || {};
-    //                 const variant = meta?.variant || {};
-    //                 const amount = meta?.amount ? meta.amount / 1000 : 'N/A';
-    //                 const outcome = op?.outcome?.outcome || 'N/A';
-
-    //                 let PaymentType = 'unknown';
-    //                 if (moduleKind === 'ln') {
-    //                     PaymentType = variant.send ? 'send' : variant.receive ? 'receive' : 'unknown';
-    //                 } else if (moduleKind === 'mint') {
-    //                     PaymentType = variant.spend_o_o_b ? 'spend_oob' : variant.reissue ? 'reissue' : 'mint';
-    //                 }
-    //                 const timestamp = creationTime
-    //                     ? new Date(
-    //                         creationTime.secs_since_epoch * 1000 +
-    //                         creationTime.nanos_since_epoch / 1_000_000
-    //                     ).toLocaleString()
-    //                     : '-';
-
-    //                 return {
-    //                     timeStamp: timestamp,
-    //                     PaymentType,
-    //                     type: moduleKind,
-    //                     amount: amount.toString(),
-    //                     OperationId: operationId,
-    //                     Outcome: outcome,
-    //                     gateway: variant.receive?.gateway_id || variant.send?.gateway_id || 'N/A',
-    //                 };
-    //             })
-    //             : [];
-
-    //         if (mappedTransactions.length > 0) {
-    //             const lastTx = mappedTransactions[mappedTransactions.length - 1];
+    //         if (transactions.length > 0) {
+    //             const lastTx = transactions[transactions.length - 1];
     //             setLastSeen({
     //                 creation_time: {
     //                     secs_since_epoch: Math.floor(
@@ -79,14 +43,13 @@ export default function Transactions() {
     //                     nanos_since_epoch:
     //                         (new Date(lastTx.timeStamp).getTime() % 1000) * 1_000_000,
     //                 },
-    //                 operation_id: lastTx.OperationId,
+    //                 operation_id: lastTx.operationId,
     //             });
     //         }
 
-    //         setHasMore(mappedTransactions.length === limit);
-    //         setTransactions(mappedTransactions);
+    //         setHasMore(transactions.length === limit);
+    //         setTransactions(transactions);
     //         setCurrentPage(page);
-    //         setTxError('');
     //     } catch (err) {
     //         console.error('Error fetching operations:', err);
     //         setTxError(err instanceof Error ? err.message : String(err));
@@ -98,61 +61,95 @@ export default function Transactions() {
     // };
 
     // useEffect(() => {
+    //     (window as any).wallet = wallet;
     //     fetchOperations(1, true);
     // }, [wallet]);
+
 
     // const memoizeSearch = useCallback(
     //     async (query: string) => {
     //         try {
     //             NProgress.start();
     //             setLoading(true);
-    //             const result = await wallet.federation.getOperation(query);
 
+    //             const result = await wallet.federation.getOperation(query);
     //             if (!result) {
     //                 setTransactions([]);
     //                 return;
     //             }
 
-    //             const meta = typeof result.meta === 'object' && !Array.isArray(result.meta) && result.meta !== null
-    //                 ? result.meta
-    //                 : {};
-    //             const variant = typeof meta.variant === 'object' && meta.variant !== null && !Array.isArray(meta.variant)
-    //                 ? meta.variant
-    //                 : {};
-    //             const amount = typeof meta.amount === 'number'
-    //                 ? (meta.amount / 1000).toString()
-    //                 : 'N/A';
-    //             const moduleKind = result.operation_module_kind || 'unknown';
+    //             let paymentType = 'unknown';
+    //             let amount = 'N/A';
+    //             let timestamp = '-';
+    //             let invoice = 'N/A';
+    //             let gateway = 'N/A';
 
-    //             let PaymentType = 'unknown';
-    //             if (moduleKind === 'ln') {
-    //                 PaymentType = (variant as any).send
-    //                     ? 'send'
-    //                     : (variant as any).receive
-    //                         ? 'receive'
-    //                         : 'unknown';
-    //             } else if (moduleKind === 'mint') {
-    //                 PaymentType = (variant as any).spend_o_o_b
-    //                     ? 'spend_oob'
-    //                     : (variant as any).reissue
-    //                         ? 'reissue'
-    //                         : 'mint';
+    //             const time = result.outcome?.time;
+    //             if (
+    //                 time &&
+    //                 typeof time === 'object' &&
+    //                 'secs_since_epoch' in time &&
+    //                 'nanos_since_epoch' in time
+    //             ) {
+    //                 const t = time as EpochTime;
+    //                 timestamp = new Date(
+    //                     t.secs_since_epoch * 1000 + t.nanos_since_epoch / 1_000_000
+    //                 ).toLocaleString();
     //             }
-    //             const outcome = typeof result.outcome === 'object' && result.outcome !== null
-    //                 ? result.outcome.outcome
-    //                 : 'N/A';
-    //             const timestamp = result.outcome?.time
-    //                 ? new Date(result.outcome.time * 1000).toLocaleString()
-    //                 : '-';
+
+    //             const moduleKind: string = result.operation_module_kind ?? 'unknown';
+    //             const meta = result.meta as any;
+
+    //             if (meta && typeof meta === 'object' && 'variant' in meta) {
+    //                 const variant = meta.variant;
+
+    //                 if (moduleKind === 'ln') {
+    //                     invoice = variant?.pay?.invoice ?? variant?.receive?.invoice ?? 'N/A';
+    //                     paymentType = variant?.pay ? 'send' : 'receive';
+    //                     gateway = variant?.receive?.gateway_id ?? variant?.send?.gateway_id ?? 'N/A';
+    //                 }
+
+    //                 else if (moduleKind === 'mint') {
+    //                     if ('spend_o_o_b' in variant) {
+    //                         paymentType = 'spend_oob';
+    //                     } else if ('reissuance' in variant) {
+    //                         paymentType = 'reissue';
+    //                     }
+
+    //                     if (typeof meta.amount === 'number') {
+    //                         amount = String(meta.amount);
+    //                     }
+    //                 }
+
+    //                 else if (moduleKind === 'wallet') {
+    //                     if (
+    //                         variant.withdraw?.amount &&
+    //                         typeof variant.withdraw.amount === 'number'
+    //                     ) {
+    //                         amount = variant.withdraw.amount.toString();
+    //                     }
+    //                     paymentType = variant.deposit ? 'deposit' : 'withdraw';
+    //                 }
+    //             }
+
+    //             let outcome = 'N/A';
+    //             if (
+    //                 result.outcome?.outcome &&
+    //                 typeof result.outcome.outcome === 'object' &&
+    //                 result.outcome.outcome !== null
+    //             ) {
+    //                 outcome = 'success' in result.outcome.outcome ? 'success' : JSON.stringify(result.outcome.outcome);
+    //             }
 
     //             const mappedTx: Transactions = {
     //                 timeStamp: timestamp,
-    //                 PaymentType,
+    //                 paymentType,
     //                 type: moduleKind,
     //                 amount,
-    //                 OperationId: query,
-    //                 Outcome: JSON.stringify(outcome),
-    //                 gateway: (variant as any).receive?.gateway_id || (variant as any).send?.gateway_id || 'N/A',
+    //                 operationId: query,
+    //                 outcome,
+    //                 invoice,
+    //                 gateway,
     //             };
 
     //             setTransactions([mappedTx]);
@@ -168,6 +165,7 @@ export default function Transactions() {
     //     [wallet, setLoading]
     // );
 
+
     // useEffect(() => {
     //     if (query.trim() !== '') {
     //         memoizeSearch(query);
@@ -175,6 +173,7 @@ export default function Transactions() {
     //         fetchOperations(1, true);
     //     }
     // }, [query, memoizeSearch]);
+
 
     // const handlePrev = () => {
     //     if (currentPage > 1) {
@@ -211,25 +210,21 @@ export default function Transactions() {
                                 <th>Amount(sat)</th>
                                 <th>Operation ID</th>
                                 <th>Outcome</th>
-                                <th>Details</th>
+                                <th>Gateway</th>
                             </tr>
                         </thead>
                         <tbody>
                             {/* {transactions.length > 0 ? (
                                 transactions.map((tx, index) => (
-                                    <tr key={tx.OperationId}>
+                                    <tr key={index}>
                                         <td>{(currentPage - 1) * limit + index + 1}</td>
                                         <td>{tx.type}</td>
-                                        <td>{tx.PaymentType}</td>
+                                        <td>{tx.paymentType}</td>
                                         <td>{tx.timeStamp}</td>
                                         <td>{tx.amount}</td>
-                                        <td>{tx.OperationId}</td>
-                                        <td>{tx.Outcome}</td>
-                                        <td>
-                                            <Link to={`/wallet/transactions/${tx.OperationId}`}>
-                                                Detail
-                                            </Link>
-                                        </td>
+                                        <td>{tx.operationId}</td>
+                                        <td>{tx.outcome}</td>
+                                        <td>{tx.gateway}</td>
                                     </tr>
                                 ))
                             ) : (
@@ -251,7 +246,6 @@ export default function Transactions() {
                         Prev
                     </button>
                     {/* <span className="pagination-info">Page {currentPage}</span> */}
-                    <span className="pagination-info">Page</span>
                     <button
                         // onClick={handleNext}
                         // disabled={!hasMore}

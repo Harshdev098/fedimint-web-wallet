@@ -6,6 +6,7 @@ import WalletContext from '../context/wallet';
 import { useDispatch, useSelector } from 'react-redux';
 import type { RootState, AppDispatch } from '../redux/store';
 import { setFederationDetails, setFederationMetaData, setError } from '../redux/slices/FederationDetails';
+import { setCurrency } from '../redux/slices/Balance';
 import { setFederationId } from '../redux/slices/ActiveFederation';
 import { setNewJoin } from '../redux/slices/ActiveFederation';
 import Alerts from '../Components/Alerts';
@@ -37,6 +38,10 @@ export default function Main() {
                 console.log("Federation Details:", result);
                 dispatch(setFederationDetails(result.details));
                 dispatch(setFederationMetaData(result.meta));
+                if(!(localStorage.getItem('walletCurrency'))){
+                    localStorage.setItem('walletCurrency','sat')
+                }
+                setCurrency(localStorage.getItem('walletCurrency') || 'sat')
                 console.log("new join is ", newJoin)
                 console.log("welcome message", result.meta.welcome_message)
             } catch (err) {

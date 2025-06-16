@@ -14,12 +14,14 @@ import { downloadQRCode } from '../services/DownloadQR';
 import { setBalance } from '../redux/slices/Balance'
 import { createNotification } from '../redux/slices/NotificationSlice';
 import type { SpendNotesState } from "@fedimint/core-web";
+import { convertToSats } from "../services/BalanceService";
 
 
 export default function Ecash() {
     const [status, setStatus] = useState<boolean>(false)
     const [openVideo, setOpenVideo] = useState<boolean>(false)
     const videoRef = useRef<HTMLVideoElement | null>(null)
+    const [convertedAmountInSat, setConvertedAmountInSat] = useState<number>(0)
     const scannerRef = useRef<QrScanner | null>(null)
     const amount = useRef<HTMLInputElement | null>(null)
     const [notes, setNotes] = useState('')
@@ -27,6 +29,7 @@ export default function Ecash() {
     const { setLoading } = useContext(LoadingContext)
     const { SpendEcashError, SpendEcashResult, RedeemEcashResult, RedeemEcashError, ParseEcashResult, ParseEcashError } = useSelector((state: RootState) => state.mint)
     const dispatch = useDispatch<AppDispatch>()
+    const { currency } = useSelector((state: RootState) => state.balance)
 
     const subscribeBalanceChange = () => {
         const unsubscribeBalance = wallet.balance.subscribeBalance((mSats) => {
@@ -47,27 +50,28 @@ export default function Ecash() {
         }
         try {
             setStatus(true)
-            if (Number(amount.current?.value) <= 0) {
+
+            if (convertedAmountInSat && Number(convertedAmountInSat) <= 0) {
                 throw new Error("Spend amount should be greater than 0")
             }
-            
-            const result = await SpendEcash(wallet, Number(amount.current?.value)*1000)
+
+            const result = await SpendEcash(wallet, convertedAmountInSat * 1000)
             dispatch(setSpendResult(result))
 
             wallet.mint.subscribeSpendNotes(
                 result.operationId,
                 (state: SpendNotesState) => {
-                    console.log("state is ",state)
-                    const date=(new Date()).toDateString()
-                    const time=(new Date()).toTimeString()
-                    if(state==='UserCanceledProcessing'){
-                        dispatch(createNotification({type:'Ecash',data:'Ecash Notes Cancelled processing',date:date,time:time,OperationId:result.operationId }))
-                    }else if(state==='UserCanceledSuccess'){
-                        dispatch(createNotification({type:'Ecash',data:'Ecash Notes Cancelled success',date:date,time:time,OperationId:result.operationId }))
-                    }else if(state==='UserCanceledFailure'){
-                        dispatch(createNotification({type:'Ecash',data:'Ecash Notes Cancelled failed',date:date,time:time,OperationId:result.operationId }))
-                    }else if(state==='Success'){
-                        dispatch(createNotification({type:'Ecash',data:'Ecash Notes success',date:date,time:time,OperationId:result.operationId }))
+                    console.log("state is ", state)
+                    const date = (new Date()).toDateString()
+                    const time = (new Date()).toTimeString()
+                    if (state === 'UserCanceledProcessing') {
+                        dispatch(createNotification({ type: 'Ecash', data: 'Ecash Notes Cancelled processing', date: date, time: time, OperationId: result.operationId }))
+                    } else if (state === 'UserCanceledSuccess') {
+                        dispatch(createNotification({ type: 'Ecash', data: 'Ecash Notes Cancelled success', date: date, time: time, OperationId: result.operationId }))
+                    } else if (state === 'UserCanceledFailure') {
+                        dispatch(createNotification({ type: 'Ecash', data: 'Ecash Notes Cancelled failed', date: date, time: time, OperationId: result.operationId }))
+                    } else if (state === 'Success') {
+                        dispatch(createNotification({ type: 'Ecash', data: 'Ecash Notes success', date: date, time: time, OperationId: result.operationId }))
                     }
                 },
                 (error) => {
@@ -86,6 +90,7 @@ export default function Ecash() {
             setStatus(false)
             if (amount.current) {
                 amount.current.value = '';
+                setConvertedAmountInSat(0)
             }
         }
     }
@@ -128,7 +133,7 @@ export default function Ecash() {
     const memoizedParseNotes = useCallback(async (notesValue: string) => {
         const result = await ParseEcashNotes(wallet, notesValue);
         if (result !== undefined) {
-            dispatch(setParseEcashResult(`Parsed Notes: ${result/1000}sat (${result}msat)`));
+            dispatch(setParseEcashResult(`Parsed Notes: ${result / 1000}sat (${result}msat)`));
         }
     }, [wallet, dispatch]);
 
@@ -153,7 +158,7 @@ export default function Ecash() {
                     if (result.data) {
                         const parseValue = await ParseEcashNotes(wallet, result.data)
                         if (parseValue !== undefined) {
-                            dispatch(setParseEcashResult(`Parsed Notes: ${parseValue/1000}sat (${parseValue}msat)`));
+                            dispatch(setParseEcashResult(`Parsed Notes: ${parseValue / 1000}sat (${parseValue}msat)`));
                             setNotes(result.data)
                         } else {
                             console.error("Parsed value is undefined");
@@ -182,6 +187,10 @@ export default function Ecash() {
         }
     }, [openVideo])
 
+    const handleConversion = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const amount = await convertToSats(Number((e.target.value).trim()), currency)
+        setConvertedAmountInSat(amount)
+    }
 
     return (
         <>
@@ -202,9 +211,11 @@ export default function Ecash() {
                 <div className="EcashTransactionWrapper">
                     <div className="SendSection">
                         <h3 className="TransactionHeading"><i className="fa-solid fa-money-bill-transfer"></i> Generate Ecash & Spend</h3>
-                        <p>Manage ecash transfers in <Link to={'/wallet/setting'} style={{ textDecoration: 'none', color: '#004cff' }}>settings <i className="fa-solid fa-gear"></i></Link></p>
+                        <p style={{marginTop:'0px'}}>You can change the currency from <Link to={'/settings'} style={{color:'#0f61b9',textDecoration:'none'}}><i className="fa-solid fa-gear"></i> Settings</Link></p>
                         <form onSubmit={handleSpendEcash}>
-                            <input type="number" placeholder="Enter amount in sats" inputMode='numeric' ref={amount} required />
+                            <label htmlFor="Ecashamount">Enter amount in {currency}:</label>
+                            <input type="number" id="Ecashamount" placeholder={`Enter amount in ${currency}`} inputMode='numeric' ref={amount} onChange={handleConversion} required />
+                            <span style={{color:'green',padding:'8px'}}>Entered amount in sats: {convertedAmountInSat}</span>
                             <button type="submit" disabled={status}>
                                 <i className="fa-solid fa-money-bill-transfer"></i>
                                 Generate & Spend
@@ -212,7 +223,7 @@ export default function Ecash() {
                         </form>
                         {SpendEcashResult && (
                             <div className='spendResult'>
-                                <button type="button" style={{ padding: '8px 13px', border: 'none', fontSize: '17px', borderRadius: '8px', cursor: 'pointer' }} onClick={() => { dispatch(setSpendResult(null))}}>Clear</button>
+                                <button type="button" style={{ padding: '8px 13px', border: 'none', fontSize: '17px', borderRadius: '8px', cursor: 'pointer' }} onClick={() => { dispatch(setSpendResult(null)) }}>Clear</button>
                                 <div className='copyWrapper'>
                                     <p id="spendNotesResult" className="copyText">{SpendEcashResult.notes}</p>
                                     <button
@@ -236,7 +247,8 @@ export default function Ecash() {
                     <div className="RecieveSection">
                         <h3 className="TransactionHeading"><i className="fa-solid fa-hand-holding-dollar"></i> Redeem Ecash</h3>
                         <form onSubmit={handleRedeemEcash}>
-                            <input type="text" placeholder="Enter the notes" value={notes} onChange={(e) => { setNotes(e.target.value) }} />
+                            <label htmlFor="notesvalue">Enter the notes or Scan:</label>
+                            <input type="text" id="notesvalue" placeholder="Enter the notes" value={notes} onChange={(e) => { setNotes(e.target.value) }} />
                             {ParseEcashResult && (
                                 <div>
                                     <p style={{ fontSize: '17px', color: 'green' }}>{ParseEcashResult}</p>

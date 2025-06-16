@@ -5,7 +5,7 @@ import WalletContext from "../context/wallet"
 import { useDispatch, useSelector } from 'react-redux'
 import type { RootState, AppDispatch } from '../redux/store'
 import { setBalance, setError } from '../redux/slices/Balance'
-import { fetchBalance } from "../services/BalanceService"
+import { convertFromMsat, fetchBalance } from "../services/BalanceService"
 import Alerts from "./Alerts"
 import NProgress from 'nprogress'
 import LoadingContext from '../context/loader'
@@ -18,6 +18,8 @@ export default function Balance() {
     const { balance, error } = useSelector((state: RootState) => state.balance)
     const { setLoading } = useContext(LoadingContext)
     const { federationId } = useSelector((state: RootState) => state.activeFederation)
+    const { currency } =useSelector((state:RootState)=>state.balance)
+
 
     useEffect(() => {
         const balance = async () => {
@@ -28,7 +30,10 @@ export default function Balance() {
                 if (value === undefined) {
                     throw new Error("Failed to fetch balance")
                 } else {
-                    dispatch(setBalance(value))
+                    console.log("fetched value is ",value,currency)
+                    const convertedAmount=await convertFromMsat(value,currency)
+                    console.log("converted value is ",convertedAmount)
+                    dispatch(setBalance(convertedAmount))
                 }
             } catch (err) {
                 dispatch(setError(`${err}`))
@@ -42,7 +47,7 @@ export default function Balance() {
         }
 
         balance()
-    }, [federationId, balance])
+    }, [federationId, balance,currency])
 
     return (
         <>
@@ -52,7 +57,7 @@ export default function Balance() {
                     <button>Balance</button>
                 </div>
                 <div className='BalanceSectionValue'>
-                    <span>{balance/1000} sat</span>
+                    <span>{balance} {currency.toUpperCase()}</span>
                 </div>
                 <div style={{ marginBottom: '20px' }}>
                     <span><Link to={'/wallet/federation'}>Federation Details</Link> | <Link to={'/wallet/ecash'}>Ecashes</Link></span>

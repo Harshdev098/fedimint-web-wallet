@@ -7,7 +7,7 @@ import { useSelector } from 'react-redux'
 import type { RootState } from '../redux/store'
 // import { setPegin, setPeginError, setPegout, setPegoutError } from '../redux/slices/OnchainSlice';
 import Alerts from '../Components/Alerts';
-
+import { convertToSats } from '../services/BalanceService';
 
 export default function OnChain() {
     const [onchainType, setOnchainType] = useState(true);
@@ -17,6 +17,8 @@ export default function OnChain() {
     // const { setLoading } = useContext(LoadingContext)
     // const dispatch = useDispatch<AppDispatch>()
     const { pegin, peginError, pegout, pegoutError } = useSelector((state: RootState) => state.onchain)
+    const { currency } = useSelector((state: RootState) => state.balance)
+    const [convertedAmountInSat, setConvertedAmountInSat] = useState<number>(0)
 
     // const handlePeginTransaction = async () => {
     //     try {
@@ -38,14 +40,15 @@ export default function OnChain() {
 
     // const handlePegoutTransaction = async (e: React.FormEvent) => {
     //     e.preventDefault()
-    //     if (!address.current?.value || !amount.current?.value) {
+    //     
+    //     if (!(address.current?.value).trim() || !(convertedAmountInSats).trim()) {
     //         alert("Please enter both address and amount");
     //         return;
     //     }
     //     try {
     //         NProgress.start()
     //         setLoading(true)
-    //         const result = await PegOut(wallet, address.current.value.trim(), Number(amount.current.value));
+    //         const result = await PegOut(wallet, address.current.value.trim(), convertedAmountInSats);
     //         if (result) {
     //             dispatch(setPegout(result))
     //             setTimeout(() => {
@@ -68,6 +71,11 @@ export default function OnChain() {
     //         setLoading(false)
     //     }
     // }
+
+    const handleConversion = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const amount = await convertToSats(Number((e.target.value).trim()), currency)
+        setConvertedAmountInSat(amount)
+    }
 
     return (
         <section className='onchainTx'>
@@ -111,8 +119,9 @@ export default function OnChain() {
                         </div>
                     ) : (
                         <form className='withdrawForm' >
+                            <input type='number' inputMode='numeric' placeholder={`Enter amount in ${currency}`} ref={amount} onChange={ handleConversion} />
+                            <span>Entered amount in sats: {convertedAmountInSat}</span>
                             <input type='text' placeholder='Enter the on-chain address' ref={address} />
-                            <input type='number' inputMode='numeric' placeholder='Enter amount' ref={amount} />
                             <button type='submit' className='actionBtn'>Withdraw</button>
                         </form>
                     )}
