@@ -61,3 +61,27 @@ export type ParsedInvoice={
   expiry:string,
   memo:string
 }
+
+export type InvoiceState={
+  timestamp:string,
+  invoiceId:string,
+  operationId:string,
+  status:string,
+  location?:{longitude:number,latitude:number} | null,
+}
+
+export type Nip47Transaction = {
+    amount: number;
+    created_at: number;
+    description: string;
+    description_hash: string;
+    expires_at: number;
+    fees_paid: number;
+    invoice: string;
+    payment_hash: string;
+    preimage: string;
+    settle_deadline?: number;
+    settled_at: number;
+    state: "settled" | "pending" | "failed";
+    type: "incoming" | "outgoing";
+};

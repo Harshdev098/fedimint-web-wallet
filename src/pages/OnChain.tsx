@@ -7,7 +7,7 @@ import { useSelector } from 'react-redux'
 import type { RootState } from '../redux/store'
 // import { setPegin, setPeginError, setPegout, setPegoutError } from '../redux/slices/OnchainSlice';
 import Alerts from '../Components/Alerts';
-import { convertToSats } from '../services/BalanceService';
+import { convertToMsats } from '../services/BalanceService';
 
 export default function OnChain() {
     const [onchainType, setOnchainType] = useState(true);
@@ -18,7 +18,7 @@ export default function OnChain() {
     // const dispatch = useDispatch<AppDispatch>()
     const { pegin, peginError, pegout, pegoutError } = useSelector((state: RootState) => state.onchain)
     const { currency } = useSelector((state: RootState) => state.balance)
-    const [convertedAmountInSat, setConvertedAmountInSat] = useState<number>(0)
+    const [convertedAmountInMSat, setConvertedAmountInMSat] = useState<number>(0)
 
     // const handlePeginTransaction = async () => {
     //     try {
@@ -73,8 +73,8 @@ export default function OnChain() {
     // }
 
     const handleConversion = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const amount = await convertToSats(Number((e.target.value).trim()), currency)
-        setConvertedAmountInSat(amount)
+        const amount = await convertToMsats(Number((e.target.value).trim()), currency)
+        setConvertedAmountInMSat(amount)
     }
 
     return (
@@ -120,7 +120,7 @@ export default function OnChain() {
                     ) : (
                         <form className='withdrawForm' >
                             <input type='number' inputMode='numeric' placeholder={`Enter amount in ${currency}`} ref={amount} onChange={ handleConversion} />
-                            <span>Entered amount in sats: {convertedAmountInSat}</span>
+                            <span>Entered amount in msats: {convertedAmountInMSat}</span>
                             <input type='text' placeholder='Enter the on-chain address' ref={address} />
                             <button type='submit' className='actionBtn'>Withdraw</button>
                         </form>

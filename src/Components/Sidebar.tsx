@@ -58,14 +58,14 @@ export default function Sidebar() {
                                 <i className="fa-solid fa-wallet"></i>ECashes
                             </Link>
                         </li>
+                        <li className={isActive('/wallet/invoice') ? 'active' : ''}>
+                            <Link to='/wallet/invoice' onClick={() => window.innerWidth <= 870 && setHamburger(true)}>
+                                <i className="fa-solid fa-file-invoice-dollar"></i>Invoice
+                            </Link>
+                        </li>
                         <li className={isActive('/wallet/guardian') ? 'active' : ''}>
                             <Link to='/wallet/guardian' onClick={() => window.innerWidth <= 870 && setHamburger(true)}>
                                 <i className="fa-solid fa-shield"></i>Guardians
-                            </Link>
-                        </li>
-                        <li className={isActive('/wallet/modules') ? 'active' : ''}>
-                            <Link to='/wallet/modules' onClick={() => window.innerWidth <= 870 && setHamburger(true)}>
-                                <i className="fa-solid fa-puzzle-piece"></i>Modules
                             </Link>
                         </li>
                     </ul>

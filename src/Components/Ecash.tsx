@@ -14,14 +14,14 @@ import { downloadQRCode } from '../services/DownloadQR';
 import { setBalance } from '../redux/slices/Balance'
 import { createNotification } from '../redux/slices/NotificationSlice';
 import type { SpendNotesState } from "@fedimint/core-web";
-import { convertToSats } from "../services/BalanceService";
+import { convertToMsats } from "../services/BalanceService";
 
 
 export default function Ecash() {
     const [status, setStatus] = useState<boolean>(false)
     const [openVideo, setOpenVideo] = useState<boolean>(false)
     const videoRef = useRef<HTMLVideoElement | null>(null)
-    const [convertedAmountInSat, setConvertedAmountInSat] = useState<number>(0)
+    const [convertedAmountInMSat, setConvertedAmountInMSat] = useState<number>(0)
     const scannerRef = useRef<QrScanner | null>(null)
     const amount = useRef<HTMLInputElement | null>(null)
     const [notes, setNotes] = useState('')
@@ -51,11 +51,11 @@ export default function Ecash() {
         try {
             setStatus(true)
 
-            if (convertedAmountInSat && Number(convertedAmountInSat) <= 0) {
+            if (convertedAmountInMSat && Number(convertedAmountInMSat) <= 0) {
                 throw new Error("Spend amount should be greater than 0")
             }
 
-            const result = await SpendEcash(wallet, convertedAmountInSat * 1000)
+            const result = await SpendEcash(wallet, convertedAmountInMSat)
             dispatch(setSpendResult(result))
 
             wallet.mint.subscribeSpendNotes(
@@ -90,7 +90,7 @@ export default function Ecash() {
             setStatus(false)
             if (amount.current) {
                 amount.current.value = '';
-                setConvertedAmountInSat(0)
+                setConvertedAmountInMSat(0)
             }
         }
     }
@@ -188,8 +188,8 @@ export default function Ecash() {
     }, [openVideo])
 
     const handleConversion = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const amount = await convertToSats(Number((e.target.value).trim()), currency)
-        setConvertedAmountInSat(amount)
+        const amount = await convertToMsats(Number((e.target.value).trim()), currency)
+        setConvertedAmountInMSat(amount)
     }
 
     return (
@@ -214,8 +214,8 @@ export default function Ecash() {
                         <p style={{marginTop:'0px'}}>You can change the currency from <Link to={'/settings'} style={{color:'#0f61b9',textDecoration:'none'}}><i className="fa-solid fa-gear"></i> Settings</Link></p>
                         <form onSubmit={handleSpendEcash}>
                             <label htmlFor="Ecashamount">Enter amount in {currency}:</label>
-                            <input type="number" id="Ecashamount" placeholder={`Enter amount in ${currency}`} inputMode='numeric' ref={amount} onChange={handleConversion} required />
-                            <span style={{color:'green',padding:'8px'}}>Entered amount in sats: {convertedAmountInSat}</span>
+                            <input type="decimal" id="Ecashamount" placeholder={`Enter amount in ${currency}`} inputMode='decimal' ref={amount} onChange={handleConversion} required />
+                            <span style={{color:'green',padding:'8px'}}>Entered amount in msats: {convertedAmountInMSat}</span>
                             <button type="submit" disabled={status}>
                                 <i className="fa-solid fa-money-bill-transfer"></i>
                                 Generate & Spend
@@ -247,7 +247,7 @@ export default function Ecash() {
                     <div className="RecieveSection">
                         <h3 className="TransactionHeading"><i className="fa-solid fa-hand-holding-dollar"></i> Redeem Ecash</h3>
                         <form onSubmit={handleRedeemEcash}>
-                            <label htmlFor="notesvalue">Enter the notes or Scan:</label>
+                            <label htmlFor="notesvalue">Enter or Scan the notes:</label>
                             <input type="text" id="notesvalue" placeholder="Enter the notes" value={notes} onChange={(e) => { setNotes(e.target.value) }} />
                             {ParseEcashResult && (
                                 <div>

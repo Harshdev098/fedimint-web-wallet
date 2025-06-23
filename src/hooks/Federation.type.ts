@@ -11,6 +11,9 @@ export type FederationMetaData = {
     welcome_message: string;
     invite_code: string;
     pinned_message:string;
+    onchain_deposits_disabled:string;
+    federation_icon_url:string;
+    max_stable_balance_msats:string;
     federation_expiry_timestamp:number | null;
 }
 
