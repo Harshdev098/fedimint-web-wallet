@@ -2,7 +2,10 @@ import type { CreateInvoiceResponse, InvoicePaymentResponse, Wallet } from "../h
 
 export const CreateInvoice = async (wallet: Wallet, amount: number, description: string): Promise<CreateInvoiceResponse> => {
     try {
-        const result = await wallet?.lightning.createInvoice(amount, description)
+        const expiryTime=Number(localStorage.getItem('InvoiceExpiryTime'))*60;
+        console.log("expiry time is ",expiryTime)
+        console.log("time from localstorage is ",localStorage.getItem('InvoiceExpiryTime'))
+        const result = await wallet?.lightning.createInvoice(amount, description,expiryTime)
         console.log("result", result)
         if (result) {
             return {

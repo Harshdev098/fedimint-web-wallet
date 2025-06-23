@@ -53,7 +53,13 @@ const fetchMetaData = async (url: string, federationID: string | null): Promise<
 export const fetchFederationDetails = async (wallet: Wallet, federationID: string | null): Promise<FederationDetailResponse> => {
     try {
         const details = await wallet?.federation.getConfig() as FederationConfig;
-        const meta = await fetchMetaData(details.meta.meta_external_url, federationID)
+        let meta: FederationMetaData = details.meta;
+        if (details.meta.meta_external_url) {
+            const fetchedMeta = await fetchMetaData(details.meta.meta_external_url, federationID);
+            if (fetchedMeta) {
+                meta = fetchedMeta;
+            }
+        }
         localStorage.setItem('FedMetaData', JSON.stringify(meta))
         return { details, meta }
     } catch (err) {

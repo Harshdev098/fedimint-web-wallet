@@ -27,11 +27,10 @@ export default function Transactions() {
     //         NProgress.start();
     //         setLoading(true);
 
-    //         const lastSeenParam = reset ? null : lastSeen;
+    //         const lastSeenParam = reset ? undefined : lastSeen ?? undefined;
     //         console.log('Calling listTransactions:', { limit, lastSeen: lastSeenParam, page });
 
-    //         const transactions = await wallet.federation.listTransactions();
-    //         console.log("transactions are ", transactions)
+    //         const transactions = await wallet.federation.listTransactions(limit, lastSeenParam);
 
     //         if (transactions.length > 0) {
     //             const lastTx = transactions[transactions.length - 1];
@@ -189,14 +188,14 @@ export default function Transactions() {
 
     return (
         <>
-            {/* {txError && <Alerts key={Date.now()} Error={txError} Result={''} />} */}
+            {/* {txError && <Alerts key={Date.now()} Error={txError} Result={''} />}
             <div className="notifications-container">
                 <h2 className="notifications-title">Transactions</h2>
                 <input
                     type="text"
                     placeholder="Search Transactions with Operation ID"
-                    // value={query}
-                    // onChange={(e) => setQuery(e.target.value)}
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
                     className="search-input"
                 />
                 <div className="notifications-table-wrapper">
@@ -207,14 +206,14 @@ export default function Transactions() {
                                 <th>Type</th>
                                 <th>Payment Type</th>
                                 <th>Timestamp</th>
-                                <th>Amount(sat)</th>
+                                <th>Amount(msat)</th>
                                 <th>Operation ID</th>
                                 <th>Outcome</th>
                                 <th>Gateway</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {/* {transactions.length > 0 ? (
+                            {transactions.length > 0 ? (
                                 transactions.map((tx, index) => (
                                     <tr key={index}>
                                         <td>{(currentPage - 1) * limit + index + 1}</td>
@@ -233,28 +232,28 @@ export default function Transactions() {
                                         No transaction record found!
                                     </td>
                                 </tr>
-                            )} */}
+                            )}
                         </tbody>
                     </table>
                 </div>
                 <div className="pagination-btn">
                     <button
-                        // onClick={handlePrev}
-                        // disabled={currentPage === 1}
+                        onClick={handlePrev}
+                        disabled={currentPage === 1}
                         className="pagination-button"
                     >
                         Prev
                     </button>
-                    {/* <span className="pagination-info">Page {currentPage}</span> */}
+                    <span className="pagination-info">Page {currentPage}</span>
                     <button
-                        // onClick={handleNext}
-                        // disabled={!hasMore}
+                        onClick={handleNext}
+                        disabled={!hasMore}
                         className="pagination-button"
                     >
                         Next
                     </button>
                 </div>
-            </div>
+            </div> */}
         </>
     );
 }
