@@ -1,15 +1,17 @@
 import { createSlice } from '@reduxjs/toolkit'
 import type { PayloadAction } from '@reduxjs/toolkit'
-import type { FederationConfig, FederationMetaData } from '../../hooks/Federation.type'
+import type { FederationConfig, FederationMetaData, GuardianStatus } from '../../hooks/Federation.type'
 
 interface FederationDetailsState {
     Details: FederationConfig | null;
     metaData: FederationMetaData | null;
+    GuardianStatus:GuardianStatus;
     error: string;
 }
 const initialState: FederationDetailsState={
     Details:null,
     metaData: null,
+    GuardianStatus:{ status: {} },
     error:''
 }
 
@@ -25,9 +27,12 @@ export const FederationDetailsSlice=createSlice({
         },
         setError:(state,action:PayloadAction<string>)=>{
             state.error=action.payload
+        },
+        setGuardianStatus:(state,action:PayloadAction<GuardianStatus>)=>{
+            state.GuardianStatus=action.payload
         }
     }
 })
 
-export const { setError, setFederationDetails, setFederationMetaData } = FederationDetailsSlice.actions;
+export const { setError, setFederationDetails, setFederationMetaData, setGuardianStatus } = FederationDetailsSlice.actions;
 export default FederationDetailsSlice.reducer;

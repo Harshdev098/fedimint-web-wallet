@@ -15,13 +15,13 @@ import Alerts from './Alerts'
 import { setBalance } from '../redux/slices/Balance'
 import { downloadQRCode } from '../services/DownloadQR';
 import type { LnPayState } from '@fedimint/core-web';
-import { convertToSats } from '../services/BalanceService';
+import { convertToMsats } from '../services/BalanceService';
 import { Link } from 'react-router';
 
 
 export default function LighningPayment() {
     const [status, setStatus] = useState<boolean>(false)
-    const [convertedAmountInSat,setConvertedAmountInSat]=useState<number | null>(null)
+    const [convertedAmountInMSat, setConvertedAmountInMSat] = useState<number | null>(null)
     const amount = useRef<HTMLInputElement>(null)
     const description = useRef<HTMLInputElement>(null)
     const invoice = useRef<HTMLInputElement>(null)
@@ -34,7 +34,7 @@ export default function LighningPayment() {
     const { setLoading } = useContext(LoadingContext)
     const dispatch = useDispatch<AppDispatch>()
     const { Invoice, InvoiceError, payInvoiceResult, payInvoiceError, payStatus } = useSelector((state: RootState) => state.Lightning)
-    const { currency } =useSelector((state:RootState)=>state.balance)
+    const { currency } = useSelector((state: RootState) => state.balance)
 
     const subscribeBalanceChange = () => {
         const unsubscribeBalance = wallet.balance.subscribeBalance((mSats) => {
@@ -52,12 +52,12 @@ export default function LighningPayment() {
         setStatus(true);
         setLoading(true);
         try {
-            if (!convertedAmountInSat || convertedAmountInSat <= 0) {
+            if (!convertedAmountInMSat || convertedAmountInMSat <= 0) {
                 throw new Error('Amount must be greater than 0');
             }
             // const amountValue = await convertToSats(convertedAmount,currency)
-            console.log("amount value is",convertedAmountInSat*1000)
-            const result = await CreateInvoice(wallet, convertedAmountInSat*1000, (description.current?.value ?? '').trim());
+            console.log("amount value is", convertedAmountInMSat * 1000)
+            const result = await CreateInvoice(wallet, convertedAmountInMSat, (description.current?.value ?? '').trim());
             console.log('Create invoice result:', result);
             dispatch(setInvoice(result));
             const unsubscribe = wallet?.lightning.subscribeLnReceive(
@@ -66,10 +66,10 @@ export default function LighningPayment() {
                     const date = (new Date()).toDateString()
                     const time = (new Date()).toTimeString()
                     if (state === "funded") {
-                        dispatch(createNotification({ type: 'Payment', data: 'Payment Recieved', date: date, time: time, OperationId:result.operationId }))
+                        dispatch(createNotification({ type: 'Payment', data: 'Payment Recieved', date: date, time: time, OperationId: result.operationId }))
                         subscribeBalanceChange()
                     } else if (typeof state === 'object' && 'canceled' in state) {
-                        dispatch(createNotification({ type: 'Payment', data: `Payment Canceled ${state.canceled.reason}`, date: date, time: time, OperationId:result.operationId }))
+                        dispatch(createNotification({ type: 'Payment', data: `Payment Canceled ${state.canceled.reason}`, date: date, time: time, OperationId: result.operationId }))
                     }
                 },
                 (error) => {
@@ -110,6 +110,35 @@ export default function LighningPayment() {
             }
             let unsubscribe: (() => void) | undefined;
 
+            if (localStorage.getItem('locationAccess') === 'true') {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const { longitude, latitude } = position.coords;
+                        const location = { latitude, longitude };
+
+                        let locations: { [invoiceId: string]: { latitude: number; longitude: number } } = {};
+                        const storedLocations = localStorage.getItem('paymentLocations');
+                        if (storedLocations) {
+                            try {
+                                locations = JSON.parse(storedLocations);
+                            } catch (error) {
+                                console.error('Error parsing paymentLocations:', error);
+                            }
+                        }
+
+                        locations[invoiceValue] = location;
+                        localStorage.setItem('paymentLocations', JSON.stringify(locations));
+                        console.log(`Location saved for invoice ${invoiceValue}:`, location);
+                    },
+                    (error) => {
+                        console.log('An error occurred while finding location', error);
+                        if(error.PERMISSION_DENIED){
+                            alert("Permission Denied! you can reset your permissions")
+                        }
+                    }
+                );
+            }
+
             const result = await PayInvoice(wallet, invoiceValue || '');
             dispatch(setPayInvoiceResult(result));
 
@@ -123,24 +152,24 @@ export default function LighningPayment() {
                             console.log("status created")
                             dispatch(setPayStatus(state))
                         } else if (state === 'canceled') {
-                            dispatch(createNotification({ type: 'Payment', data: 'Payment Cancelled', date, time, OperationId:result.id }));
+                            dispatch(createNotification({ type: 'Payment', data: 'Payment Cancelled', date, time, OperationId: result.id }));
                             dispatch(setPayStatus(state))
                         } else if (typeof state === 'object') {
                             if ('success' in state) {
-                                dispatch(createNotification({ type: 'Payment', data: 'Payment Succeeded', date, time, OperationId:result.id }));
+                                dispatch(createNotification({ type: 'Payment', data: 'Payment Succeeded', date, time, OperationId: result.id }));
                                 subscribeBalanceChange();
                                 dispatch(setPayStatus('success'))
                             } else if ('funded' in state) {
-                                dispatch(createNotification({ type: 'Payment', data: 'Payment Funded', date, time, OperationId:result.id }));
+                                dispatch(createNotification({ type: 'Payment', data: 'Payment Funded', date, time, OperationId: result.id }));
                                 dispatch(setPayStatus('funded'))
                             } else if ('waiting_for_refund' in state) {
-                                dispatch(createNotification({ type: 'Payment', data: 'Waiting for Refund', date, time, OperationId:result.id }));
+                                dispatch(createNotification({ type: 'Payment', data: 'Waiting for Refund', date, time, OperationId: result.id }));
                                 dispatch(setPayStatus('waiting_for_refund'))
                             } else if ('refunded' in state) {
-                                dispatch(createNotification({ type: 'Payment', data: 'Payment Refunded', date, time, OperationId:result.id }));
+                                dispatch(createNotification({ type: 'Payment', data: 'Payment Refunded', date, time, OperationId: result.id }));
                                 dispatch(setPayStatus('refunded'))
                             } else if ('unexpected_error' in state) {
-                                dispatch(createNotification({ type: 'Payment', data: 'Unexpected Error Occurred', date, time, OperationId:result.id }));
+                                dispatch(createNotification({ type: 'Payment', data: 'Unexpected Error Occurred', date, time, OperationId: result.id }));
                                 dispatch(setPayStatus('unexpected_error'))
                             }
                         }
@@ -199,9 +228,9 @@ export default function LighningPayment() {
         }
     }, [openVideo])
 
-    const handleConversion = async(e: React.ChangeEvent<HTMLInputElement>) => {
-        const amount=await convertToSats(Number((e.target.value).trim()),currency)
-        setConvertedAmountInSat(amount)
+    const handleConversion = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const amount = await convertToMsats(Number((e.target.value).trim()), currency)
+        setConvertedAmountInMSat(amount)
     }
 
     return (
@@ -218,15 +247,15 @@ export default function LighningPayment() {
             {openRecieveBox && (
                 <div className="modalOverlay">
                     <div className='createInvoice'>
-                        <button type='button' className='closeBtn' onClick={() => { setOpenRecieveBox(false); dispatch(setInvoice(null));setConvertedAmountInSat(0) }}>
+                        <button type='button' className='closeBtn' onClick={() => { setOpenRecieveBox(false); dispatch(setInvoice(null)); setConvertedAmountInMSat(0) }}>
                             <i className="fa-solid fa-xmark"></i>
                         </button>
                         <h2>Create Invoice</h2>
-                        <p style={{marginTop:'0px',textAlign:'center'}}>You can change the currency from <Link to={'/settings'} style={{color:'#0f61b9',textDecoration:'none'}}><i className="fa-solid fa-gear"></i> Settings</Link></p>
+                        <p style={{ marginTop: '0px', textAlign: 'center' }}>You can change the currency from <Link to={'/settings'} style={{ color: '#0f61b9', textDecoration: 'none' }}><i className="fa-solid fa-gear"></i> Settings</Link></p>
                         <form onSubmit={handleCreateInvoice}>
                             <label htmlFor='amountvalue'>Enter amount in {currency}:</label>
-                            <input type="number" id='amountvalue' inputMode='numeric' placeholder={`Enter amount in ${currency}`} ref={amount} onChange={handleConversion} required />
-                            <span style={{color:'green'}}>Entered amount in sats: {convertedAmountInSat}</span>
+                            <input type="decimal" id='amountvalue' inputMode='decimal' placeholder={`Enter amount in ${currency}`} ref={amount} onChange={handleConversion} required />
+                            <span style={{ color: 'green' }}>Entered amount in msats: {convertedAmountInMSat}</span>
                             <label>Enter description:</label>
                             <input type="text" placeholder='Enter the description' ref={description} />
                             <button type='submit' disabled={status}>Create</button>

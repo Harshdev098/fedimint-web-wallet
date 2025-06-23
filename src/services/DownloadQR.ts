@@ -1,4 +1,4 @@
-// import type { Transactions } from "@fedimint/core-web";
+import type { Transactions } from "@fedimint/core-web";
 
 export const downloadQRCode = (downloadName: string) => {
 	const svg = document.querySelector(".qrCode svg");
@@ -29,34 +29,34 @@ export const downloadQRCode = (downloadName: string) => {
 	img.src = "data:image/svg+xml;base64," + btoa(svgString);
 };
 
-// export const DownloadTransactionsCSV = (transactions:Transactions[]) => {
-//     console.log("transactions are",transactions)
+export const DownloadTransactionsCSV = (transactions:Transactions[]) => {
+    console.log("transactions are",transactions)
 
-//     const headers = ['TimeStamp', 'PaymentType', 'Type', 'Amount', 'OperationId', 'Outcome', 'Gateway','Invoice'];
-//     const csvRows = [
-//         headers.join(','),
-//         ...transactions.map(tx =>
-//             [
-//                 `"${tx.timeStamp}"`,
-//                 tx.paymentType,
-//                 tx.type,
-//                 tx.amount,
-//                 tx.operationId,
-//                 tx.outcome,
-//                 tx.gateway,
-// 				tx.invoice
-//             ].join(',')
-//         )
-//     ];
+    const headers = ['TimeStamp', 'PaymentType', 'Type', 'Amount', 'OperationId', 'Outcome', 'Gateway','Invoice'];
+    const csvRows = [
+        headers.join(','),
+        ...transactions.map(tx =>
+            [
+                `"${tx.timeStamp}"`,
+                tx.paymentType,
+                tx.type,
+                tx.amount,
+                tx.operationId,
+                tx.outcome,
+                tx.gateway,
+				tx.invoice
+            ].join(',')
+        )
+    ];
 
-//     const csvContent = csvRows.join('\n');
-//     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-//     const url = URL.createObjectURL(blob);
+    const csvContent = csvRows.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
 
-//     const link = document.createElement('a');
-//     link.href = url;
-//     link.setAttribute('download', `transactions_${new Date().toISOString()}.csv`);
-//     document.body.appendChild(link);
-//     link.click();
-//     document.body.removeChild(link);
-// };
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `transactions_${new Date().toISOString()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+};

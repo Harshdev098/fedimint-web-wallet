@@ -4,14 +4,17 @@ export interface InviteCode {
 
 export type FederationMeta = {
     federation_name: string;
-    meta_external_url: string;
+    meta_external_url?: string;
 };
 export type FederationMetaData = {
     federation_name: string;
-    welcome_message: string;
-    invite_code: string;
-    pinned_message:string;
-    federation_expiry_timestamp:number | null;
+    welcome_message?: string;
+    invite_code?: string;
+    pinned_message?:string;
+    onchain_deposits_disabled?:string;
+    federation_icon_url?:string;
+    max_stable_balance_msats?:string;
+    federation_expiry_timestamp?:number | null;
 }
 
 export type FederationConfig = {
@@ -44,3 +47,7 @@ export type EpochTime = {
   secs_since_epoch: number;
   nanos_since_epoch: number;
 };
+
+export type GuardianStatus={
+    status:Record<number,string>
+}
