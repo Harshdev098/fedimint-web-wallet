@@ -248,7 +248,7 @@ export default function Settings() {
                                     </button>
                                 </div>
                                 <div className="accordion-body" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <span>Fedimint will not track users data. Location will be saved locally</span>
+                                    <span>Fedimint will not track users data. Location will be saved locally.</span>
                                     <label className="switch">
                                         <input
                                             type="checkbox"
