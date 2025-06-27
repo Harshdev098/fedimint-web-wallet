@@ -308,7 +308,7 @@ export default function LighningPayment() {
             )}
 
             <div className='BalanceSectionActions'>
-                <button onClick={() => { setOpenRecieveBox(true) }}><img src={receiveIcon} alt="" width={'20px'} /> Recieve</button>
+                <button onClick={() => { setOpenRecieveBox(true) }}><img src={receiveIcon} alt="" width={'20px'} /> Receive</button>
                 <button onClick={() => { setOpenSendBox(true) }}><img src={sendIcon} alt="" width={'20px'} /> Send</button>
             </div>
             <div className="TransactionsWithQR">

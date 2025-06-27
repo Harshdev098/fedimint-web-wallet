@@ -248,7 +248,7 @@ export default function Settings() {
                                     </button>
                                 </div>
                                 <div className="accordion-body" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <span>Fedimint will not track users data. Location will be saved locally</span>
+                                    <span>Fedimint will not track users data. Location will be saved locally.</span>
                                     <label className="switch">
                                         <input
                                             type="checkbox"
@@ -275,7 +275,7 @@ export default function Settings() {
                         </select>
                     </div>
                     <div className="setting-div">
-                        <p className="language-label">Export Trnasactions</p>
+                        <p className="language-label">Export Transactions</p>
                         <i className="fa-solid fa-download" style={{ padding: "2px", margin: '0px 20px', cursor: 'pointer' }} onClick={handleDownloadTransactions}></i>
                     </div>
                     <p className="setting-label">Federations</p>
@@ -323,7 +323,7 @@ export default function Settings() {
                                             >
                                                 {nwcURL ? nwcURL : "Can't load the connection url"}
                                             </p>
-                                            <p>Auto payment is enabled by defualt</p>
+                                            <p>Auto payment is enabled by default</p>
                                         </div>}
                                     </div>
                                 </div>
