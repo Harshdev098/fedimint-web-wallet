@@ -104,7 +104,7 @@ export default function OnChain() {
                             <button className='actionBtn' onClick={() => { }}>Get Address</button>
                             {pegin && <div>
                                 <p>You can deposit your bitcoin on this generated address</p>
-                                <div className='copyWrapper'>
+                                <div className='copyWrapper'> {/* fix: Dark mode */}
                                     <p style={{ backgroundColor: '#d4edda', borderColor: '#c3e6cb;', color: '#155724', padding: '8px', borderRadius: '4px' }}><b>Deposit Address:</b> {pegin.deposit_address}</p>
                                     <button
                                         className="copyBtnOverlay"

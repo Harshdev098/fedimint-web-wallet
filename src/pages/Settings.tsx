@@ -12,6 +12,8 @@ import NProgress from 'nprogress';
 // import { DownloadTransactionsCSV } from '../services/DownloadQR';
 import Alerts from '../Components/Alerts';
 import { downloadQRCode } from '../services/DownloadQR';
+import { setMode } from '../redux/slices/Mode';
+import NostrContext from '../context/nostr';
 
 
 export default function Settings() {
@@ -20,9 +22,11 @@ export default function Settings() {
     const { setLoading } = useContext(LoadingContext);
     const [openAccordion, setOpenAccordion] = useState(null);
     const { metaData } = useSelector((state: RootState) => state.federationdetails)
+    const { mode } = useSelector((state: RootState) => state.Mode)
     const { federationId } = useSelector((state: RootState) => state.activeFederation)
     const { currency } = useSelector((state: RootState) => state.balance)
-    const { wallet, nwcEnabled, nwcURL, generateNWCConnection, nwcRelays, setNWCRelays } = useContext(WalletContext)
+    const { wallet } = useContext(WalletContext)
+    const { nwcEnabled, nwcURL, generateNWCConnection, nwcRelays, NostrAppName, NostrRelay, updateRelay, setNostrAppName, setNostrRelay } = useContext(NostrContext)
     const [balance, setBalance] = useState(0)
     const [error, setError] = useState('')
     const [autoPay, setAutoPay] = useState(localStorage.getItem('autoPayNostr') === 'true' ? true : false)
@@ -63,6 +67,13 @@ export default function Settings() {
         localStorage.setItem('autoPayNostr', newValue.toString());
     };
 
+    const toggleMode = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const newValue = e.target.checked
+        dispatch(setMode(newValue))
+        localStorage.setItem('appMode', JSON.stringify(newValue))
+        console.log("mode toggled")
+    }
+
     const handleToggleLocation = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newValue = e.target.checked;
         if (enabledLocation === true && newValue === false) {
@@ -89,9 +100,7 @@ export default function Settings() {
             return alert("Invalid WebSocket relay URL format.");
         }
         if (relayUrl && !nwcRelays.includes(relayUrl)) {
-            const updated = [...nwcRelays, relayUrl];
-            localStorage.setItem('nwcRelays', JSON.stringify(updated));
-            setNWCRelays(updated)
+            updateRelay(relayUrl)
             setRelayURL('');
         }
     }
@@ -109,6 +118,10 @@ export default function Settings() {
             indexedDB.deleteDatabase(`${localStorage.getItem('walletName')}`);
             localStorage.removeItem('walletName')
             localStorage.removeItem('activeFederation')
+            localStorage.removeItem('WalletNostrKeys')
+            localStorage.removeItem('ClientRelayKeys')
+            localStorage.removeItem('nwcRelays')
+            localStorage.removeItem('nwcEnabled')
             if (!wallet.isOpen()) {
                 console.log('wallet open ', wallet.isOpen())
                 navigate('/')
@@ -259,6 +272,29 @@ export default function Settings() {
                                     </label>
                                 </div>
                             </div>
+                            <div className="accordion-item">
+                                <div className="accordion-header">
+                                    <button
+                                        className="accordion-button collapsed"
+                                        onClick={() => toggleAccordion(999)}
+                                        disabled
+                                        style={{ cursor: 'default', backgroundColor: 'transparent' }}
+                                    >
+                                        Change Theme
+                                    </button>
+                                </div>
+                                <div className="accordion-body" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <span>Enable {mode === true ? 'Dark' : 'Light'} mode</span>
+                                    <label className="switch">
+                                        <input
+                                            type="checkbox"
+                                            checked={mode}
+                                            onChange={toggleMode}
+                                        />
+                                        <span className="slider round"></span>
+                                    </label>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div className="setting-div">
@@ -313,18 +349,43 @@ export default function Settings() {
                                 </div>
                                 <div className={`accordion-collapse ${openAccordion === 0 ? 'show' : ''}`} >
                                     <div className="accordion-body">
-                                        {nwcEnabled === false ? <div style={{ wordBreak: 'break-word' }}>
-                                            <p>Nostr Wallet Connect will be enabled with Generating and connecting the client app</p>
-                                            <button onClick={generateNWCConnection}>Generate Nostr Connection link</button>
-                                        </div> : <div style={{ wordBreak: 'break-word' }}>
-                                            <p
-                                                title='Click to copy'
-                                                onClick={() => { navigator.clipboard.writeText(nwcURL || ''); }}
-                                            >
-                                                {nwcURL ? nwcURL : "Can't load the connection url"}
-                                            </p>
-                                            <p>Auto payment is enabled by default</p>
-                                        </div>}
+                                        <div style={{ wordBreak: 'break-word' }}>
+                                            <div style={{ wordBreak: 'break-word' }}>
+                                                <ul>
+                                                    {nwcURL.length !== 0 && nwcURL.map((uri, idx) => (
+                                                        <li key={idx}>
+                                                            <b>{uri.appName}</b>
+                                                            <p
+                                                                title='Click to copy URI'
+                                                                onClick={() => { navigator.clipboard.writeText(uri.nwcUri); }}
+                                                                style={{ cursor: 'pointer' }}
+                                                            >
+                                                                {uri.nwcUri}
+                                                            </p>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                                {nwcEnabled && <p>Auto payment is enabled by default</p>}
+                                            </div>
+                                            {!nwcEnabled && <p>Nostr Wallet Connect will be enabled with Generating and connecting the client app</p>}
+                                            <form onSubmit={(e) => { e.preventDefault(); generateNWCConnection(NostrAppName, NostrRelay ?? undefined); }}>
+                                                <input
+                                                    type="text"
+                                                    placeholder="Enter the client app name"
+                                                    value={NostrAppName}
+                                                    onChange={(e) => setNostrAppName(e.target.value)}
+                                                    required
+                                                />
+                                                <input
+                                                    type="text"
+                                                    placeholder="Enter the preferred relay for the client app"
+                                                    value={NostrRelay ?? ''}
+                                                    onChange={(e) => setNostrRelay(e.target.value)}
+                                                />
+                                                <p>You can give a preferred relay for the specific app, Fedimint will use a default relay if not provided</p>
+                                                <button type="submit">Generate Nostr Connection link</button>
+                                            </form>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

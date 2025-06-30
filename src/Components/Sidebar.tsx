@@ -9,11 +9,12 @@ export default function Sidebar() {
     const { hamburger, setHamburger } = useContext(HamburgerContext)
     const location = useLocation()
     const notifications = useSelector((state: RootState) => state.notifications)
+    const { mode } = useSelector((state: RootState) => state.Mode)
 
     const isActive = (path: string) => location.pathname === path
 
     return (
-        <section className={`sidebarContainer ${hamburger ? 'sidebarHidden' : ''}`}>
+        <section className={`sidebarContainer ${hamburger ? 'sidebarHidden' : ''} ${mode===true ? 'SidebarDarkMode' : undefined}`}>
             <div>
                 <div className='sidebarImageBox'>
                     <img src={whiteLogo} alt="logo" />

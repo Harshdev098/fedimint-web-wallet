@@ -21,6 +21,7 @@ export default function Main() {
     const { Details, metaData, error } = useSelector((state: RootState) => state.federationdetails);
     const { setLoading } = useContext(LoadingContext);
     const { federationId, newJoin } = useSelector((state: RootState) => state.activeFederation);
+    const {mode}=useSelector((state:RootState)=>state.Mode)
 
     const checkGuardianStatus = async (Details: FederationConfig) => {
         if (Details.api_endpoints && typeof Details.api_endpoints === 'object') {
@@ -135,7 +136,7 @@ return (
                 />
             )}
             <Sidebar />
-            <section className='WalletContentSection'>
+            <section className={`WalletContentSection ${mode===true ? 'DarkMode' : 'WhiteMode'}`}>
                 <Header />
                 {metaData && Details && <Outlet />}
             </section>
