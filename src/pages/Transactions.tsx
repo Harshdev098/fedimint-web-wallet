@@ -31,6 +31,7 @@ export default function Transactions() {
             console.log('Calling listTransactions:', { limit, lastSeen: lastSeenParam, page });
 
             const transactions = await wallet.federation.listTransactions(limit, lastSeenParam);
+            console.log("transactions are ",transactions)
 
             if (transactions.length > 0) {
                 const lastTx = transactions[transactions.length - 1];

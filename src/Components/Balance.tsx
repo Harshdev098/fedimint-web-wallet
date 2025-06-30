@@ -19,6 +19,7 @@ export default function Balance() {
     const { setLoading } = useContext(LoadingContext)
     const { federationId } = useSelector((state: RootState) => state.activeFederation)
     const { currency } =useSelector((state:RootState)=>state.balance)
+    const {mode}=useSelector((state:RootState)=>state.Mode)
 
 
     useEffect(() => {
@@ -60,7 +61,7 @@ export default function Balance() {
                     <span>{balance} {currency.toUpperCase()}</span>
                 </div>
                 <div style={{ marginBottom: '20px' }}>
-                    <span><Link to={'/wallet/federation'}>Federation Details</Link> | <Link to={'/wallet/ecash'}>Ecashes</Link></span>
+                    <span><Link to={'/wallet/federation'} style={mode === true ? { color: '#6f6f6f' } : undefined}>Federation Details</Link> | <Link to={'/wallet/ecash'} style={mode === true ? { color: '#6f6f6f' } : undefined}>Ecashes</Link></span>
                 </div>
                 <LighningPayment />
             </section>

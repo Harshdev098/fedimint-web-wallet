@@ -20,6 +20,7 @@ export default function Header() {
     const { hamburger, setHamburger } = useContext(HamburgerContext)
     const { federationId } = useSelector((state: RootState) => state.activeFederation)
     const { metaData } = useSelector((state: RootState) => state.federationdetails)
+    const {mode}=useSelector((state:RootState)=>state.Mode)
     const notifications=useSelector((state:RootState)=>state.notifications)
 
 

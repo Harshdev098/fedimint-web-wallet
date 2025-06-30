@@ -11,7 +11,7 @@ export default function FederationDetails() {
                 <div className="Fedheader">
                     <img
                         src={metaData?.federation_icon_url}
-                        alt="Federation Icon"
+                        alt="Fed Icon"
                         className="federation-icon"
                     />
                     <div>
@@ -60,7 +60,7 @@ export default function FederationDetails() {
                     </div>
                 </div>
                 <div className="modules-section">
-                    <h3 className="modules-title"><i className="fa-solid fa-file-invoice-dollar"></i> Federation Modules</h3>
+                    <h2 className="modules-title"><i className="fa-solid fa-file-invoice-dollar"></i> Federation Modules</h2>
                     <div className="modules-grid">
                         {
                             Object.entries(Details?.modules ?? {}).map(([id, mod]: any) => (

@@ -7,6 +7,7 @@ import LightningSlice from "./slices/LightningPayment";
 import WalletSlice from "./slices/WalletSlice";
 import OnchainSlice from "./slices/OnchainSlice";
 import NotificationSlice from "./slices/NotificationSlice";
+import Mode from "./slices/Mode";
 
 
 export const store=configureStore({
@@ -18,7 +19,8 @@ export const store=configureStore({
         Lightning:LightningSlice,
         wallet:WalletSlice,
         onchain:OnchainSlice,
-        notifications:NotificationSlice
+        notifications:NotificationSlice,
+        Mode:Mode
     }
 })
 
