@@ -31,9 +31,7 @@ export default function Balance() {
                 if (value === undefined) {
                     throw new Error("Failed to fetch balance")
                 } else {
-                    console.log("fetched value is ",value,currency)
                     const convertedAmount=await convertFromMsat(value,currency)
-                    console.log("converted value is ",convertedAmount)
                     dispatch(setBalance(convertedAmount))
                 }
             } catch (err) {

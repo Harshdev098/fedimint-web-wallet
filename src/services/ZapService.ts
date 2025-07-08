@@ -1,6 +1,7 @@
 import type { NDKEvent as NDKEventTYpe, NDKPrivateKeySigner } from "@nostr-dev-kit/ndk";
 import NDK,{NDKEvent} from "@nostr-dev-kit/ndk";
 import type { Wallet } from "../hooks/wallet.type";
+import logger from "../utils/logger";
 
 export async function handleZapRequest(
   event: NDKEventTYpe,
@@ -35,7 +36,7 @@ export async function handleZapRequest(
         return { error: { code: "LNURL_ERROR", message: "Failed to fetch invoice from LNURL" } };
       }
     } catch (error) {
-      console.error('Error fetching invoice from LNURL:', error);
+      logger.error('Error fetching invoice from LNURL:', error);
       return { error: { code: "LNURL_ERROR", message: "Failed to fetch invoice from LNURL" } };
     }
 
@@ -55,11 +56,11 @@ export async function handleZapRequest(
 
     await zapReceipt.sign(signer);
     await zapReceipt.publish();
-    console.log('Published zap receipt for invoice:', invoice);
+    logger.log('Published zap receipt for invoice:', invoice);
 
     return { result: { preimage: paymentResult?.payment_type, success: true } };
   } catch (error) {
-    console.error('Error handling zap request:', error);
+    logger.error('Error handling zap request:', error);
     return { error: { code: "ZAP_PROCESSING_ERROR", message: "Failed to process zap request" } };
   }
 }
@@ -73,7 +74,7 @@ async function fetchInvoiceFromLnurl(lnurl: string): Promise<string> {
     }
     throw new Error('No invoice returned from LNURL');
   } catch (error) {
-    console.error('Error fetching LNURL invoice:', error);
+    logger.error('Error fetching LNURL invoice:', error);
     throw error;
   }
 }

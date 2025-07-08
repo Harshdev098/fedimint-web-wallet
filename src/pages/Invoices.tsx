@@ -6,6 +6,7 @@ import NProgress from 'nprogress';
 import LoadingContext from '../context/loader';
 import Alerts from '../Components/Alerts';
 import { Link } from 'react-router';
+import logger from '../utils/logger';
 
 export default function Invoices() {
     const invoiceExpiryOptions = ['--Select--', '10 minutes', '20 min', '30 minutes', '40 min', '60 min', '180 min', '300 min', '480 min'];
@@ -41,7 +42,7 @@ export default function Invoices() {
                         location = locations[invoice];
                     }
                 } catch (error) {
-                    console.error('Error parsing paymentLocations:', error);
+                    logger.error('Error parsing paymentLocations:', error);
                 }
             }
         }
@@ -71,10 +72,10 @@ export default function Invoices() {
             let currentState: string
             const tx = await wallet.federation.listTransactions();
             if (tx.length > 0) {
-                console.log("transactions ", tx);
+                logger.log("transactions ", tx);
                 tx.forEach((transaction: Transactions) => {
-                    if (transaction.type === 'ln' && transaction.paymentType === "receive") {
-                        const { invoice, operationId, timeStamp } = transaction
+                    if (transaction.kind === 'ln' && transaction.type === "receive") {
+                        const { invoice, operationId, timestamp } = transaction
 
                         const unsubscribe = wallet.lightning.subscribeLnReceive(transaction.operationId,
                             async (state) => {
@@ -87,17 +88,17 @@ export default function Invoices() {
                                 }
                                 if (currentState) {
                                     setInvoiceStateList((prev) =>
-                                        handleState(prev, currentState, invoice, operationId, timeStamp)
+                                        handleState(prev, currentState, invoice, operationId, new Date(timestamp).toLocaleString())
                                     );
                                 }
                             }, (error) => {
-                                console.log("an error occured", error)
+                                logger.log("an error occured", error)
                             })
                         setTimeout(() => {
                             unsubscribe?.();
                         }, 600000);
-                    } else if (transaction.type === 'ln' && transaction.paymentType === "send") {
-                        const { invoice, operationId, timeStamp } = transaction
+                    } else if (transaction.kind === 'ln' && transaction.type === "send") {
+                        const { invoice, operationId, timestamp } = transaction
 
                         const unsubscribe = wallet.lightning.subscribeLnPay(transaction.operationId,
                             async (state) => {
@@ -110,11 +111,11 @@ export default function Invoices() {
                                 }
                                 if (currentState) {
                                     setInvoicePendingList((prev) =>
-                                        handleState(prev, currentState, invoice, operationId, timeStamp)
+                                        handleState(prev, currentState, invoice, operationId, new Date(timestamp).toLocaleString())
                                     );
                                 }
                             }, (error) => {
-                                console.log("an error occured", error)
+                                logger.log("an error occured", error)
                             })
                         setTimeout(() => {
                             unsubscribe?.();
@@ -123,7 +124,7 @@ export default function Invoices() {
                 });
             }
         } catch (err) {
-            console.log("an error occured")
+            logger.log("an error occured")
             setError(String(err))
             setTimeout(() => {
                 setError('')

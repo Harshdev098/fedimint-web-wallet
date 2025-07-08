@@ -4,15 +4,22 @@ import WalletContext from '../context/wallet';
 import Alerts from '../Components/Alerts';
 import NProgress from 'nprogress';
 import LoadingContext from '../context/loader';
-import type { Transactions } from '@fedimint/core-web';
+import type { EcashTransaction, WalletTransaction, LightningTransaction, Transactions } from '@fedimint/core-web';
 import type { EpochTime } from '../hooks/Federation.type';
+import logger from '../utils/logger';
+import type { Transaction } from '../hooks/wallet.type';
+
 
 export default function Transactions() {
     const { wallet } = useContext(WalletContext);
     const { setLoading } = useContext(LoadingContext);
     const [query, setQuery] = useState<string>('');
     const [txError, setTxError] = useState('');
-    const [transactions, setTransactions] = useState<Transactions[]>([]);
+    const [transactions, setTransactions] = useState<Transaction[]>([]);
+    const [totalSpending, setTotalSpending] = useState<number>(0)
+    const [totalRecieve, setTotalRecieve] = useState<number>(0)
+    const [txBalance, setTxBalance] = useState(0)
+    const [txBalanceType, setTxBalanceType] = useState<'positive' | 'negative' | null>(null)
     const [currentPage, setCurrentPage] = useState(1);
     const [lastSeen, setLastSeen] = useState<{
         creation_time: { nanos_since_epoch: number; secs_since_epoch: number };
@@ -26,32 +33,63 @@ export default function Transactions() {
         try {
             NProgress.start();
             setLoading(true);
-
             const lastSeenParam = reset ? undefined : lastSeen ?? undefined;
-            console.log('Calling listTransactions:', { limit, lastSeen: lastSeenParam, page });
+            logger.log('Calling listTransactions:', { limit, lastSeen: lastSeenParam, page });
 
             const transactions = await wallet.federation.listTransactions(limit, lastSeenParam);
-            console.log("transactions are ",transactions)
+            logger.log("transactions are ", transactions);
+
+            const formattedTransactions: Transaction[] = transactions.map((tx) => {
+                let invoice = 'N/A';
+                let outcome = 'N/A';
+                let amountMsats = 'N/A';
+                let gateway = 'N/A';
+                const kind = tx.kind;
+                const timestamp = new Date(tx.timestamp).toLocaleString();
+                const operationId = tx.operationId;
+                const type = tx.type;
+                logger.log("the tx is ",tx)
+
+                if (tx.kind === 'ln') {
+                    invoice = (tx as LightningTransaction).invoice || 'N/A';
+                    outcome = (tx as LightningTransaction).outcome || 'N/A';
+                    gateway = (tx as LightningTransaction).gateway || 'N/A';
+                } else if (tx.kind === 'mint') {
+                    amountMsats = (tx as EcashTransaction).amountMsats.toString();
+                    outcome = (tx as EcashTransaction).outcome || 'N/A';
+                } else if (tx.kind === 'wallet') {
+                    amountMsats = (tx as WalletTransaction).amountMsats.toString();
+                    outcome = (tx as WalletTransaction).outcome || 'N/A';
+                }
+
+                return {
+                    invoice,
+                    operationId,
+                    type,
+                    amountMsats,
+                    outcome,
+                    timestamp,
+                    kind,
+                    gateway,
+                };
+            });
 
             if (transactions.length > 0) {
                 const lastTx = transactions[transactions.length - 1];
                 setLastSeen({
                     creation_time: {
-                        secs_since_epoch: Math.floor(
-                            new Date(lastTx.timeStamp).getTime() / 1000
-                        ),
-                        nanos_since_epoch:
-                            (new Date(lastTx.timeStamp).getTime() % 1000) * 1_000_000,
+                        secs_since_epoch: Math.floor(new Date(lastTx.timestamp).getTime() / 1000),
+                        nanos_since_epoch: (new Date(lastTx.timestamp).getTime() % 1000) * 1_000_000,
                     },
                     operation_id: lastTx.operationId,
                 });
             }
 
             setHasMore(transactions.length === limit);
-            setTransactions(transactions);
+            setTransactions(formattedTransactions);
             setCurrentPage(page);
         } catch (err) {
-            console.error('Error fetching operations:', err);
+            logger.error('Error fetching operations:', err);
             setTxError(err instanceof Error ? err.message : String(err));
             setTimeout(() => setTxError(''), 3000);
         } finally {
@@ -60,9 +98,51 @@ export default function Transactions() {
         }
     };
 
+    const paymentSummary = async () => {
+        let totalsendAmount = 0, ecashSpendAmount = 0, lnSpendAmount = 0;
+        let totalRecieveAmount = 0, ecashRecieveAmount = 0, lnRecieveAmount = 0;
+
+        for (const tx of transactions) {
+            if (tx.kind === 'mint') {
+                if (tx.type === "spend_oob") {
+                    ecashSpendAmount += Number(tx.amountMsats);
+                } else if (tx.type === "reissue") {
+                    ecashRecieveAmount += Number(tx.amountMsats);
+                }
+            } else if (tx.kind === 'ln') {
+                console.log("ln transaction found")
+                const amount = await wallet.parseBolt11Invoice(tx.invoice);
+                console.log('the amount got from ln is ', amount)
+                if (amount.data && typeof amount.data === 'object' && 'amount' in amount.data) {
+                    const amt = (amount.data as { amount: number }).amount;
+                    if (tx.type === 'send') {
+                        lnSpendAmount += amt;
+                    } else if (tx.type === "receive") {
+                        lnRecieveAmount += amt;
+                    }
+                }
+            }
+        }
+
+        totalsendAmount = ecashSpendAmount + lnSpendAmount;
+        totalRecieveAmount = ecashRecieveAmount + lnRecieveAmount;
+
+        console.log('spend amounts ', totalsendAmount, ecashSpendAmount, lnSpendAmount);
+        console.log('recieve amounts ', totalRecieveAmount, ecashRecieveAmount, lnRecieveAmount);
+
+        setTxBalance(totalRecieveAmount - totalsendAmount);
+        setTxBalanceType(totalsendAmount >= totalRecieveAmount ? 'positive' : 'negative');
+        setTotalSpending(totalsendAmount);
+        setTotalRecieve(totalRecieveAmount);
+    };
+
+
     useEffect(() => {
-        (window as any).wallet = wallet;
-        fetchOperations(1, true);
+        const setupTransactionDetail = async () => {
+            await fetchOperations(1, true);
+            // await paymentSummary()
+        }
+        setupTransactionDetail()
     }, [wallet]);
 
 
@@ -78,7 +158,7 @@ export default function Transactions() {
                     return;
                 }
 
-                let paymentType = 'unknown';
+                let paymentType: "receive" | "send" | "spend_oob" | "reissue" | "withdraw" | "deposit" = "receive";
                 let amount = 'N/A';
                 let timestamp = '-';
                 let invoice = 'N/A';
@@ -128,7 +208,7 @@ export default function Transactions() {
                         ) {
                             amount = variant.withdraw.amount.toString();
                         }
-                        paymentType = variant.deposit ? 'deposit' : 'withdraw';
+                        paymentType = variant.deposit ? "deposit" : "withdraw";
                     }
                 }
 
@@ -141,11 +221,11 @@ export default function Transactions() {
                     outcome = 'success' in result.outcome.outcome ? 'success' : JSON.stringify(result.outcome.outcome);
                 }
 
-                const mappedTx: Transactions = {
-                    timeStamp: timestamp,
-                    paymentType,
-                    type: moduleKind,
-                    amount,
+                const mappedTx: Transaction = {
+                    timestamp: new Date(timestamp).toLocaleString(),
+                    type: paymentType,
+                    kind: moduleKind,
+                    amountMsats: amount,
                     operationId: query,
                     outcome,
                     invoice,
@@ -154,7 +234,7 @@ export default function Transactions() {
 
                 setTransactions([mappedTx]);
             } catch (err) {
-                console.error('Search error:', err);
+                logger.error('Search error:', err);
                 setTxError(err instanceof Error ? err.message : String(err));
                 setTimeout(() => setTxError(''), 3000);
             } finally {
@@ -192,6 +272,28 @@ export default function Transactions() {
             {txError && <Alerts key={Date.now()} Error={txError} Result={''} />}
             <div className="notifications-container">
                 <h2 className="notifications-title">Transactions</h2>
+                {txBalanceType ? (
+                    <div className='TxSummary'>
+                        <div className="summary-card">
+                            <div className="card-label">Current Balance</div>
+                            <div className="card-value">{txBalance}</div>
+                        </div>
+                        <div className="summary-card">
+                            <div className="card-label">Total Spending</div>
+                            <div className="card-value">{totalSpending}</div>
+                        </div>
+                        <div className="summary-card">
+                            <div className="card-label">Total Received</div>
+                            <div className="card-value">{totalRecieve}</div>
+                        </div>
+                        <div className="summary-card">
+                            <div className="card-label">Balance Type</div>
+                            <div className="card-value">{txBalanceType}</div>
+                        </div>
+                    </div>
+                ) : (
+                    <p>Extracting your payment summary</p>
+                )}
                 <input
                     type="text"
                     placeholder="Search Transactions with Operation ID"
@@ -204,13 +306,14 @@ export default function Transactions() {
                         <thead>
                             <tr>
                                 <th>SNo.</th>
-                                <th>Type</th>
                                 <th>Payment Type</th>
+                                <th>Type</th>
                                 <th>Timestamp</th>
                                 <th>Amount(sat)</th>
                                 <th>Operation ID</th>
                                 <th>Outcome</th>
                                 <th>Gateway</th>
+                                <th>Invoice</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -218,13 +321,14 @@ export default function Transactions() {
                                 transactions.map((tx, index) => (
                                     <tr key={index}>
                                         <td>{(currentPage - 1) * limit + index + 1}</td>
+                                        <td>{tx.kind}</td>
                                         <td>{tx.type}</td>
-                                        <td>{tx.paymentType}</td>
-                                        <td>{tx.timeStamp}</td>
-                                        <td>{tx.amount}</td>
+                                        <td>{tx.timestamp}</td>
+                                        <td>{tx.amountMsats}</td>
                                         <td>{tx.operationId}</td>
                                         <td>{tx.outcome}</td>
                                         <td>{tx.gateway}</td>
+                                        <td>{tx.invoice.slice(0,20)}...</td>
                                     </tr>
                                 ))
                             ) : (
