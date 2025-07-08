@@ -10,6 +10,7 @@ import LoadingContext from '../context/loader'
 import { setBalance, setError } from '../redux/slices/Balance'
 import HamburgerContext from "../context/hamburger"
 import AddFederation from './AddFederation'
+import logger from '../utils/logger'
 
 export default function Header() {
     const dispatch = useDispatch()
@@ -26,7 +27,7 @@ export default function Header() {
 
     // Todo: Use LoadingContext when handling multiple federations
     const federationName = () => {
-        console.log('metadata from localstorage', JSON.parse(localStorage.getItem('FedMetaData') || '{}').federation_name)
+        logger.log('metadata from localstorage', JSON.parse(localStorage.getItem('FedMetaData') || '{}').federation_name)
         const name = metaData?.federation_name || JSON.parse(localStorage.getItem('FedMetaData') || '{}').federation_name
         setFedName(name)
     }

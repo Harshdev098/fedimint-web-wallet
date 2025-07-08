@@ -15,6 +15,7 @@ import { setBalance } from '../redux/slices/Balance'
 import { createNotification } from '../redux/slices/NotificationSlice';
 import type { SpendNotesState } from "@fedimint/core-web";
 import { convertToMsats } from "../services/BalanceService";
+import logger from "../utils/logger";
 
 
 export default function Ecash() {
@@ -33,7 +34,6 @@ export default function Ecash() {
 
     const subscribeBalanceChange = () => {
         const unsubscribeBalance = wallet.balance.subscribeBalance((mSats) => {
-            console.log('Balance updated:', mSats);
             dispatch(setBalance(mSats));
             setTimeout(() => {
                 unsubscribeBalance?.();
@@ -61,7 +61,7 @@ export default function Ecash() {
             wallet.mint.subscribeSpendNotes(
                 result.operationId,
                 (state: SpendNotesState) => {
-                    console.log("state is ", state)
+                    logger.log("state is ", state)
                     const date = (new Date()).toDateString()
                     const time = (new Date()).toTimeString()
                     if (state === 'UserCanceledProcessing') {
@@ -75,7 +75,7 @@ export default function Ecash() {
                     }
                 },
                 (error) => {
-                    console.error("Spend notes subscription error:", error);
+                    logger.error("Spend notes subscription error:", error);
                     dispatch(setSpendError(error))
                 }
             );
@@ -117,7 +117,7 @@ export default function Ecash() {
                 dispatch(setParseEcashResult(null))
             }, 3000);
         } catch (err) {
-            console.log(`An error occured ${err}`)
+            logger.log(`An error occured ${err}`)
             dispatch(setRedeemError(`${err}`))
             setTimeout(() => {
                 dispatch(setRedeemError(''))
@@ -161,7 +161,7 @@ export default function Ecash() {
                             dispatch(setParseEcashResult(`Parsed Notes: ${parseValue / 1000}sat (${parseValue}msat)`));
                             setNotes(result.data)
                         } else {
-                            console.error("Parsed value is undefined");
+                            logger.error("Parsed value is undefined");
                             dispatch(setRedeemError('Parsed value is undefined'))
                             setTimeout(() => {
                                 dispatch(setParseEcashError(''))
@@ -176,9 +176,9 @@ export default function Ecash() {
                 { returnDetailedScanResult: true }
             )
             scannerRef.current.start().then(() => {
-                console.log("scanning started")
+                logger.log("scanning started")
             }).catch((err) => {
-                console.log(`${err}`)
+                logger.log(`${err}`)
                 dispatch(setRedeemError('Scanning failed'))
                 setTimeout(() => {
                     dispatch(setRedeemError(''))
