@@ -14,6 +14,7 @@ import LoadingContext from '../context/loader';
 import NProgress from 'nprogress';
 import Header from '../Components/Header';
 import type { FederationConfig } from '@fedimint/core-web';
+import logger from '../utils/logger';
 
 export default function Main() {
     const { wallet, walletStatus } = useContext(WalletContext);
@@ -74,7 +75,7 @@ export default function Main() {
 
     useEffect(() => {
         const handleFederationDetails = async () => {
-            console.log("wallet status in federation details ", walletStatus)
+            logger.log("wallet status in federation details ", walletStatus)
             const activeFederation = localStorage.getItem('activeFederation');
             try {
                 NProgress.start();
@@ -86,17 +87,17 @@ export default function Main() {
                     dispatch(setFederationId(FederationID))
                 }
                 const result = await fetchFederationDetails(wallet, FederationID);
-                console.log("Federation Details:", result);
+                logger.log("Federation Details:", result);
                 dispatch(setFederationDetails(result.details));
                 dispatch(setFederationMetaData(result.meta));
                 if (!(localStorage.getItem('walletCurrency'))) {
                     localStorage.setItem('walletCurrency', 'sat')
                 }
                 setCurrency(localStorage.getItem('walletCurrency') || 'sat')
-                console.log("new join is ", newJoin)
-                console.log("welcome message", result.meta.welcome_message)
+                logger.log("new join is ", newJoin)
+                logger.log("welcome message", result.meta.welcome_message)
             } catch (err) {
-                console.error("Error fetching federation details:", err);
+                logger.error("Error fetching federation details:", err);
                 dispatch(setError(`${err}`));
                 setTimeout(() => {
                     dispatch(setError(''));

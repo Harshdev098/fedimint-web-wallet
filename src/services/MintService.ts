@@ -1,17 +1,18 @@
 import type { MintSpendNotesResponse, Wallet, NotesByDenomonationResponse } from "../hooks/wallet.type";
+import logger from "../utils/logger";
 
 export const SpendEcash=async(wallet:Wallet,amount:number) : Promise<MintSpendNotesResponse> =>{
     try{
-        console.log("the amount is",amount)
+        logger.log("the amount is",amount)
         const result = await wallet.mint.spendNotes(amount);
-        console.log("result in spend ecash is ",result)
+        logger.log("result in spend ecash is ",result)
         if (result) {
             return {notes:result.notes,operationId:result.operation_id};
         } else {
             throw new Error(`No value returned or invalid response`);
         }
     }catch(err){
-        console.log("An error occurred",err);
+        logger.log("An error occurred",err);
         throw new Error(`An error occured ${err}`)
     }
 }
@@ -19,7 +20,7 @@ export const SpendEcash=async(wallet:Wallet,amount:number) : Promise<MintSpendNo
 export const RedeemEcash=async(wallet:Wallet,notes:string) : Promise<string>=>{
     try{
         const result=await wallet?.mint.redeemEcash(notes)
-        console.log("result in redeem ecash ",result)
+        logger.log("result in redeem ecash ",result)
         if(result){
             return "Redeem Successfully";
         } else {
@@ -33,7 +34,7 @@ export const RedeemEcash=async(wallet:Wallet,notes:string) : Promise<string>=>{
 export const ParseEcashNotes=async(wallet:Wallet,notes:string) : Promise<number>=>{
     try{
         const result=await wallet?.mint.parseNotes(notes)
-        console.log("result of parseNotes is ",result)
+        logger.log("result of parseNotes is ",result)
         if(result){
             return result;
         } else {
@@ -47,7 +48,7 @@ export const ParseEcashNotes=async(wallet:Wallet,notes:string) : Promise<number>
 export const NoteCountByDenomination=async(wallet:Wallet): Promise<NotesByDenomonationResponse>=>{
     try{
         const result=await wallet.mint.getNotesByDenomination()
-        console.log("notes are ",result)
+        logger.log("notes are ",result)
         if (result === null) {
             throw new Error("No value returned from getNotesByDenomination");
         }

@@ -1,9 +1,10 @@
 // import type { Transactions } from "@fedimint/core-web";
+import logger from "../utils/logger";
 
 export const downloadQRCode = (downloadName: string) => {
 	const svg = document.querySelector(".qrCode svg");
 	if (!svg) {
-		console.error("QR code SVG not found.");
+		logger.error("QR code SVG not found.");
 		return;
 	}
 	const canvas = document.createElement("canvas");
@@ -22,7 +23,7 @@ export const downloadQRCode = (downloadName: string) => {
 			link.download = `${downloadName}.png`;
 			link.click();
 		} else {
-			console.error("2D context not available.");
+			logger.error("2D context not available.");
 		}
 	};
 
@@ -30,7 +31,7 @@ export const downloadQRCode = (downloadName: string) => {
 };
 
 // export const DownloadTransactionsCSV = (transactions:Transactions[]) => {
-//     console.log("transactions are",transactions)
+//     logger.log("transactions are",transactions)
 
 //     const headers = ['TimeStamp', 'PaymentType', 'Type', 'Amount', 'OperationId', 'Outcome', 'Gateway','Invoice'];
 //     const csvRows = [

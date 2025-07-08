@@ -1,18 +1,19 @@
-import type { FederationConfig, FederationDetailResponse, FederationMetaData, PreviewFederationResponse } from "../hooks/Federation.type";
+import type { FederationConfig, FederationDetailResponse, FederationMeta, FederationMetaData, PreviewFederationResponse } from "../hooks/Federation.type";
 import type { Wallet } from "../hooks/wallet.type";
 import type { JoinFedResponse } from "../hooks/Federation.type";
+import logger from "../utils/logger";
 
 export const JoinFederation = async (inviteCode: string, walletName: string, wallet: Wallet): Promise<JoinFedResponse> => {
     try {
-        console.log("Joining federation with invite code:", inviteCode, "and clientName:", walletName || 'fm-default');
+        logger.log("Joining federation with invite code:", inviteCode, "and clientName:", walletName || 'fm-default');
         const result = await wallet.joinFederation(inviteCode, walletName);
 
         if (result) {
             const federationId = await wallet.federation.getFederationId();
-            console.log("Federation ID:", federationId);
+            logger.log("Federation ID:", federationId);
             localStorage.setItem('activeFederation', federationId);
             localStorage.setItem('walletName', walletName);
-            localStorage.setItem('joinDate',new Date().toDateString())
+            localStorage.setItem('joinDate', new Date().toDateString())
             return {
                 success: true,
                 message: `Joined federation ${federationId}`,
@@ -22,30 +23,30 @@ export const JoinFederation = async (inviteCode: string, walletName: string, wal
             throw new Error('Failed to join federation');
         }
     } catch (err) {
-        console.error("JoinFederation error:", err);
+        logger.error("JoinFederation error:", err);
         throw new Error(`Failed to join federation: ${err}`);
     }
 }
 
-const fetchMetaData = async (url: string, federationID: string | null): Promise<FederationMetaData> => {
+export const fetchMetaData = async (url: string, federationID: string | null): Promise<FederationMetaData> => {
     try {
         let meta;
         const response = await fetch(url)
         if (response.ok) {
             let result = await response.json()
-            console.log("result is ", result)
+            logger.log("result is ", result)
             if (!federationID) {
                 throw new Error("Federation ID is null");
             }
             meta = result[federationID];
-            console.log("the meta is ", meta)
+            logger.log("the meta is ", meta)
             if (!meta) {
                 throw new Error(`No metadata found for federation ID: ${federationID}`)
             }
         }
         return meta;
     } catch (err) {
-        console.log("An error occred while fetching meta data", err)
+        logger.log("An error occred while fetching meta data", err)
         throw new Error('Failed to fetch metadata')
     }
 }
@@ -63,7 +64,7 @@ export const fetchFederationDetails = async (wallet: Wallet, federationID: strin
         localStorage.setItem('FedMetaData', JSON.stringify(meta))
         return { details, meta }
     } catch (err) {
-        console.log(err)
+        logger.log(err)
         throw new Error(`${err}`);
     }
 }
@@ -72,20 +73,34 @@ export const previewFederation = async (wallet: Wallet, inviteCode: string): Pro
     try {
         const result = await wallet.previewFederation(inviteCode)
         if (result) {
-            console.log("preview Federation result is ", result)
+            logger.log("preview Federation result is ", result)
             const config = typeof result.config === 'string'
                 ? JSON.parse(result.config)
-                : result.config;
+                : result.config.global
+
+            let meta: FederationMeta | FederationMetaData = config.meta
+            const externalUrl = (meta as FederationMeta)?.meta_external_url;
+
+            if (externalUrl) {
+                const fetchedMeta = await fetchMetaData(externalUrl, result.federation_id);
+                if (fetchedMeta) {
+                    meta = fetchedMeta as FederationMetaData;
+                }
+            }
+
             let structuredResult = {
-                config: config,
+                fedName: meta?.federation_name,
+                iconUrl:(meta as FederationMetaData)?.federation_icon_url,
+                consensousVersion:config.consensus_version,
                 federationID: result.federation_id
             }
+
             return structuredResult;
         } else {
             throw new Error('Did not get result')
         }
     } catch (err) {
-        console.log(`${err}`)
+        logger.log(`${err}`)
         throw new Error(`${err}`)
     }
 }
