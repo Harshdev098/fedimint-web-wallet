@@ -8,6 +8,7 @@ import type { FederationDetailResponse } from '../hooks/Federation.type';
 import NProgress from 'nprogress';
 import LoadingContext from '../context/loader';
 import Guardians from './Guardian';
+import logger from '../utils/logger';
 
 
 export default function Federation() {
@@ -21,22 +22,22 @@ export default function Federation() {
         const fetchFederationData = async () => {
             if (fedId) {
                 try {
-                    console.log("fed id is ", fedId)
+                    logger.log("fed id is ", fedId)
                     NProgress.start();
                     setLoading(true);
                     const result = await fetchFederationDetails(wallet, fedId)
                     setDetails(result)
                 } catch (err) {
-                    console.log("an error occured ", err)
+                    logger.log("an error occured ", err)
                 } finally {
                     NProgress.done();
                     setLoading(false)
                 }
             } else {
-                console.log("federation id not got")
+                logger.log("federation id not got")
             }
         }
-        console.log("fetching the details")
+        logger.log("fetching the details")
         fetchFederationData()
     }, [])
 

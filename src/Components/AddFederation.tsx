@@ -9,6 +9,7 @@ import Alerts from './Alerts'
 import { JoinFederation as JoinFederationService } from '../services/FederationService'
 import QrScanner from 'qr-scanner'
 import NProgress from 'nprogress'
+import logger from '../utils/logger'
 
 
 export default function AddFederation({ setJoinForm }: { setJoinForm: React.Dispatch<React.SetStateAction<boolean>> }) {
@@ -29,7 +30,7 @@ export default function AddFederation({ setJoinForm }: { setJoinForm: React.Disp
         const code = inviteCode.current?.value?.trim() || qrData
         if (!code) return; // invitecode should not be empty
         if (wallet?.isOpen()) {
-            console.log("wallet is open")
+            logger.log("wallet is open")
             // let result = await wallet.federation.getFederationId();
             // localStorage.setItem('activeFederation', result)
             // dispatch(setFederationId(result))
@@ -67,7 +68,7 @@ export default function AddFederation({ setJoinForm }: { setJoinForm: React.Disp
                     videoRef.current,
                     async (result) => {
                         if (result?.data) {
-                            console.log("the result from qr is ", result.data)
+                            logger.log("the result from qr is ", result.data)
                             await handleJoinFederation({ preventDefault: () => { } } as React.FormEvent, result.data)
                             scannerRef.current?.destroy()
                             scannerRef.current = null;
@@ -76,16 +77,16 @@ export default function AddFederation({ setJoinForm }: { setJoinForm: React.Disp
                     { returnDetailedScanResult: true }
                 )
                 scannerRef.current.start().then(() => {
-                    console.log("Camera started successfully");
+                    logger.log("Camera started successfully");
                 }).catch((err) => {
-                    console.error("Camera access denied:", err);
+                    logger.log("Camera access denied:", err);
                     dispatch(setError('Camera access denied!'))
                     setTimeout(() => {
                         dispatch(setError(''))
                     }, 2000);
                 });
             } catch (err) {
-                console.log("an error occured while scanning")
+                logger.log("an error occured while scanning")
                 dispatch(setError("Error occured while scanning"))
                 setTimeout(() => {
                     dispatch(setError(''))

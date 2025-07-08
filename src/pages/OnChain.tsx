@@ -1,13 +1,14 @@
 import { useRef, useState } from 'react';
 // import { PegIn, PegOut } from '../services/OnChainService';
 // import WalletContext from '../context/wallet'
-// import NProgress from 'nprogress'
-// import LoadingContext from '../context/loader'
 import { useSelector } from 'react-redux'
 import type { RootState } from '../redux/store'
+// import NProgress from 'nprogress'
+// import LoadingContext from '../context/loader'
 // import { setPegin, setPeginError, setPegout, setPegoutError } from '../redux/slices/OnchainSlice';
 import Alerts from '../Components/Alerts';
 import { convertToMsats } from '../services/BalanceService';
+// import logger from '../utils/logger';
 
 export default function OnChain() {
     const [onchainType, setOnchainType] = useState(true);
@@ -20,57 +21,59 @@ export default function OnChain() {
     const { currency } = useSelector((state: RootState) => state.balance)
     const [convertedAmountInMSat, setConvertedAmountInMSat] = useState<number>(0)
 
-    // const handlePeginTransaction = async () => {
-    //     try {
-    //         NProgress.start()
-    //         setLoading(true)
-    //         const result = await PegIn(wallet)
-    //         dispatch(setPegin(result))
-    //     } catch (err) {
-    //         console.log(`${err}`)
-    //         dispatch(setPeginError(`${err}`))
-    //         setTimeout(() => {
-    //             dispatch(setPeginError(''))
-    //         }, 3000);
-    //     } finally {
-    //         NProgress.done()
-    //         setLoading(false)
-    //     }
-    // }
+    const handlePeginTransaction = async () => {
+        // try {
+        //     NProgress.start()
+        //     setLoading(true)
+        //     console.log('handle pegin')
+        //     const result = await PegIn(wallet)
+        //     dispatch(setPegin(result))
+        // } catch (err) {
+        //     logger.log(`${err}`)
+        //     dispatch(setPeginError(`${err}`))
+        //     setTimeout(() => {
+        //         dispatch(setPeginError(''))
+        //     }, 3000);
+        // } finally {
+        //     NProgress.done()
+        //     setLoading(false)
+        // }
+    }
 
-    // const handlePegoutTransaction = async (e: React.FormEvent) => {
-    //     e.preventDefault()
-    //     
-    //     if (!(address.current?.value).trim() || !(convertedAmountInSats).trim()) {
-    //         alert("Please enter both address and amount");
-    //         return;
-    //     }
-    //     try {
-    //         NProgress.start()
-    //         setLoading(true)
-    //         const result = await PegOut(wallet, address.current.value.trim(), convertedAmountInSats);
-    //         if (result) {
-    //             dispatch(setPegout(result))
-    //             setTimeout(() => {
-    //                 dispatch(setPegout(null))
-    //             }, 3000);
-    //         } else {
-    //             dispatch(setPegoutError('PegOut did not return a valid result'));
-    //             setTimeout(() => {
-    //                 dispatch(setPegoutError(''));
-    //             }, 3000);
-    //         }
-    //     } catch (err) {
-    //         console.error("PegOut failed:", err);
-    //         dispatch(setPegoutError(`${err}`))
-    //         setTimeout(() => {
-    //             dispatch(setPegoutError(''))
-    //         }, 3000);
-    //     } finally {
-    //         NProgress.done()
-    //         setLoading(false)
-    //     }
-    // }
+    const handlePegoutTransaction = async (e: React.FormEvent) => {
+        e.preventDefault()
+        
+        // if (!(address.current?.value?.trim()) || !(convertedAmountInMSat?.toString().trim())) {
+        //     alert("Please enter both address and amount");
+        //     return;
+        // }
+        // try {
+        //     NProgress.start()
+        //     setLoading(true)
+        //     console.log("handle pegout")
+        //     const result = await PegOut(wallet, address.current.value.trim(), convertedAmountInMSat);
+        //     if (result) {
+        //         dispatch(setPegout(result))
+        //         setTimeout(() => {
+        //             dispatch(setPegout(null))
+        //         }, 3000);
+        //     } else {
+        //         dispatch(setPegoutError('PegOut did not return a valid result'));
+        //         setTimeout(() => {
+        //             dispatch(setPegoutError(''));
+        //         }, 3000);
+        //     }
+        // } catch (err) {
+        //     logger.error("PegOut failed:", err);
+        //     dispatch(setPegoutError(`${err}`))
+        //     setTimeout(() => {
+        //         dispatch(setPegoutError(''))
+        //     }, 3000);
+        // } finally {
+        //     NProgress.done()
+        //     setLoading(false)
+        // }
+    }
 
     const handleConversion = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const amount = await convertToMsats(Number((e.target.value).trim()), currency)
@@ -101,7 +104,7 @@ export default function OnChain() {
                     {onchainType ? (
                         <div className='depositSection'>
                             <h2>Get Your Deposit Address</h2>
-                            <button className='actionBtn' onClick={() => { }}>Get Address</button>
+                            <button className='actionBtn' onClick={() => { handlePeginTransaction() }}>Get Address</button>
                             {pegin && <div>
                                 <p>You can deposit your bitcoin on this generated address</p>
                                 <div className='copyWrapper'> {/* fix: Dark mode */}
@@ -118,7 +121,7 @@ export default function OnChain() {
                             </div>}
                         </div>
                     ) : (
-                        <form className='withdrawForm' >
+                        <form className='withdrawForm' onSubmit={handlePegoutTransaction} >
                             <input type='number' inputMode='numeric' placeholder={`Enter amount in ${currency}`} ref={amount} onChange={ handleConversion} />
                             <span>Entered amount in msats: {convertedAmountInMSat}</span>
                             <input type='text' placeholder='Enter the on-chain address' ref={address} />

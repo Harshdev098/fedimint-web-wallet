@@ -1,11 +1,18 @@
 export interface InviteCode {
     code: string
 }
+export type Federation = {
+    inviteCode: string
+    federationId: string
+    federationName?:string
+    iconUrl?:string
+}
 
 export type FederationMeta = {
     federation_name: string;
     meta_external_url?: string;
 };
+
 export type FederationMetaData = {
     federation_name: string;
     welcome_message?: string;
@@ -39,7 +46,9 @@ export type JoinFedResponse = {
 }
 
 export type PreviewFederationResponse={
-    config:{global:FederationConfig},
+    fedName:string,
+    iconUrl?:string,
+    consensousVersion:{ major: number; minor: number }
     federationID:string,
 }
 

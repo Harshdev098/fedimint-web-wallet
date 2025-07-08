@@ -1,4 +1,5 @@
 import type { Wallet, BalanceResponse } from "../hooks/wallet.type";
+import logger from "../utils/logger";
 const SATS_PER_BTC = 100_000_000;
 const MSATS_PER_BTC = 100_000_000_000;
 
@@ -9,10 +10,10 @@ export const fetchBalance = async (wallet: Wallet): Promise<BalanceResponse> => 
             await wallet?.open()
         }
         const value = await wallet?.balance.getBalance();
-        console.log("balance", value)
+        logger.log("balance", value)
         return value;
     } catch (err) {
-        console.log("Failed to fetch balance", err)
+        logger.log("Failed to fetch balance", err)
         throw new Error(`An error occured ${err}`)
     }
 }
@@ -30,7 +31,7 @@ export const fetchExchangeRates = async () => {
             eur: data.bitcoin.eur
         };
     }catch(err){
-        console.log("an error occured while fetching exchange rates")
+        logger.log("an error occured while fetching exchange rates")
     }
 };
 

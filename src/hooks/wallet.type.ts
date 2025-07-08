@@ -85,3 +85,14 @@ export type Nip47Transaction = {
     state: "settled" | "pending" | "failed";
     type: "incoming" | "outgoing";
 };
+
+export type Transaction= {
+  amountMsats:string
+  invoice:string
+  gateway:string
+  timestamp:string
+  operationId:string
+  kind:string
+  type:string
+  outcome:string
+}

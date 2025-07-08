@@ -9,6 +9,7 @@ import { getUTXOSet } from '../services/WalletService';
 import LoadingContext from '../context/loader';
 import NProgress from 'nprogress';
 import Alerts from '../Components/Alerts';
+import logger from '../utils/logger';
 
 export default function EcashSetting() {
     const { wallet } = useContext(WalletContext);
@@ -23,7 +24,7 @@ export default function EcashSetting() {
                 const result = await NoteCountByDenomination(wallet);
                 dispatch(setNotesByDenomination(result));
             } catch (err) {
-                console.error("Error fetching notes:", err);
+                logger.error("Error fetching notes:", err);
             }
         };
 

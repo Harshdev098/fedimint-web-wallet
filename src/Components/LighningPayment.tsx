@@ -3,7 +3,7 @@ import QrScanner from "qr-scanner";
 import receiveIcon from '../assets/recieve-icon.png'
 import sendIcon from '../assets/send-icon.png'
 import QRCode from 'react-qr-code'
-import { setInvoice, setInvoiceError, setPayInvoiceError, setPayInvoiceResult, setPayStatus } from '../redux/slices/LightningPayment'
+import { setInvoice, setInvoiceOperationId, setInvoiceError, setPayInvoiceError, setPayInvoiceResult, setPayStatus } from '../redux/slices/LightningPayment'
 import { createNotification } from '../redux/slices/NotificationSlice';
 import { useSelector, useDispatch } from 'react-redux'
 import type { RootState, AppDispatch } from '../redux/store'
@@ -17,6 +17,7 @@ import { downloadQRCode } from '../services/DownloadQR';
 import type { LnPayState } from '@fedimint/core-web';
 import { convertToMsats } from '../services/BalanceService';
 import { Link } from 'react-router';
+import logger from '../utils/logger';
 
 
 export default function LighningPayment() {
@@ -33,12 +34,11 @@ export default function LighningPayment() {
     const { wallet } = useContext(WalletContext)
     const { setLoading } = useContext(LoadingContext)
     const dispatch = useDispatch<AppDispatch>()
-    const { Invoice, InvoiceError, payInvoiceResult, payInvoiceError, payStatus } = useSelector((state: RootState) => state.Lightning)
+    const { Invoice, InvoiceOperationId, InvoiceError, payInvoiceResult, payInvoiceError, payStatus } = useSelector((state: RootState) => state.Lightning)
     const { currency } = useSelector((state: RootState) => state.balance)
 
     const subscribeBalanceChange = () => {
         const unsubscribeBalance = wallet.balance.subscribeBalance((mSats) => {
-            console.log('Balance updated:', mSats);
             dispatch(setBalance(mSats));
             setTimeout(() => {
                 unsubscribeBalance?.();
@@ -56,10 +56,11 @@ export default function LighningPayment() {
                 throw new Error('Amount must be greater than 0');
             }
             // const amountValue = await convertToSats(convertedAmount,currency)
-            console.log("amount value is", convertedAmountInMSat * 1000)
+            logger.log("amount value is", convertedAmountInMSat)
             const result = await CreateInvoice(wallet, convertedAmountInMSat, (description.current?.value ?? '').trim());
-            console.log('Create invoice result:', result);
-            dispatch(setInvoice(result));
+            logger.log('Create invoice result:', result);
+            dispatch(setInvoice(result.invoice));
+            dispatch(setInvoiceOperationId(result.operationId))
             const unsubscribe = wallet?.lightning.subscribeLnReceive(
                 result.operationId,
                 async (state) => {
@@ -73,7 +74,7 @@ export default function LighningPayment() {
                     }
                 },
                 (error) => {
-                    console.error("Error in subscription:", error);
+                    logger.error("Error in subscription:", error);
                     throw new Error("An error occured! Payment cancelled")
                 }
             );
@@ -82,7 +83,7 @@ export default function LighningPayment() {
                 unsubscribe?.();
             }, 300000);
         } catch (err) {
-            console.error('Create Invoice Error:', err);
+            logger.error('Create Invoice Error:', err);
             const errorMessage = err instanceof Error ? err.message : 'Failed to create invoice';
             dispatch(setInvoiceError(errorMessage));
             setTimeout(() => {
@@ -122,16 +123,15 @@ export default function LighningPayment() {
                             try {
                                 locations = JSON.parse(storedLocations);
                             } catch (error) {
-                                console.error('Error parsing paymentLocations:', error);
+                                logger.error('Error parsing paymentLocations:', error);
                             }
                         }
 
                         locations[invoiceValue] = location;
                         localStorage.setItem('paymentLocations', JSON.stringify(locations));
-                        console.log(`Location saved for invoice ${invoiceValue}:`, location);
                     },
                     (error) => {
-                        console.log('An error occurred while finding location', error);
+                        logger.log('An error occurred while finding location', error);
                         if(error.PERMISSION_DENIED){
                             alert("Permission Denied! you can reset your permissions")
                         }
@@ -149,7 +149,6 @@ export default function LighningPayment() {
                         const time = new Date().toTimeString();
 
                         if (state === 'created') {
-                            console.log("status created")
                             dispatch(setPayStatus(state))
                         } else if (state === 'canceled') {
                             dispatch(createNotification({ type: 'Payment', data: 'Payment Cancelled', date, time, OperationId: result.id }));
@@ -175,7 +174,7 @@ export default function LighningPayment() {
                         }
                     },
                     (error) => {
-                        console.error("Error in subscription:", error);
+                        logger.error("Error in subscription:", error);
                         throw new Error("An error occured! Payment cancelled")
                     }
                 )
@@ -183,7 +182,7 @@ export default function LighningPayment() {
 
             setTimeout(() => unsubscribe?.(), 300000);
         } catch (err) {
-            console.error('handlePayInvoice error:', err);
+            logger.error('handlePayInvoice error:', err);
             const errorMessage = err instanceof Error ? err.message : 'Failed to pay invoice';
             dispatch(setPayInvoiceError(errorMessage));
             setTimeout(() => {
@@ -203,7 +202,7 @@ export default function LighningPayment() {
                 videoRef.current,
                 async (result) => {
                     if (result.data) {
-                        console.log("qr data ", result.data)
+                        logger.log("qr data ", result.data)
                         await handlePayInvoice({ preventDefault: () => { } } as React.FormEvent, result.data)
                         scannerRef.current?.stop()
                         setOpenVideo(false)
@@ -215,9 +214,9 @@ export default function LighningPayment() {
             )
 
             scannerRef.current.start().then(() => {
-                console.log("QR scanning started.")
+                logger.log("QR scanning started.")
             }).catch((err) => {
-                console.error("QR scanning failed:", err)
+                logger.error("QR scanning failed:", err)
                 dispatch(setPayInvoiceError('camera access denied'))
                 setTimeout(() => dispatch(setPayInvoiceError('')), 3000)
             })
@@ -264,16 +263,16 @@ export default function LighningPayment() {
                             <div className='createInvoiceResult'>
                                 <div className='qrCode'>
                                     <div className='copyWrapper'>
-                                        <p><b>Invoice:</b> {Invoice.invoice}</p>
+                                        <p><b>Invoice:</b> {Invoice}</p>
                                         <button
                                             className="copyBtnOverlay"
                                             onClick={() => {
-                                                navigator.clipboard.writeText(Invoice.invoice);
+                                                navigator.clipboard.writeText(Invoice);
                                             }}
                                         ><i className="fa-regular fa-copy"></i></button>
                                     </div>
-                                    <p style={{ margin: '12px' }}><b>OperationID:</b> {Invoice.operationId}</p>
-                                    <QRCode value={JSON.stringify(Invoice)} size={150} bgColor='white' fgColor='black' />
+                                    <p style={{ margin: '12px' }}><b>OperationID:</b> {InvoiceOperationId}</p>
+                                    <QRCode value={JSON.stringify(Invoice)} onClick={()=>{logger.log("invoice in qr is ",JSON.stringify(Invoice))}} size={150} bgColor='white' fgColor='black' />
                                     <button type='button' onClick={() => downloadQRCode('invoice')}>Download QR</button>
                                 </div>
                             </div>
