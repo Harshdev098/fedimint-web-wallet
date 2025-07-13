@@ -9,7 +9,7 @@ import { convertFromMsat, fetchBalance } from "../services/BalanceService"
 import Alerts from "./Alerts"
 import NProgress from 'nprogress'
 import LoadingContext from '../context/loader'
-import LighningPayment from "./LighningPayment"
+import LightningPayment from "./LightningPayment"
 
 
 export default function Balance() {
@@ -61,7 +61,7 @@ export default function Balance() {
                 <div style={{ marginBottom: '20px' }}>
                     <span><Link to={'/wallet/federation'} style={mode === true ? { color: '#6f6f6f' } : undefined}>Federation Details</Link> | <Link to={'/wallet/ecash'} style={mode === true ? { color: '#6f6f6f' } : undefined}>Ecashes</Link></span>
                 </div>
-                <LighningPayment />
+                <LightningPayment />
             </section>
         </>
     )

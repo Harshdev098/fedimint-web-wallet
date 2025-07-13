@@ -20,7 +20,7 @@ import { Link } from 'react-router';
 import logger from '../utils/logger';
 
 
-export default function LighningPayment() {
+export default function LightningPayment() {
     const [status, setStatus] = useState<boolean>(false)
     const [convertedAmountInMSat, setConvertedAmountInMSat] = useState<number | null>(null)
     const amount = useRef<HTMLInputElement>(null)
