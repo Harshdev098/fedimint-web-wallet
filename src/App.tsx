@@ -1,5 +1,5 @@
 import { Routes, Route } from 'react-router'
-import './App.css'
+import './style/App.css'
 import JoinFederation from './pages/JoinFederation'
 import Wallet from './Wallet'
 import { LoadingProvider } from './context/loader'

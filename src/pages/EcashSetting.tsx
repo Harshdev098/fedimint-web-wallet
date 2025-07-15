@@ -4,19 +4,22 @@ import { NoteCountByDenomination } from '../services/MintService';
 import { useSelector, useDispatch } from 'react-redux';
 import type { RootState, AppDispatch } from '../redux/store';
 import { setNotesByDenomination } from '../redux/slices/Mint';
-import { setUTXOSet, setError } from '../redux/slices/WalletSlice';
+import { setUTXOSet } from '../redux/slices/WalletSlice';
 import { getUTXOSet } from '../services/WalletService';
+import { setError } from '../redux/slices/Alerts';
 import LoadingContext from '../context/loader';
 import NProgress from 'nprogress';
 import Alerts from '../Components/Alerts';
 import logger from '../utils/logger';
+import '../style/Ecash.css'
 
 export default function EcashSetting() {
     const { wallet } = useContext(WalletContext);
     const dispatch = useDispatch<AppDispatch>();
     const { setLoading } = useContext(LoadingContext);
     const { NotesByDenomonation } = useSelector((state: RootState) => state.mint);
-    const { UTXOSet, error } = useSelector((state: RootState) => state.wallet);
+    const { UTXOSet } = useSelector((state: RootState) => state.wallet);
+    const {error}=useSelector((state:RootState)=>state.Alert)
 
     useEffect(() => {
         const handleNoteCount = async () => {
@@ -33,9 +36,9 @@ export default function EcashSetting() {
                 const result = await getUTXOSet(wallet);
                 dispatch(setUTXOSet(result));
             } catch (err) {
-                dispatch(setError(`${err}`));
+                dispatch(setError({type:'UTXO Error: ',message:err instanceof Error ? err.message : String(err)}));
                 setTimeout(() => {
-                    dispatch(setError(''))
+                    dispatch(setError(null))
                 }, 3000);
             }
         };

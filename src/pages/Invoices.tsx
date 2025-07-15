@@ -1,21 +1,26 @@
 import React, { useState, useEffect } from 'react';
 // import WalletContext from '../context/wallet';
+// import type { Transactions } from '@fedimint/core-web';
 // import type { InvoiceState } from '../hooks/wallet.type';
 // import NProgress from 'nprogress';
 // import LoadingContext from '../context/loader';
-// import Alerts from '../Components/Alerts';
+import Alerts from '../Components/Alerts';
 // import { Link } from 'react-router';
 // import logger from '../utils/logger';
+import '../style/Invoice.css'
+import { useSelector } from 'react-redux';
+import type { RootState } from '../redux/store';
+// import { setError } from '../redux/slices/Alerts';
 
 export default function Invoices() {
     const invoiceExpiryOptions = ['--Select--', '10 minutes', '20 min', '30 minutes', '40 min', '60 min', '180 min', '300 min', '480 min'];
     const [expiryTime, setExpiryTime] = useState('--Select--');
     // const [invoiceStateList, setInvoiceStateList] = useState<InvoiceState[]>([]);
     // const [invoicePendingList, setInvoicePendingList] = useState<InvoiceState[]>([])
-    // const [stateFilter, setStateFilter] = useState<string>('all')
+    const [stateFilter, setStateFilter] = useState<string>('all')
     // const { wallet } = useContext(WalletContext)
     // const { setLoading } = useContext(LoadingContext)
-    // const [error, setError] = useState('')
+    const {error}=useSelector((state:RootState)=>state.Alert)
     const [currentPage, setCurrentPage] = useState(1)
     // const pageLimint = 5
 
@@ -124,9 +129,9 @@ export default function Invoices() {
         //     }
         // } catch (err) {
         //     logger.log("an error occured")
-        //     setError(String(err))
+        //     setError({type:'Invoice Error: ',message:String(err)})
         //     setTimeout(() => {
-        //         setError('')
+        //         setError(null)
         //     }, 3000);
         // } finally {
         //     NProgress.done()
@@ -134,9 +139,9 @@ export default function Invoices() {
         // }
     }
 
-    // const handleFilter = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    //     setStateFilter(e.target.value)
-    // }
+    const handleFilter = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        setStateFilter(e.target.value)
+    }
 
 
     useEffect(() => {
@@ -152,7 +157,7 @@ export default function Invoices() {
 
     return (
         <>
-            {/* {error && <Alerts Error={error} Result='' />} */}
+            {error && <Alerts Error={error} />}
             <div className="invoice-page">
                 <div className="invoice-header">
                     <div>
@@ -172,12 +177,12 @@ export default function Invoices() {
 
                         <div className="expiry-select">
                             <label htmlFor="states">Filter by Status:</label>
-                            {/* <select id="states" value={stateFilter} onChange={handleFilter}>
+                            <select id="states" value={stateFilter} onChange={handleFilter}>
                                 <option value="all">All</option>
                                 <option value="claimed">claimed</option>
                                 <option value="pending">pending</option>
                                 <option value="canceled">canceled</option>
-                            </select> */}
+                            </select>
                         </div>
                     </div>
                 </div>

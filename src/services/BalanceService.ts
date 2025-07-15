@@ -1,4 +1,6 @@
 import type { Wallet, BalanceResponse } from "../hooks/wallet.type";
+import type { AppDispatch } from "../redux/store";
+import { updateBalanceFromMsat } from "../redux/slices/Balance";
 import logger from "../utils/logger";
 const SATS_PER_BTC = 100_000_000;
 const MSATS_PER_BTC = 100_000_000_000;
@@ -18,6 +20,15 @@ export const fetchBalance = async (wallet: Wallet): Promise<BalanceResponse> => 
     }
 }
 
+export const subscribeBalance = async (wallet: Wallet,dispatch:AppDispatch) => {
+    const unsubscribeBalance = wallet.balance.subscribeBalance((mSats) => {
+        dispatch(updateBalanceFromMsat(mSats));
+        setTimeout(() => {
+            unsubscribeBalance?.();
+        }, 10000);
+    });
+}
+
 export const fetchExchangeRates = async () => {
     try {
         const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd,eur');
@@ -30,7 +41,7 @@ export const fetchExchangeRates = async () => {
             usd: data.bitcoin.usd,
             eur: data.bitcoin.eur
         };
-    }catch(err){
+    } catch (err) {
         logger.log("an error occured while fetching exchange rates")
     }
 };

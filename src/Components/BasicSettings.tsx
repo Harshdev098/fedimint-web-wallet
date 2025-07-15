@@ -1,4 +1,4 @@
-import { useState, useContext } from "react";
+import { useState, useContext, useCallback, useEffect } from "react";
 import { useDispatch, useSelector } from 'react-redux'
 import type { RootState } from '../redux/store'
 import { setMode } from '../redux/slices/Mode';
@@ -10,6 +10,8 @@ import LoadingContext from '../context/loader';
 import NProgress from 'nprogress';
 // import { DownloadTransactionsCSV } from "../services/DownloadQR";
 import Alerts from "./Alerts";
+import { setError,setResult } from "../redux/slices/Alerts";
+import validate from 'bitcoin-address-validation';
 
 
 export default function BasicSettings() {
@@ -21,7 +23,9 @@ export default function BasicSettings() {
     const { currency } = useSelector((state: RootState) => state.balance)
     const { federationId } = useSelector((state: RootState) => state.activeFederation)
     const { setLoading } = useContext(LoadingContext);
-    const [error, setError] = useState('')
+    const { error,result } = useSelector((state: RootState) => state.Alert)
+    const [autoWithdrawAddress, setAutoWithdrawAddress] = useState<string | null>(localStorage.getItem('autoWithdraw'))
+    const [isValidAddress, setIsValidAddress] = useState(false)
     const navigate = useNavigate()
 
 
@@ -44,6 +48,43 @@ export default function BasicSettings() {
             localStorage.setItem('locationAccess', newValue.toString());
         }
     }
+
+
+    const handleAutoWithdrawal = (e: React.FormEvent) => {
+        e.preventDefault()
+        if (autoWithdrawAddress) {
+            localStorage.setItem('autoWithdrawalValue', autoWithdrawAddress)
+            logger.log('saved!')
+            dispatch(setResult('Saved!'))
+            setTimeout(() => {
+                dispatch(setResult(null))
+            }, 2000);
+        }
+    }
+
+    const validateAddress = useCallback(() => {
+        if (autoWithdrawAddress) {
+            try {
+                if (validate(autoWithdrawAddress)===true) {
+                    setIsValidAddress(true)
+                    return true;
+                }else{
+                    setIsValidAddress(false)
+                    return false;
+                }
+            } catch (err) {
+                setIsValidAddress(false)
+                logger.log('an error occured while validating')
+                return false;
+            }
+        }
+    },[autoWithdrawAddress])
+    
+    useEffect(()=>{
+        if(autoWithdrawAddress){
+            validateAddress()
+        }
+    },[autoWithdrawAddress])
 
     const toggleMode = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newValue = e.target.checked
@@ -75,9 +116,9 @@ export default function BasicSettings() {
             }
         } catch (err) {
             logger.log("an error occured")
-            setError(err instanceof Error ? err.message : String(err))
+            setError({ type: 'Federation Error: ', message: err instanceof Error ? err.message : String(err) })
             setTimeout(() => {
-                setError('')
+                setError(null)
             }, 3000);
         } finally {
             NProgress.done()
@@ -94,9 +135,9 @@ export default function BasicSettings() {
         //     DownloadTransactionsCSV(transactions)
         // } catch (err) {
         //     logger.log('an error occured')
-        //     setError(err instanceof Error ? err.message : String(err))
+        //     setError({type:'Transaction Error',message:err instanceof Error ? err.message : String(err)})
         //     setTimeout(() => {
-        //         setError('')
+        //         setError(null)
         //     }, 3000);
         // } finally {
         //     NProgress.done()
@@ -106,7 +147,8 @@ export default function BasicSettings() {
 
     return (
         <>
-            {error && <Alerts Error={error} Result='' />}
+            {error && <Alerts Error={error} />}
+            {result && <Alerts Result={result} />}
 
             <div className="settings-container">
                 {/* Federation Information Section */}
@@ -204,6 +246,18 @@ export default function BasicSettings() {
                                 </label>
                             </div>
                         </div>
+                        <div className="setting-item auto-withdrawal">
+                            <div className="setting-info">
+                                <h3>Auto Withdraw to External Address</h3>
+                                <p>Enabling auto withdraw will auto withdraw the amount to external address if amount increased from the max stable balance of federation</p>
+                            </div>
+                            <div className="setting-control">
+                                <form onSubmit={handleAutoWithdrawal}>
+                                    <input type="text" placeholder="Enter the external address(onchain)" value={autoWithdrawAddress ?? ''} onChange={(e) => setAutoWithdrawAddress(e.target.value) } />
+                                    <button type="submit" style={{ backgroundColor: isValidAddress ? '#4CAF50' : '#c0c2c4' }} disabled={!isValidAddress}><i className="fa-solid fa-circle-check"></i></button>
+                                </form>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -239,7 +293,6 @@ export default function BasicSettings() {
                             <div className="federation-card">
                                 <div className="federation-info">
                                     <h3>{metaData.federation_name}</h3>
-                                    <span className="federation-status">Active</span>
                                 </div>
                                 <div className="federation-actions">
                                     <a href={`/fedimint-web-wallet/federation/${federationId || localStorage.getItem('activeFederation')}`} className="action-btn view-btn">

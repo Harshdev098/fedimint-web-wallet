@@ -5,7 +5,8 @@ import { fetchFederationDetails } from '../services/FederationService';
 import WalletContext from '../context/wallet';
 import { useDispatch, useSelector } from 'react-redux';
 import type { RootState, AppDispatch } from '../redux/store';
-import { setFederationDetails, setFederationMetaData, setError, setGuardianStatus } from '../redux/slices/FederationDetails';
+import { setFederationDetails, setFederationMetaData, setGuardianStatus } from '../redux/slices/FederationDetails';
+import { setError } from '../redux/slices/Alerts';
 import { setCurrency } from '../redux/slices/Balance';
 import { setFederationId } from '../redux/slices/ActiveFederation';
 import { setNewJoin } from '../redux/slices/ActiveFederation';
@@ -19,10 +20,11 @@ import logger from '../utils/logger';
 export default function Main() {
     const { wallet, walletStatus } = useContext(WalletContext);
     const dispatch = useDispatch<AppDispatch>();
-    const { Details, metaData, error } = useSelector((state: RootState) => state.federationdetails);
+    const { Details, metaData } = useSelector((state: RootState) => state.federationdetails);
     const { setLoading } = useContext(LoadingContext);
     const { federationId, newJoin } = useSelector((state: RootState) => state.activeFederation);
     const {mode}=useSelector((state:RootState)=>state.Mode)
+    const {error}=useSelector((state:RootState)=>state.Alert)
 
     const checkGuardianStatus = async (Details: FederationConfig) => {
         if (Details.api_endpoints && typeof Details.api_endpoints === 'object') {
@@ -56,7 +58,7 @@ export default function Main() {
 
                         return { key, status };
                     } catch (error) {
-                        return { key, status: 'error' };
+                        return { key, status: 'offline' };
                     }
                 } else {
                     return { key, status: 'invalid' };
@@ -98,9 +100,9 @@ export default function Main() {
                 logger.log("welcome message", result.meta.welcome_message)
             } catch (err) {
                 logger.error("Error fetching federation details:", err);
-                dispatch(setError(`${err}`));
+                dispatch(setError({type:'Config Error: ', message:`${err}`}));
                 setTimeout(() => {
-                    dispatch(setError(''));
+                    dispatch(setError(null));
                 }, 3000);
             } finally {
                 NProgress.done();
@@ -128,11 +130,10 @@ export default function Main() {
 return (
     walletStatus === 'open' && (
         <main className='MainWalletContainer'>
-            {error && <Alerts Error={error} Result='' />}
-            {metaData?.welcome_message && newJoin === true && <Alerts Error='' Result={metaData.welcome_message} onDismiss={() => { dispatch(setNewJoin(false)) }} />}
+            {error && <Alerts Error={error} />}
+            {metaData?.welcome_message && newJoin === true && <Alerts Result={metaData.welcome_message} onDismiss={() => { dispatch(setNewJoin(false)) }} />}
             {metaData?.federation_expiry_timestamp && (
                 <Alerts
-                    Error=''
                     Result={`${metaData.welcome_message} federation Expiry time: ${new Date(metaData.federation_expiry_timestamp * 1000).toLocaleString()}`}
                 />
             )}

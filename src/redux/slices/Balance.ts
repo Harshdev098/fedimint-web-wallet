@@ -1,27 +1,34 @@
-import { createSlice } from '@reduxjs/toolkit'
-import type { PayloadAction } from '@reduxjs/toolkit'
+import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
+import { convertFromMsat } from '../../services/BalanceService'
+
+export const updateBalanceFromMsat = createAsyncThunk(
+  'balance/updateBalanceFromMsat',
+  async (mSats: number, { getState }) => {
+    const state = getState() as any
+    const currency = state.balance.currency
+    return await convertFromMsat(mSats, currency)
+  }
+)
 
 const initialState = {
-    balance: 0,
-    currency:localStorage.getItem('walletCurrency') || 'sat',
-    error: ''
+  balance: 0,
+  currency: localStorage.getItem('walletCurrency') || 'sat'
 }
 
-export const BalanceSlice = createSlice({
-    name: 'Balance',
-    initialState,
-    reducers: {
-        setBalance: (state, action: PayloadAction<number>) => {
-            state.balance = action.payload
-        },
-        setError: (state, action: PayloadAction<string>) => {
-            state.error = action.payload
-        },
-        setCurrency:(state,action:PayloadAction<string>)=>{
-            state.currency=action.payload
-        }
+const BalanceSlice = createSlice({
+  name: 'Balance',
+  initialState,
+  reducers: {
+    setCurrency: (state, action) => {
+      state.currency = action.payload
     }
+  },
+  extraReducers: (builder) => {
+    builder.addCase(updateBalanceFromMsat.fulfilled, (state, action) => {
+      state.balance = action.payload
+    })
+  }
 })
 
-export const { setBalance, setError, setCurrency } = BalanceSlice.actions
-export default BalanceSlice.reducer;
+export const { setCurrency } = BalanceSlice.actions
+export default BalanceSlice.reducer

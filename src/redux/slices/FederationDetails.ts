@@ -6,13 +6,11 @@ interface FederationDetailsState {
     Details: FederationConfig | null;
     metaData: FederationMetaData | null;
     GuardianStatus:GuardianStatus;
-    error: string;
 }
 const initialState: FederationDetailsState={
     Details:null,
     metaData: null,
-    GuardianStatus:{ status: {} },
-    error:''
+    GuardianStatus:{ status: {} }
 }
 
 export const FederationDetailsSlice=createSlice({
@@ -25,14 +23,11 @@ export const FederationDetailsSlice=createSlice({
         setFederationMetaData:(state,action:PayloadAction<FederationMetaData>)=>{
             state.metaData=action.payload
         },
-        setError:(state,action:PayloadAction<string>)=>{
-            state.error=action.payload
-        },
         setGuardianStatus:(state,action:PayloadAction<GuardianStatus>)=>{
             state.GuardianStatus=action.payload
         }
     }
 })
 
-export const { setError, setFederationDetails, setFederationMetaData, setGuardianStatus } = FederationDetailsSlice.actions;
+export const { setFederationDetails, setFederationMetaData, setGuardianStatus } = FederationDetailsSlice.actions;
 export default FederationDetailsSlice.reducer;

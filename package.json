@@ -17,6 +17,7 @@
     "@nostr-dev-kit/ndk-hooks": "^1.2.3",
     "@nostr-dev-kit/ndk-wallet": "^0.6.2",
     "@reduxjs/toolkit": "^2.8.0",
+    "bitcoin-address-validation": "^3.0.0",
     "dexie": "^4.0.11",
     "nostr-tools": "^2.15.0",
     "nprogress": "^0.2.0",

@@ -4,8 +4,6 @@ import type { FederationID } from '../../hooks/Federation.type'
 
 const initialState = {
     joining: false,
-    joinResult: '',
-    joinError: '',
     federationId: '',
     newJoin:false
 }
@@ -19,12 +17,6 @@ export const ActiveFederationSlice = createSlice({
         setJoining: (state, action: PayloadAction<boolean>) => {
             state.joining = action.payload
         },
-        setJoinResult: (state, action: PayloadAction<string>) => {
-            state.joinResult = action.payload
-        },
-        setError: (state, action: PayloadAction<string>) => {
-            state.joinError = action.payload
-        },
         setFederationId:(state,action:PayloadAction<FederationID>)=>{
             state.federationId=action.payload
         },
@@ -34,6 +26,6 @@ export const ActiveFederationSlice = createSlice({
     }
 })
 
-export const { setJoining, setJoinResult, setError,setFederationId,setNewJoin } = ActiveFederationSlice.actions
+export const { setJoining, setFederationId,setNewJoin } = ActiveFederationSlice.actions
 
 export default ActiveFederationSlice.reducer;

@@ -2,19 +2,21 @@
 // import { useContext } from 'react';
 // import WalletContext from '../context/wallet';
 // import Alerts from '../Components/Alerts';
-// // import NProgress from 'nprogress';
+// import NProgress from 'nprogress';
 // import LoadingContext from '../context/loader';
 // import type { EcashTransaction, WalletTransaction, LightningTransaction, Transactions } from '@fedimint/core-web';
 // import type { EpochTime } from '../hooks/Federation.type';
 // import logger from '../utils/logger';
 // import type { Transaction } from '../hooks/wallet.type';
+// import { useSelector } from 'react-redux';
+// import type { RootState } from '../redux/store';
+// import { setError } from '../redux/slices/Alerts';
 
 
 export default function Transactions() {
     // const { wallet } = useContext(WalletContext);
     // const { setLoading } = useContext(LoadingContext);
     // const [query, setQuery] = useState<string>('');
-    // const [txError, setTxError] = useState('');
     // const [transactions, setTransactions] = useState<Transaction[]>([]);
     // const [totalSpending, setTotalSpending] = useState<number>(0)
     // const [totalRecieve, setTotalRecieve] = useState<number>(0)
@@ -27,6 +29,7 @@ export default function Transactions() {
     // } | null>(null);
     // const limit = 4;
     // const [hasMore, setHasMore] = useState(true);
+    // const {error}=useSelector((state:RootState)=>state.Alert)
 
 
     // const fetchOperations = async (page: number, reset = false) => {
@@ -84,17 +87,17 @@ export default function Transactions() {
         //         });
         //     }
 
-        //     setHasMore(transactions.length === limit);
-        //     setTransactions(formattedTransactions);
-        //     setCurrentPage(page);
-        // } catch (err) {
-        //     logger.error('Error fetching operations:', err);
-        //     setTxError(err instanceof Error ? err.message : String(err));
-        //     setTimeout(() => setTxError(''), 3000);
-        // } finally {
-        //     NProgress.done();
-        //     setLoading(false);
-        // }
+    //         setHasMore(transactions.length === limit);
+    //         setTransactions(formattedTransactions);
+    //         setCurrentPage(page);
+    //     } catch (err) {
+    //         logger.error('Error fetching operations:', err);
+    //         setError({type:'Transaction Error: ',message:err instanceof Error ? err.message : String(err)})
+    //         setTimeout(() => setError(null), 3000);
+    //     } finally {
+    //         NProgress.done();
+    //         setLoading(false);
+    //     }
     // };
 
     // const paymentSummary = async () => {
@@ -231,17 +234,17 @@ export default function Transactions() {
         //             gateway,
         //         };
 
-        //         setTransactions([mappedTx]);
-        //     } catch (err) {
-        //         logger.error('Search error:', err);
-        //         setTxError(err instanceof Error ? err.message : String(err));
-        //         setTimeout(() => setTxError(''), 3000);
-        //     } finally {
-        //         NProgress.done();
-        //         setLoading(false);
-        //     }
-        // },
-        // [wallet, setLoading]
+    //             setTransactions([mappedTx]);
+    //         } catch (err) {
+    //             logger.error('Search error:', err);
+    //             setError({type:'Transaction Error: ',message:err instanceof Error ? err.message : String(err)});
+    //             setTimeout(() => setError(null), 3000);
+    //         } finally {
+    //             NProgress.done();
+    //             setLoading(false);
+    //         }
+    //     },
+    //     [wallet, setLoading]
     // );
 
 
@@ -268,7 +271,7 @@ export default function Transactions() {
 
     return (
         <>
-            {/* {txError && <Alerts key={Date.now()} Error={txError} Result={''} />} */}
+            {/* {error && <Alerts key={Date.now()} Error={error} Result={''} />} */}
             <div className="notifications-container">
                 <h2 className="notifications-title">Transactions</h2>
                 {/* {txBalanceType ? (
