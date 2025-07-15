@@ -3,7 +3,6 @@ import type { PayloadAction } from '@reduxjs/toolkit'
 
 const initialState = {
     module: {},
-    error: ''
 }
 
 export const ModuleSlice = createSlice({
@@ -12,12 +11,9 @@ export const ModuleSlice = createSlice({
     reducers: {
         setModule: (state, action: PayloadAction<JSON>) => {
             state.module = action.payload
-        },
-        setError: (state, action: PayloadAction<string>) => {
-            state.module = action.payload
         }
     }
 })
 
-export const { setModule, setError } = ModuleSlice.actions;
+export const { setModule } = ModuleSlice.actions;
 export default ModuleSlice.reducer;

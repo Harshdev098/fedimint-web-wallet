@@ -3,10 +3,10 @@ import { PayInvoice } from "../services/LightningPaymentService";
 import type { Wallet } from "../hooks/wallet.type";
 import { hexToBytes, bytesToHex } from "@noble/hashes/utils";
 import { generateSecretKey, getPublicKey } from "nostr-tools";
-import type { LightningTransaction, Transactions } from "@fedimint/core-web";
+import type { CreateBolt11Response, LightningTransaction, LnReceiveState, Transactions } from "@fedimint/core-web";
 import { handleZapRequest } from "./ZapService";
 import logger from "../utils/logger";
-import type { Federation } from "../hooks/Federation.type";
+import type { DiscoveredFederation } from "../hooks/Federation.type";
 import { previewFederation } from "./FederationService";
 
 const invoiceStore = new Map<string, string>();
@@ -64,9 +64,9 @@ export const handleNWCConnection = (ndk: NDK, relay: string | null, appName: str
     infoEvent.pubkey = walletNostrPubKey;
     infoEvent.created_at = Math.floor(Date.now() / 1000);
     infoEvent.content = JSON.stringify({
-        methods: ["get_info", "pay_invoice", "make_invoice", "get_balance", "list_transactions", "lookup_invoice"],
+        methods: ["get_info", "pay_invoice", "make_invoice", "get_balance", "list_transactions", "lookup_invoice", "notifications", "payment_sent", "payment_received"],
     });
-    infoEvent.tags = [["p", walletNostrPubKey]];
+    infoEvent.tags = [["p", walletNostrPubKey],["d","Fedimint Wallet"]];
 
     infoEvent.sign().then(() => {
         infoEvent.publish().then(() => {
@@ -80,8 +80,8 @@ export const handleNWCConnection = (ndk: NDK, relay: string | null, appName: str
 export const handleDiscoverFederation = async (
     wallet: Wallet,
     ndk: NDK,
-    setState: (feds: Federation[]) => void,
-    discoveredFederations: Federation[]
+    setState: (feds: DiscoveredFederation[]) => void,
+    discoveredFederations: DiscoveredFederation[]
 ) => {
     logger.log('Starting federation discovery...')
     if (!ndk.pool.connectedRelays().length) {
@@ -132,8 +132,8 @@ export const handleDiscoverFederation = async (
 const processFederationEvent = async (
     wallet: Wallet,
     event: NDKEvent,
-    discoveredFederations: Federation[],
-    setState: (feds: Federation[]) => void,
+    discoveredFederations: DiscoveredFederation[],
+    setState: (feds: DiscoveredFederation[]) => void,
     processingFederationIds: Set<string>
 ): Promise<void> => {
     logger.log('Processing federation event:', event.id)
@@ -167,7 +167,7 @@ const processFederationEvent = async (
         return
     }
 
-    if (discoveredFederations.some((f) => f.federationId === federationId)) {
+    if (discoveredFederations.some((f) => f.federationID === federationId)) {
         logger.log('Federation already discovered:', federationId)
         return
     }
@@ -181,16 +181,22 @@ const processFederationEvent = async (
 
     try {
         const previewResult = await previewFederation(wallet, inviteCode)
-        if (discoveredFederations.some((f) => f.federationId === federationId)) {
+        if (discoveredFederations.some((f) => f.federationID === federationId)) {
             logger.log('Federation was discovered while processing:', federationId)
             return
         }
 
-        const federation: Federation = {
+        const federation: DiscoveredFederation = {
             inviteCode,
-            federationId,
+            federationID: federationId,
             iconUrl: previewResult.iconUrl,
-            federationName: previewResult.fedName
+            fedName: previewResult.fedName,
+            welcomeMessage: previewResult.welcomeMessage,
+            onChainDeposit: previewResult.onChainDeposit,
+            totalGuardians: previewResult.totalGuardians,
+            maxBalance: previewResult.maxBalance,
+            consensousVersion: previewResult.consensousVersion,
+            modules: previewResult.modules
         }
 
         discoveredFederations.push(federation)
@@ -199,6 +205,7 @@ const processFederationEvent = async (
         processingFederationIds.delete(federationId)
     }
 }
+
 
 export const handleNostrPayment = async (wallet: Wallet, walletNostrSecretKey: string, walletNostrPubKey: string, ndk: NDK) => {
     const signer = new NDKPrivateKeySigner(walletNostrSecretKey);
@@ -241,6 +248,19 @@ export const handleNostrPayment = async (wallet: Wallet, walletNostrSecretKey: s
                 return;
             }
 
+            // ignoring the expired event
+            const expirationTag = event.tagValue('expiration');
+            if (expirationTag) {
+                const expirationSeconds = parseInt(expirationTag, 10);
+                const nowSeconds = Math.floor(Date.now() / 1000);
+
+                if (nowSeconds > expirationSeconds) {
+                    logger.log(`Found expired event, ignoring. Expired at ${expirationSeconds}, now ${nowSeconds}`);
+                    return;
+                }
+            }
+
+
             const method = content.method;
             const params = content.params || {};
             // Using event id if request id is not provided
@@ -253,9 +273,9 @@ export const handleNostrPayment = async (wallet: Wallet, walletNostrSecretKey: s
                 case 'get_info':
                     result = {
                         result: {
-                            methods: ["get_info", "pay_invoice", "make_invoice", "get_balance", "create_connection", 'list_transactions', 'lookup_invoice'],
+                            methods: ["get_info", "pay_invoice", "make_invoice", "get_balance", "create_connection", 'list_transactions', 'lookup_invoice',"notifications", "payment_sent", "payment_received"],
                             alias: "Fedimint Wallet",
-                            color: "#ff9900",
+                            color: "#1570cbff",
                             pubkey: `${walletNostrPubKey}`,
                             network: "regtest",
                             block_height: 0,
@@ -271,7 +291,7 @@ export const handleNostrPayment = async (wallet: Wallet, walletNostrSecretKey: s
                     result = await CheckBalance();
                     break;
                 case 'make_invoice':
-                    result = await CreateInvoice(params);
+                    result = await CreateInvoice(params, ndk, signer, walletNostrPubKey);
                     break;
                 case 'lookup_invoice':
                     result = await LookForInvoice(params) as { result?: any; error?: any; };
@@ -373,41 +393,74 @@ export const handleNostrPayment = async (wallet: Wallet, walletNostrSecretKey: s
         }
     };
 
-    const CreateInvoice = async (request: { amount: number, description: string, description_hash: string, expiry: number }) => {
+    const CreateInvoice = async (
+        request: { amount: number, description: string, description_hash: string, expiry: number },
+        ndk: NDK,
+        signer: NDKPrivateKeySigner,
+        walletNostrPubKey: string
+    ) => {
         try {
             const invoiceData = await wallet.lightning.createInvoice(
                 request.amount,
                 request.description || 'This is an invoice'
             );
-            logger.log(invoiceData.operation_id)
-            invoiceStore.set(invoiceData.invoice, invoiceData.operation_id)
+            logger.log('Invoice created, operation_id:', invoiceData.operation_id);
+            invoiceStore.set(invoiceData.invoice, invoiceData.operation_id);
 
             const now = Math.floor(Date.now() / 1000);
+            const invoiceResult = {
+                type: "incoming",
+                invoice: invoiceData.invoice,
+                description: request.description || 'This is an invoice',
+                description_hash: request.description_hash || null,
+                preimage: null,
+                payment_hash: invoiceData.operation_id || '',
+                amount: request.amount,
+                fees_paid: 0,
+                created_at: now,
+                expires_at: request.expiry ? now + request.expiry : now + 3600,
+                settled_at: null,
+                metadata: {}
+            };
+
+            // Publish payment_received notification event (pending)
+            const notificationEvent = new NDKEvent(ndk);
+            notificationEvent.kind = 23194;
+            notificationEvent.tags = [
+                ["p", walletNostrPubKey],
+                ["t", "payment_received"]
+            ];
+
+            const notificationContent = {
+                method: "payment_received",
+                params: {
+                    payment_hash: invoiceData.operation_id,
+                    amount: request.amount,
+                    invoice: invoiceData.invoice,
+                    status: "pending"
+                }
+            };
+
+            notificationEvent.content = JSON.stringify(notificationContent);
+            await notificationEvent.sign(signer);
+            await notificationEvent.publish();
+            logger.log('Published payment_received notification (pending) for invoice:', invoiceData.operation_id);
+
+            // Start monitoring invoice payment
+            monitorInvoicePayment(invoiceData, ndk, signer, walletNostrPubKey, request);
 
             return {
-                result: {
-                    type: "incoming",
-                    invoice: invoiceData.invoice,
-                    description: request.description || 'This is an invoice',
-                    description_hash: request.description_hash || null,
-                    preimage: null,
-                    payment_hash: invoiceData.operation_id || '',
-                    amount: request.amount,
-                    fees_paid: 0,
-                    created_at: now,
-                    expires_at: request.expiry ? now + request.expiry : now + 3600,
-                    settled_at: null,
-                    metadata: {}
-                },
+                result: invoiceResult,
                 error: null
-            };;
+            };
         } catch (error: any) {
+            logger.error('Error creating invoice:', error);
             return {
                 result: null,
                 error: { code: "INTERNAL", message: error?.toString() }
             };
         }
-    }
+    };
 
     const PayInvoiceViaNostr = async (request: { invoice: string, amount: number }) => {
         try {
@@ -419,7 +472,6 @@ export const handleNostrPayment = async (wallet: Wallet, walletNostrSecretKey: s
                     invoiceResult.id,
                     async (state) => {
                         if (typeof state === 'object' && 'success' in state) {
-                            ndk
                             resolve({
                                 result_type: 'pay_invoice',
                                 result: {
@@ -576,6 +628,61 @@ export const handleNostrPayment = async (wallet: Wallet, walletNostrSecretKey: s
                 unsubscribe?.();
             }, 300000);
         });
+    };
+
+    const monitorInvoicePayment = (
+        invoiceData: CreateBolt11Response,
+        ndk: NDK,
+        signer: NDKPrivateKeySigner,
+        walletNostrPubKey: string,
+        request: { amount: number, description: string, description_hash: string, expiry: number }
+    ) => {
+        const unsubscribe = wallet.lightning.subscribeLnReceive(invoiceData.operation_id, async (state: LnReceiveState) => {
+            if (state === 'claimed') {
+                const now = Math.floor(Date.now() / 1000);
+                const notificationData = {
+                    type: "incoming",
+                    invoice: invoiceData.invoice,
+                    description: request.description || '',
+                    preimage: '0000000000000000000000000000000000000000000000000000000000000000',
+                    payment_hash: invoiceData.operation_id,
+                    amount: request.amount || 1000,
+                    fees_paid: 0,
+                    created_at: now,
+                    expires_at: request.expiry ? now + request.expiry : now + 3600,
+                    settled_at: now,
+                    metadata: {}
+                };
+
+                // Publish payment_received notification event (settled)
+                const notificationEvent = new NDKEvent(ndk);
+                notificationEvent.kind = 23194;
+                notificationEvent.tags = [
+                    ["p", walletNostrPubKey],
+                    ["t", "payment_received"]
+                ];
+
+                const notificationContent = {
+                    method: "payment_received",
+                    params: {
+                        payment_hash: invoiceData.operation_id,
+                        amount: notificationData.amount,
+                        invoice: invoiceData.invoice,
+                        status: "settled",
+                        preimage: notificationData.preimage
+                    }
+                };
+
+                notificationEvent.content = JSON.stringify(notificationContent);
+                await notificationEvent.sign(signer);
+                await notificationEvent.publish();
+                logger.log('Published payment_received notification (settled) for invoice:', invoiceData.operation_id);
+
+            }
+        });
+        setTimeout(() => {
+            unsubscribe?.();
+        }, 30000);
     };
 
     return subscription;

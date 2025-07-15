@@ -2,7 +2,7 @@ import { FedimintWallet } from "@fedimint/core-web"
 
 export type Wallet = FedimintWallet
 
-export type BalanceResponse = number | undefined
+export type BalanceResponse = number
 
 export type MintSpendNotesResponse = {
   notes:string,

@@ -12,6 +12,8 @@ import Nostr from '../Components/Nostr';
 import Faq from '../Components/Faq';
 import Footer from '../Components/Footer';
 import BasicSettings from '../Components/BasicSettings';
+import { setError } from '../redux/slices/Alerts';
+import '../style/Settings.css'
 
 
 export default function Settings() {
@@ -20,7 +22,7 @@ export default function Settings() {
     const { currency } = useSelector((state: RootState) => state.balance)
     const { wallet } = useContext(WalletContext)
     const [balance, setBalance] = useState(0)
-    const [error, setError] = useState('')
+    const { error } = useSelector((state: RootState) => state.Alert)
 
 
     const fetchBalance = async () => {
@@ -31,9 +33,9 @@ export default function Settings() {
             const convertedAmount = await convertFromMsat(result, currency)
             setBalance(convertedAmount)
         } catch (err) {
-            setError(err instanceof Error ? err.message : String(err))
+            setError({ type: 'Balance Error: ', message: err instanceof Error ? err.message : String(err) })
             setTimeout(() => {
-                setError('')
+                setError(null)
             }, 3000);
         } finally {
             NProgress.done()
@@ -79,13 +81,13 @@ export default function Settings() {
                     </section>
                 </section>
                 <section className='modern-settings'>
-                    
+
                     <BasicSettings />
 
                     <Nostr />
 
                     <Faq />
-                    
+
                     <Footer />
                 </section>
             </main>

@@ -7,7 +7,8 @@ import type { RootState } from '../redux/store'
 // import LoadingContext from '../context/loader'
 // import { setPegin, setPeginError, setPegout, setPegoutError } from '../redux/slices/OnchainSlice';
 import Alerts from '../Components/Alerts';
-import { convertToMsats } from '../services/BalanceService';
+import { setError } from '../redux/slices/Alerts';
+// import { convertToMsats } from '../services/BalanceService';
 // import logger from '../utils/logger';
 
 export default function OnChain() {
@@ -17,9 +18,10 @@ export default function OnChain() {
     // const { wallet } = useContext(WalletContext)
     // const { setLoading } = useContext(LoadingContext)
     // const dispatch = useDispatch<AppDispatch>()
-    const { pegin, peginError, pegout, pegoutError } = useSelector((state: RootState) => state.onchain)
+    const { pegin, pegout } = useSelector((state: RootState) => state.onchain)
     const { currency } = useSelector((state: RootState) => state.balance)
-    const [convertedAmountInMSat, setConvertedAmountInMSat] = useState<number>(0)
+    const {error}=useSelector((state:RootState)=>state.Alert)
+    // const [convertedAmountInMSat, setConvertedAmountInMSat] = useState<number>(0)
 
     const handlePeginTransaction = async () => {
         // try {
@@ -75,15 +77,15 @@ export default function OnChain() {
         // }
     }
 
-    const handleConversion = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const amount = await convertToMsats(Number((e.target.value).trim()), currency)
-        setConvertedAmountInMSat(amount)
-    }
+    // const handleConversion = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    //     // const amount = await convertToMsats(Number((e.target.value).trim()), currency)
+    //     // setConvertedAmountInMSat(amount)
+    // }
 
     return (
         <section className='onchainTx'>
-            {(peginError || pegoutError) && <Alerts Error={peginError || pegoutError} Result='' />}
-            {pegout && <Alerts Error='' Result={"Withdrawal successful"} />}
+            {(error) && <Alerts Error={error} />}
+            {pegout && <Alerts Result={"Withdrawal successful"} />}
             <div className='onchainContainer'>
                 <div className='onchainType'>
                     <button
@@ -122,8 +124,8 @@ export default function OnChain() {
                         </div>
                     ) : (
                         <form className='withdrawForm' onSubmit={handlePegoutTransaction} >
-                            <input type='number' inputMode='numeric' placeholder={`Enter amount in ${currency}`} ref={amount} onChange={ handleConversion} />
-                            <span>Entered amount in msats: {convertedAmountInMSat}</span>
+                            {/* <input type='number' inputMode='numeric' placeholder={`Enter amount in ${currency}`} ref={amount} onChange={ handleConversion} /> */}
+                            <input type='number' inputMode='numeric' placeholder={`Enter amount in ${currency}`} ref={amount} />
                             <input type='text' placeholder='Enter the on-chain address' ref={address} />
                             <button type='submit' className='actionBtn'>Withdraw</button>
                         </form>

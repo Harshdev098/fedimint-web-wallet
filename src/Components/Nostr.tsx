@@ -4,7 +4,7 @@ import NostrContext from '../context/nostr';
 export default function Nostr() {
     const [autoPay, setAutoPay] = useState(localStorage.getItem('autoPayNostr') === 'true' ? true : false)
     const [relayUrl, setRelayURL] = useState('')
-    const { nwcEnabled, nwcURL, generateNWCConnection, nwcRelays, NostrAppName, NostrRelay, updateRelay, setNostrAppName, setNostrRelay } = useContext(NostrContext)
+    const { nwcEnabled, nwcURL, generateNWCConnection, connectionStatus, NostrAppName, NostrRelay, updateRelay, setNostrAppName, setNostrRelay } = useContext(NostrContext)
 
     const isValidRelayUrl = (url: string): boolean => {
         const regex = /^wss?:\/\/[^\s/$.?#].[^\s]*$/i;
@@ -13,14 +13,22 @@ export default function Nostr() {
 
     const handleConfigureRelay = (e: React.FormEvent) => {
         e.preventDefault();
+
         if (!isValidRelayUrl(relayUrl)) {
-            return alert("Invalid WebSocket relay URL format.");
+            alert("Invalid WebSocket relay URL format.");
+            return;
         }
-        if (relayUrl && !nwcRelays.includes(relayUrl)) {
-            updateRelay(relayUrl)
+
+        const alreadyExists = connectionStatus.some(cs => cs.relay === relayUrl);
+
+        if (relayUrl && !alreadyExists) {
+            updateRelay(relayUrl);
             setRelayURL('');
+        } else if (alreadyExists) {
+            alert("Relay already exists in your connection list.");
         }
-    }
+    };
+
 
     const handleAutoNostrPay = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newValue = e.target.checked;
@@ -122,19 +130,19 @@ export default function Nostr() {
             <div className="settings-section">
                 <h2 className="section-title">Nostr Relays</h2>
 
-                {nwcRelays.length > 0 && (
+                {connectionStatus.length > 0 && (
                     <div className="relay-list">
                         <h3 className="subsection-title">Configured Relays</h3>
                         <div className="relay-cards">
-                            {nwcRelays.map((relay, id) => (
+                            {connectionStatus.map((relay, id) => (
                                 <div key={id} className="relay-card">
                                     <div className="relay-url">
                                         <i className="fa-solid fa-server"></i>
-                                        <span>{relay}</span>
+                                        <span>{relay.relay}</span>
                                     </div>
                                     <div className="relay-status">
                                         <span className="status-dot active"></span>
-                                        Active
+                                        {relay.status}
                                     </div>
                                 </div>
                             ))}

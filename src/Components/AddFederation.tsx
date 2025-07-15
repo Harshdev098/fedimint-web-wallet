@@ -2,11 +2,12 @@ import { useRef, useContext } from 'react'
 import { useNavigate } from 'react-router'
 import { useDispatch, useSelector } from 'react-redux'
 import type { RootState, AppDispatch } from '../redux/store'
-import { setError, setJoinResult, setJoining, setFederationId } from '../redux/slices/ActiveFederation'
+import { setJoining, setFederationId } from '../redux/slices/ActiveFederation'
 import WalletContext from '../context/wallet'
 import LoadingContext from '../context/loader'
 import Alerts from './Alerts'
 import { JoinFederation as JoinFederationService } from '../services/FederationService'
+import { setError } from '../redux/slices/Alerts'
 import QrScanner from 'qr-scanner'
 import NProgress from 'nprogress'
 import logger from '../utils/logger'
@@ -22,7 +23,8 @@ export default function AddFederation({ setJoinForm }: { setJoinForm: React.Disp
     const {wallet} = useContext(WalletContext)
     const { setLoading } = useContext(LoadingContext)
     const dispatch = useDispatch<AppDispatch>()
-    const { joining, joinError, joinResult } = useSelector((state: RootState) => state.activeFederation)
+    const { joining } = useSelector((state: RootState) => state.activeFederation)
+    const {error}=useSelector((state:RootState)=>state.Alert)
 
     const handleJoinFederation = async (e: React.FormEvent, qrData?: string): Promise<void> => {
         e.preventDefault()
@@ -36,9 +38,9 @@ export default function AddFederation({ setJoinForm }: { setJoinForm: React.Disp
             // dispatch(setFederationId(result))
             // navigate('/wallet')
             setTimeout(() => {
-                dispatch(setError(""))
+                dispatch(setError(null))
             }, 2000);
-            dispatch(setError("Wallet is open"))
+            dispatch(setError({type:'Join Federation: ',message:'Wallet is open'}))
             return;
         }
         dispatch(setJoining(true))
@@ -47,11 +49,11 @@ export default function AddFederation({ setJoinForm }: { setJoinForm: React.Disp
             NProgress.start()
             setLoading(true)
             const result = await JoinFederationService(code, walletName.current?.value || '', wallet)
-            dispatch(setJoinResult(result.message))
+            // dispatch(setJoinResult(result.message))
             dispatch(setFederationId(result.federationID))
             navigate('/wallet')
         } catch (err) {
-            dispatch(setError(`${err}`))
+            dispatch(setError({type:'Join Federation: ',message:err instanceof Error ? err.message : String(err)}))
         } finally {
             dispatch(setJoining(false))
             NProgress.done()
@@ -80,16 +82,16 @@ export default function AddFederation({ setJoinForm }: { setJoinForm: React.Disp
                     logger.log("Camera started successfully");
                 }).catch((err) => {
                     logger.log("Camera access denied:", err);
-                    dispatch(setError('Camera access denied!'))
+                    dispatch(setError({type:'QR Error: ',message:'Camera access denied!'}))
                     setTimeout(() => {
-                        dispatch(setError(''))
+                        dispatch(setError(null))
                     }, 2000);
                 });
             } catch (err) {
                 logger.log("an error occured while scanning")
-                dispatch(setError("Error occured while scanning"))
+                dispatch(setError({type:'QR Error: ',message:"Error occured while scanning"}))
                 setTimeout(() => {
-                    dispatch(setError(''))
+                    dispatch(setError(null))
                 }, 2000);
             }
         }
@@ -98,7 +100,7 @@ export default function AddFederation({ setJoinForm }: { setJoinForm: React.Disp
     return (
         <>
             {
-                (joinError || joinResult) && <Alerts Error={joinError} Result={joinResult} />
+                (error) && <Alerts Error={error} />
             }
             <div className="addFederation">
                 <div className="addFedBox">

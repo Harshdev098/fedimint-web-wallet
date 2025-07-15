@@ -1,5 +1,5 @@
 import { useDispatch, useSelector } from 'react-redux'
-import type { RootState } from '../redux/store'
+import type { AppDispatch, RootState } from '../redux/store'
 import { Link } from 'react-router'
 import { setFederationId } from '../redux/slices/ActiveFederation'
 import { useState, useContext, useEffect } from 'react'
@@ -7,13 +7,14 @@ import WalletContext from '../context/wallet'
 import { fetchBalance } from '../services/BalanceService'
 import NProgress from 'nprogress'
 import LoadingContext from '../context/loader'
-import { setBalance, setError } from '../redux/slices/Balance'
+import { setError } from '../redux/slices/Alerts'
 import HamburgerContext from "../context/hamburger"
 import AddFederation from './AddFederation'
 import logger from '../utils/logger'
+import { updateBalanceFromMsat } from '../redux/slices/Balance'
 
 export default function Header() {
-    const dispatch = useDispatch()
+    const dispatch = useDispatch<AppDispatch>()
     const [joinForm, setJoinForm] = useState(false)
     const { wallet } = useContext(WalletContext)
     const { setLoading } = useContext(LoadingContext)
@@ -21,7 +22,7 @@ export default function Header() {
     const { hamburger, setHamburger } = useContext(HamburgerContext)
     const { federationId } = useSelector((state: RootState) => state.activeFederation)
     const { metaData } = useSelector((state: RootState) => state.federationdetails)
-    const {mode}=useSelector((state:RootState)=>state.Mode)
+    // const {error}=useSelector((state:RootState)=>state.Alert)
     const notifications=useSelector((state:RootState)=>state.notifications)
 
 
@@ -43,12 +44,15 @@ export default function Header() {
             federationID && dispatch(setFederationId(federationID))
             const value = await fetchBalance(wallet)
             if (value === undefined) {
-                dispatch(setError('Failed to fetch balance'))
+                dispatch(setError({type:'Balance Error: ',message:'Failed to fetch balance'}))
             } else {
-                dispatch(setBalance(value))
+                dispatch(updateBalanceFromMsat(value))
             }
         } catch (err) {
-            dispatch(setError("An error occured while fetching balance"))
+            dispatch(setError({type:'Error: ',message:"An error occured"}))
+            setTimeout(() => {
+                dispatch(setError(null))
+            }, 3000);
         } finally {
             NProgress.done()
             setLoading(false)

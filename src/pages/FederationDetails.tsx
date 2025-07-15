@@ -21,7 +21,6 @@ export default function FederationDetails() {
                 </div>
 
                 <div className="federation-grid">
-                    {/* existing fields */}
                     <div className="federation-field">
                         <span>🧩 Consensus Version</span>
                         <strong>Major: {Details?.consensus_version.major} Minor: {Details?.consensus_version.minor}</strong>
@@ -33,9 +32,9 @@ export default function FederationDetails() {
                     <div className="federation-field">
                         <span>💰 On-chain Deposit</span>
                         <strong>
-                            {metaData?.onchain_deposits_disabled === "false"
+                            {metaData?.onchain_deposits_disabled === 'false'
                                 ? "Enabled"
-                                : metaData?.onchain_deposits_disabled === "true"
+                                : metaData?.onchain_deposits_disabled === 'true'
                                     ? "Disabled"
                                     : "N/A"}
                         </strong>
@@ -60,7 +59,7 @@ export default function FederationDetails() {
                     </div>
                 </div>
                 <div className="modules-section">
-                    <h2 className="modules-title"><i className="fa-solid fa-file-invoice-dollar"></i> Federation Modules</h2>
+                    <h2 className="modules-title"><i className="fa-solid fa-file-invoice-dollar"></i> Federation Services</h2>
                     <div className="modules-grid">
                         {
                             Object.entries(Details?.modules ?? {}).map(([id, mod]: any) => (
@@ -68,12 +67,6 @@ export default function FederationDetails() {
                                     <h4>{mod.kind.toUpperCase()}</h4>
                                     <p><strong>Module ID: </strong> {id}</p>
                                     <p><strong>Version:</strong> {mod.version.major}.{mod.version.minor}</p>
-                                    <p>
-                                        <strong>Config:</strong>{' '}
-                                        <code title={mod.config}>
-                                            {mod.config.slice(0, 40)}...
-                                        </code>
-                                    </p>
                                 </div>
                             ))}
                     </div>

@@ -1,12 +1,7 @@
 export interface InviteCode {
     code: string
 }
-export type Federation = {
-    inviteCode: string
-    federationId: string
-    federationName?:string
-    iconUrl?:string
-}
+export type DiscoveredFederation = PreviewFederationResponse & {inviteCode: string}
 
 export type FederationMeta = {
     federation_name: string;
@@ -20,7 +15,7 @@ export type FederationMetaData = {
     pinned_message?:string;
     onchain_deposits_disabled?:string;
     federation_icon_url?:string;
-    max_stable_balance_msats?:string;
+    max_stable_balance_msats?:number;
     federation_expiry_timestamp?:number | null;
 }
 
@@ -47,9 +42,14 @@ export type JoinFedResponse = {
 
 export type PreviewFederationResponse={
     fedName:string,
-    iconUrl?:string,
     consensousVersion:{ major: number; minor: number }
     federationID:string,
+    iconUrl?:string,
+    totalGuardians?:number,
+    maxBalance?:number,
+    onChainDeposit?:string,
+    welcomeMessage?:string,
+    modules?:Record<number, any>
 }
 
 export type EpochTime = {

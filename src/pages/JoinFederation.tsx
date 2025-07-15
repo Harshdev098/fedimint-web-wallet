@@ -5,7 +5,8 @@ import { useSelector, useDispatch } from 'react-redux'
 import type { RootState, AppDispatch } from '../redux/store'
 import Alerts from '../Components/Alerts'
 import Navbar from '../Components/Navbar'
-import { setError, setJoinResult, setJoining, setFederationId, setNewJoin } from '../redux/slices/ActiveFederation'
+import { setJoining, setFederationId, setNewJoin } from '../redux/slices/ActiveFederation'
+import { setError } from '../redux/slices/Alerts'
 import WalletContext from '../context/wallet'
 import LoadingContext from '../context/loader'
 import { JoinFederation as JoinFederationService, previewFederation } from '../services/FederationService'
@@ -14,6 +15,7 @@ import NProgress from 'nprogress'
 import type { PreviewFederationResponse } from '../hooks/Federation.type'
 import logger from '../utils/logger'
 import DiscoverFederation from '../Components/DiscoverFederation'
+import '../style/JoinFederation.css'
 
 
 export default function JoinFederation() {
@@ -29,7 +31,8 @@ export default function JoinFederation() {
     const { wallet, setWalletStatus } = useContext(WalletContext)
     const { setLoading } = useContext(LoadingContext)
     const dispatch = useDispatch<AppDispatch>()
-    const { joining, joinError, joinResult } = useSelector((state: RootState) => state.activeFederation)
+    const { joining } = useSelector((state: RootState) => state.activeFederation)
+    const {error}=useSelector((state:RootState)=>state.Alert)
 
     const handleJoinFederation = async (code?: string): Promise<void> => {
         dispatch(setJoining(true))
@@ -37,17 +40,15 @@ export default function JoinFederation() {
             NProgress.start()
             setLoading(true)
             const result = await JoinFederationService(code || inviteCode, walletName.current?.value || 'fm-default', wallet)
-            dispatch(setJoinResult(result.message))
             dispatch(setFederationId(result.federationID))
             setWalletStatus('open')
-            dispatch(setJoinResult(''))
             dispatch(setNewJoin(true))
             navigate('/wallet')
         } catch (err) {
-            dispatch(setError(`${err}`))
+            dispatch(setError({type:'Join Error:',message:`${err}`}))
             setTimeout(() => {
-                dispatch(setError(''))
-            }, 3000);
+                dispatch(setError(null))
+            }, 4000);
         } finally {
             dispatch(setJoining(false))
             NProgress.done()
@@ -68,9 +69,9 @@ export default function JoinFederation() {
             setPreviewFederationData(result)
             setOpenPreviewFederation(true)
         } catch (err) {
-            dispatch(setError(`${err}`))
+            dispatch(setError({type:'Preview Error:', message:`${err}`}))
             setTimeout(() => {
-                dispatch(setError(''))
+                dispatch(setError(null))
             }, 3000);
         } finally {
             NProgress.done()
@@ -99,14 +100,14 @@ export default function JoinFederation() {
                     logger.log("Camera started successfully");
                 }).catch((err) => {
                     logger.error("Camera access denied:", err);
-                    dispatch(setError('Camera access denied!'))
+                    dispatch(setError({type:'QR Error: ',message:`${err}`}))
                     setTimeout(() => {
-                        dispatch(setError(''))
+                        dispatch(setError(null))
                     }, 3000);
                 });
             } catch (err) {
                 logger.log("an error occured while scanning")
-                dispatch(setError("Error occured while scanning"))
+                dispatch(setError({type:'QR Error: ',message:`Error occured while scanning`}))
             }
         }
     }
@@ -116,27 +117,47 @@ export default function JoinFederation() {
             <main className='JoinFedContainer'>
                 <Navbar />
                 {
-                    (joinError || joinResult) && <Alerts Error={joinError} Result={joinResult} />
+                    (error) && <Alerts Error={error} />
                 }
                 {showFederations && <DiscoverFederation setShowFederation={setShowFederation} setInviteCode={setInviteCode} joinFederation={handleJoinFederation} showFederations={showFederations} />}
                 {openPreviewFederation && previewFederationData && (
-                    <div className="previewData">
-                        <div className="previewCard">
-                            <button className="closeButton" onClick={() => { setOpenPreviewFederation(false); setPreviewFederationData(null) }}><i className="fa-solid fa-xmark"></i></button>
-                            <h3>Federation Preview</h3>
-                            <div className="previewRow"><strong>Federation ID:</strong> {previewFederationData.federationID}</div>
-                            <div className="previewRow"><strong>Name:</strong> {previewFederationData.fedName}</div>
-                            <div className="previewRow"><strong>Consensus Version:</strong> Major: {previewFederationData.consensousVersion.major} Minor: {previewFederationData.consensousVersion.minor}</div>
-                            <button style={{ width: '100%', padding: '8px', backgroundColor: 'black', color: 'white', borderRadius: '10px', cursor: 'pointer', fontSize: '16px' }} onClick={() => { handleJoinFederation() }} disabled={joining}>{joining ? 'Joining...' : 'Join'}</button>
+                    <section className='federation-discovery'>
+                        <div className="previewData">
+                            <div className="previewCard">
+                                <button className="closeButton" onClick={() => { setOpenPreviewFederation(false); setPreviewFederationData(null) }}><i className="fa-solid fa-xmark"></i></button>
+                                <h3>Federation Preview</h3>
+                                <ul>
+                                    <li>
+                                        <img src={previewFederationData.iconUrl} alt="icon" />
+                                        <div className='fed-info'>
+                                            <h4>{previewFederationData.fedName}</h4>
+                                            <p>{previewFederationData.federationID}</p>
+                                            <div className="federation-details">
+                                                <div>
+                                                    <span><b>Guardians:</b> {previewFederationData.totalGuardians}</span>
+                                                    <span><b>Max stable Balance:</b> {previewFederationData.maxBalance}</span>
+                                                    <span><b>Message:</b> {previewFederationData.welcomeMessage}</span>
+                                                    <span><b>Onchain deposit:</b> {previewFederationData.onChainDeposit==='true' ? 'Disabled' : 'Enabled'}</span>
+                                                    <span><b>Services(modules):</b> {previewFederationData.modules && Object.values(previewFederationData.modules).length > 0
+                                                        ? Object.values(previewFederationData.modules).map((m) => m.kind).join(', ')
+                                                        : 'N/A'}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </li>
+                                </ul>
+                                <button style={{ width: '100%', padding: '8px', backgroundColor: 'black', color: 'white', borderRadius: '10px', cursor: 'pointer', fontSize: '16px' }} onClick={() => { handleJoinFederation() }} disabled={joining}>{joining ? 'Joining...' : 'Join'}</button>
+                            </div>
                         </div>
-                    </div>
+                    </section>
                 )}
 
                 <section className='JoinFedSection'>
                     <div className='JoinFedDiv'>
                         <div>
                             <h2>Join Federation</h2>
-                            <p style={{fontSize:'1.2rem'}}>Create your first Fedimint Wallet by joining a federation today!</p>
+                            <p style={{ fontSize: '1.2rem' }}>Create your first Fedimint Wallet by joining a federation today!</p>
                         </div>
                         <div className='JoinFedBox'>
                             <div className='JoinMethod'>
@@ -162,7 +183,7 @@ export default function JoinFederation() {
                             )}
                         </div>
                         <div>
-                            <p style={{padding:'30px 10px'}}>Custody Bitcoin with ease and privacy — you control your funds, your community, your future.</p>
+                            <p style={{ padding: '30px 10px' }}>Custody Bitcoin with ease and privacy — you control your funds, your community, your future.</p>
                         </div>
                     </div>
                 </section>
