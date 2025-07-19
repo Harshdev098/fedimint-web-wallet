@@ -1,10 +1,12 @@
-import { createContext, useContext, useState, useEffect, useRef, useMemo,useCallback } from "react";
+import { createContext, useState, useEffect, useRef, useMemo, useCallback, useContext } from "react";
 import WalletContext from "./wallet";
 import { handleDiscoverFederation, handleNWCConnection, handleNostrPayment } from "../services/nostrPayment";
 import NDK, { NDKEvent, NDKPrivateKeySigner } from '@nostr-dev-kit/ndk';
 import NDKCacheAdapterDexie from "@nostr-dev-kit/ndk-cache-dexie";
 import logger from "../utils/logger";
 import type { DiscoveredFederation } from "../hooks/Federation.type";
+import { useSelector } from "react-redux";
+import type { RootState } from "../redux/store";
 
 interface NostrContextType {
     nwcEnabled: boolean;
@@ -37,7 +39,9 @@ const NostrContext = createContext<NostrContextType>({
 });
 
 export const NostrProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const { wallet, walletStatus } = useContext(WalletContext);
+    const walletContext = useContext(WalletContext)
+    const wallet = walletContext?.wallet
+    const {walletStatus}=useSelector((state:RootState)=>state.wallet)
 
     const [nwcEnabled, setNWCEnabled] = useState(false);
     const [nwcURL, setNWCURL] = useState<NostrContextType['nwcURL']>([]);
@@ -120,7 +124,7 @@ export const NostrProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             const ndk = ndkRef.current;
             if (!ndk) throw new Error('NDK not initialized');
             await waitForConnection();
-            await handleDiscoverFederation(wallet, ndk, setDiscoveredFederations, discoveredFederations);
+            await handleDiscoverFederation(ndk, setDiscoveredFederations, discoveredFederations);
         } catch (err) {
             logger.error("Federation discovery failed:", err);
         }
@@ -206,8 +210,10 @@ export const NostrProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         });
 
         ndk.connect().then(() => {
-            if (localStorage.getItem('nwcEnabled')) setNWCEnabled(true);
-            retryFailedEvents();
+            if (localStorage.getItem('nwcEnabled')) {
+                setNWCEnabled(true);
+                retryFailedEvents();
+            }
         }).catch(err => {
             logger.error("NDK connection failed", err);
         });
@@ -237,12 +243,16 @@ export const NostrProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 logger.error("Info event publish failed", err);
             }
 
-            if (localStorage.getItem('nwcEnabled') === "true") {
+            if(localStorage.getItem('autoPayNostr')==='true' && wallet){
+                if(confirm('Nostr Confirmation')){
+                    await handleNostrPayment(wallet, walletKeys.walletNostrSecretKey, walletKeys.walletNostrPubKey, ndk);
+                }
+            } else if (localStorage.getItem('autoPayNostr') === "false" && wallet) {
                 await handleNostrPayment(wallet, walletKeys.walletNostrSecretKey, walletKeys.walletNostrPubKey, ndk);
             }
         };
 
-        if (nwcEnabled && walletStatus === 'open') {
+        if (nwcEnabled && wallet && walletStatus === 'open') {
             runNostrNWC()
             setNwcURI()
         }

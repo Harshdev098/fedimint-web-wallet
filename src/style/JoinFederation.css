@@ -946,14 +946,14 @@ footer div i:hover {
     background-color: #1a1a40;
 }
 
-.divider {
+.option-divider {
     text-align: center;
     font-size: 17px;
     position: relative;
     margin: 10px 0;
 }
 
-.divider p {
+.option-divider p {
     display: inline-block;
     padding: 0 10px;
     background: white;
@@ -961,7 +961,7 @@ footer div i:hover {
     z-index: 2;
 }
 
-.divider::before {
+.option-divider::before {
     content: '';
     height: 1px;
     width: 100%;

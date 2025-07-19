@@ -9,7 +9,7 @@ import type { RootState, AppDispatch } from '../redux/store'
 import { CreateInvoice, PayInvoice, subscribeLnPay, subscribeLnReceive } from '../services/LightningPaymentService'
 import LoadingContext from '../context/loader'
 import NProgress from 'nprogress'
-import WalletContext from '../context/wallet'
+import { useWallet } from '../context/wallet'
 import Alerts from './Alerts'
 import { downloadQRCode } from '../services/DownloadQR';
 import { convertToMsats } from '../services/BalanceService';
@@ -29,7 +29,7 @@ export default function LighningPayment() {
     const [openRecieveBox, setOpenRecieveBox] = useState(false)
     const [openSendBox, setOpenSendBox] = useState<boolean>(false)
     const [openVideo, setOpenVideo] = useState<boolean>(false)
-    const { wallet } = useContext(WalletContext)
+    const { wallet } = useWallet()
     const { setLoading } = useContext(LoadingContext)
     const dispatch = useDispatch<AppDispatch>()
     const { Invoice, InvoiceOperationId, payInvoiceResult, payStatus } = useSelector((state: RootState) => state.Lightning)

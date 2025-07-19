@@ -1,5 +1,5 @@
 import Balance from './Balance'
-import Ecash from './Ecash'
+import TabSwitch from './TabSwitch'
 
 export default function WalletContent() {
 
@@ -7,7 +7,7 @@ export default function WalletContent() {
         <>
             <main className='WalletContent'>
                 <Balance />
-                <Ecash />
+                <TabSwitch />
             </main>
         </>
     )

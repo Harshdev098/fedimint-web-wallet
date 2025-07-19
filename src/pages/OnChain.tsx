@@ -7,7 +7,7 @@ import type { RootState } from '../redux/store'
 // import LoadingContext from '../context/loader'
 // import { setPegin, setPeginError, setPegout, setPegoutError } from '../redux/slices/OnchainSlice';
 import Alerts from '../Components/Alerts';
-import { setError } from '../redux/slices/Alerts';
+// import { setError } from '../redux/slices/Alerts';
 // import { convertToMsats } from '../services/BalanceService';
 // import logger from '../utils/logger';
 

@@ -1,13 +1,14 @@
 import NDK, { NDKEvent, NDKPrivateKeySigner, NDKUser, type NDKFilter } from "@nostr-dev-kit/ndk";
 import { PayInvoice } from "../services/LightningPaymentService";
-import type { Wallet } from "../hooks/wallet.type";
+import { Wallet } from "@fedimint/core-web";
 import { hexToBytes, bytesToHex } from "@noble/hashes/utils";
 import { generateSecretKey, getPublicKey } from "nostr-tools";
-import type { CreateBolt11Response, LightningTransaction, LnReceiveState, Transactions } from "@fedimint/core-web";
+// import type { CreateBolt11Response, LightningTransaction, LnReceiveState, Transactions } from "@fedimint/core-web";
+import type { CreateBolt11Response, LnPayState, LnReceiveState } from "@fedimint/core-web";
 import { handleZapRequest } from "./ZapService";
 import logger from "../utils/logger";
 import type { DiscoveredFederation } from "../hooks/Federation.type";
-import { previewFederation } from "./FederationService";
+import { previewFedWithInviteCode } from "./FederationService";
 
 const invoiceStore = new Map<string, string>();
 
@@ -78,7 +79,6 @@ export const handleNWCConnection = (ndk: NDK, relay: string | null, appName: str
 };
 
 export const handleDiscoverFederation = async (
-    wallet: Wallet,
     ndk: NDK,
     setState: (feds: DiscoveredFederation[]) => void,
     discoveredFederations: DiscoveredFederation[]
@@ -102,7 +102,6 @@ export const handleDiscoverFederation = async (
 
         try {
             await processFederationEvent(
-                wallet,
                 event,
                 discoveredFederations,
                 setState,
@@ -130,7 +129,6 @@ export const handleDiscoverFederation = async (
 }
 
 const processFederationEvent = async (
-    wallet: Wallet,
     event: NDKEvent,
     discoveredFederations: DiscoveredFederation[],
     setState: (feds: DiscoveredFederation[]) => void,
@@ -180,7 +178,7 @@ const processFederationEvent = async (
     processingFederationIds.add(federationId)
 
     try {
-        const previewResult = await previewFederation(wallet, inviteCode)
+        const previewResult = await previewFedWithInviteCode(inviteCode)
         if (discoveredFederations.some((f) => f.federationID === federationId)) {
             logger.log('Federation was discovered while processing:', federationId)
             return
@@ -368,7 +366,7 @@ export const handleNostrPayment = async (wallet: Wallet, walletNostrSecretKey: s
     const CheckBalance = async () => {
         try {
             const msats = await new Promise<number>((resolve, reject) => {
-                const unsubscribe = wallet.balance.subscribeBalance((msats) => {
+                const unsubscribe = wallet.balance.subscribeBalance((msats:number) => {
                     resolve(msats);
                     unsubscribe?.();
                 });
@@ -470,7 +468,7 @@ export const handleNostrPayment = async (wallet: Wallet, walletNostrSecretKey: s
             return new Promise((resolve, reject) => {
                 const unsubscribe = wallet?.lightning.subscribeLnPay(
                     invoiceResult.id,
-                    async (state) => {
+                    async (state:LnPayState) => {
                         if (typeof state === 'object' && 'success' in state) {
                             resolve({
                                 result_type: 'pay_invoice',
@@ -487,7 +485,7 @@ export const handleNostrPayment = async (wallet: Wallet, walletNostrSecretKey: s
                             });
                         }
                     },
-                    (error) => {
+                    (error:any) => {
                         logger.error("Error in subscription:", error);
                         resolve({
                             result: undefined,
@@ -509,62 +507,66 @@ export const handleNostrPayment = async (wallet: Wallet, walletNostrSecretKey: s
     }
 
     const ListTransactions = async () => {
-        try {
-            const rawTransactions: Transactions[] = await wallet.federation.listTransactions();
+        // try {
+        //     const rawTransactions: Transactions[] = await wallet.federation.listTransactions();
 
-            const transactions = rawTransactions.map(tx => {
-                let state: "settled" | "pending" | "failed" = "pending";
+        //     const transactions = rawTransactions.map(tx => {
+        //         let state: "settled" | "pending" | "failed" = "pending";
 
-                if (tx.kind === 'ln') {
-                    if (tx.outcome === "claimed" || tx.outcome === "success") {
-                        state = "settled";
-                    } else if (tx.outcome === 'cancelled' || tx.outcome === 'failed') {
-                        state = "failed";
-                    }
-                } else if (tx.kind === 'mint') {
-                    if (tx.outcome === 'Success') {
-                        state = 'settled';
-                    } else if (
-                        tx.outcome === 'UserCanceledProcessing' ||
-                        tx.outcome === 'UserCanceledFailure'
-                    ) {
-                        state = 'failed';
-                    }
-                }
+        //         if (tx.kind === 'ln') {
+        //             if (tx.outcome === "claimed" || tx.outcome === "success") {
+        //                 state = "settled";
+        //             } else if (tx.outcome === 'cancelled' || tx.outcome === 'failed') {
+        //                 state = "failed";
+        //             }
+        //         } else if (tx.kind === 'mint') {
+        //             if (tx.outcome === 'Success') {
+        //                 state = 'settled';
+        //             } else if (
+        //                 tx.outcome === 'UserCanceledProcessing' ||
+        //                 tx.outcome === 'UserCanceledFailure'
+        //             ) {
+        //                 state = 'failed';
+        //             }
+        //         }
 
-                const created_at = Math.floor(tx.timestamp / 1000);
+        //         const created_at = Math.floor(tx.timestamp / 1000);
 
-                return {
-                    type: tx.type === 'receive' ? 'incoming' : 'outgoing',
-                    invoice: tx.kind === 'ln' ? (tx as LightningTransaction).invoice : undefined,
-                    description: "",
-                    description_hash: "",
-                    preimage: "",
-                    payment_hash: "",
-                    amount: 0,
-                    fees_paid: 0,
-                    created_at,
-                    expires_at: null,
-                    settled_at: created_at,
-                    metadata: {},
-                };
-            });
+        //         return {
+        //             type: tx.type === 'receive' ? 'incoming' : 'outgoing',
+        //             invoice: tx.kind === 'ln' ? (tx as LightningTransaction).invoice : undefined,
+        //             description: "",
+        //             description_hash: "",
+        //             preimage: "",
+        //             payment_hash: "",
+        //             amount: 0,
+        //             fees_paid: 0,
+        //             created_at,
+        //             expires_at: null,
+        //             settled_at: created_at,
+        //             metadata: {},
+        //         };
+        //     });
 
-            return {
-                result_type: "list_transactions",
-                result: {
-                    transactions
-                }
-            };
-        } catch (error: any) {
-            return {
-                result_type: "list_transactions",
-                error: {
-                    code: "list_transactions_error",
-                    message: error?.toString() || "Unknown error"
-                }
-            };
+        //     return {
+        //         result_type: "list_transactions",
+        //         result: {
+        //             transactions
+        //         }
+        //     };
+        return {
+            result_type:"list_transactions",
+            result:{}
         }
+        // } catch (error: any) {
+        //     return {
+        //         result_type: "list_transactions",
+        //         error: {
+        //             code: "list_transactions_error",
+        //             message: error?.toString() || "Unknown error"
+        //         }
+        //     };
+        // }
     };
 
 
@@ -589,7 +591,7 @@ export const handleNostrPayment = async (wallet: Wallet, walletNostrSecretKey: s
         return new Promise((resolve, reject) => {
             const unsubscribe = wallet?.lightning.subscribeLnReceive(
                 operationId,
-                async (state) => {
+                async (state:LnReceiveState) => {
                     if (state === 'claimed') {
                         resolve({
                             result: {
@@ -615,7 +617,7 @@ export const handleNostrPayment = async (wallet: Wallet, walletNostrSecretKey: s
                         });
                     }
                 },
-                (error) => {
+                (error:any) => {
                     logger.error("Error in subscription:", error);
                     resolve({
                         result: null,

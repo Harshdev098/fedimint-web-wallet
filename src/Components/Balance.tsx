@@ -1,7 +1,6 @@
 // import QrScanner from "qr-scanner"
-import { useContext, useEffect } from "react"
-import { Link } from "react-router"
-import WalletContext from "../context/wallet"
+import { useContext, useEffect, useState } from "react"
+import { useWallet } from "../context/wallet"
 import { useDispatch, useSelector } from 'react-redux'
 import type { RootState, AppDispatch } from '../redux/store'
 import { setError } from "../redux/slices/Alerts"
@@ -10,17 +9,18 @@ import Alerts from "./Alerts"
 import NProgress from 'nprogress'
 import LoadingContext from '../context/loader'
 import LighningPayment from "./LighningPayment"
+import EcashSetting from "../pages/EcashSetting"
 
 
 export default function Balance() {
-    const { wallet } = useContext(WalletContext)
+    const { wallet } = useWallet()
     const dispatch = useDispatch<AppDispatch>()
     const { balance } = useSelector((state: RootState) => state.balance)
     const { setLoading } = useContext(LoadingContext)
     const { federationId } = useSelector((state: RootState) => state.activeFederation)
     const { currency } = useSelector((state: RootState) => state.balance)
-    const { mode } = useSelector((state: RootState) => state.Mode)
     const { error } = useSelector((state: RootState) => state.Alert)
+    const [OpenEcashNotes,setOpenEcashNotes]=useState<boolean>(false)
 
 
     useEffect(() => {
@@ -45,17 +45,17 @@ export default function Balance() {
     return (
         <>
             {error && <Alerts Error={error} />}
+            {OpenEcashNotes && <EcashSetting isOpen={OpenEcashNotes} onClose={() => setOpenEcashNotes(false)} />}
             <section className='BalanceSection'>
-                <div className='BalanceSectionTag'>
-                    <button>Balance</button>
-                </div>
                 <div className='BalanceSectionValue'>
                     <span>{balance} {currency.toUpperCase()}</span>
                 </div>
-                <div style={{ marginBottom: '20px' }}>
-                    <span><Link to={'/wallet/federation'} style={mode === true ? { color: '#6f6f6f' } : undefined}>Federation Details</Link> | <Link to={'/wallet/ecash'} style={mode === true ? { color: '#6f6f6f' } : undefined}>Ecashes</Link></span>
+                <div className="wallet-notes">
+                    <span onClick={()=>setOpenEcashNotes(!OpenEcashNotes)}><i className="fa-solid fa-note-sticky"></i> Wallet Ecash Notes</span>
                 </div>
+
                 <LighningPayment />
+
             </section>
         </>
     )

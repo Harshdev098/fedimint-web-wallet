@@ -1,5 +1,6 @@
-import type { Wallet, BalanceResponse } from "../hooks/wallet.type";
+import type { BalanceResponse } from "../hooks/wallet.type";
 import type { AppDispatch } from "../redux/store";
+import { Wallet } from "@fedimint/core-web";
 import { updateBalanceFromMsat } from "../redux/slices/Balance";
 import logger from "../utils/logger";
 const SATS_PER_BTC = 100_000_000;
@@ -8,10 +9,7 @@ const MSATS_PER_BTC = 100_000_000_000;
 
 export const fetchBalance = async (wallet: Wallet): Promise<BalanceResponse> => {
     try {
-        if (!(wallet?.isOpen())) {
-            await wallet?.open()
-        }
-        const value = await wallet?.balance.getBalance();
+        const value = await wallet.balance.getBalance();
         logger.log("balance", value)
         return value;
     } catch (err) {

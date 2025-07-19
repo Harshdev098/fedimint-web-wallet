@@ -4,20 +4,39 @@ import JoinFederation from './pages/JoinFederation'
 import Wallet from './Wallet'
 import { LoadingProvider } from './context/loader'
 import 'nprogress/nprogress.css'
-import { HamburgerProvider } from './context/hamburger'
 import Federations from './pages/Federations'
+import { WalletProvider } from './context/wallet.tsx'
 
 function App() {
-    return (
-        <HamburgerProvider>
-            <LoadingProvider>
+
+    const WalletRoutes = () => {
+        return (
+            <WalletProvider>
                 <Routes>
-                    <Route path='/' element={<JoinFederation />} />
-                    <Route path='/wallet/*' element={<Wallet />} />
-                    <Route path='/federation/:fedId' element={<Federations />} />
+                    <Route path="/*" element={<Wallet />} />
                 </Routes>
-            </LoadingProvider>
-        </HamburgerProvider>
+            </WalletProvider>
+        )
+    }
+
+    const FederationRoutes=()=>{
+        return (
+            <WalletProvider>
+                <Routes>
+                    <Route path='/*' element={<Federations />} />
+                </Routes>
+            </WalletProvider>
+        )
+    }
+
+    return (
+        <LoadingProvider>
+            <Routes>
+                <Route path='/' element={<JoinFederation />} />
+                <Route path='/wallet/*' element={<WalletRoutes />} />
+                <Route path='/federation/:fedId' element={<FederationRoutes />} />
+            </Routes>
+        </LoadingProvider>
     )
 }
 

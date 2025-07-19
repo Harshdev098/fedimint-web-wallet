@@ -10,13 +10,14 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@fedimint/core-web": "canary",
+    "@fedimint/core-web": "^0.0.0-rpc-v1-2495b9818ee0aa99d0d7351f672957467dc3b711",
     "@noble/hashes": "^1.8.0",
     "@nostr-dev-kit/ndk": "^2.14.32",
     "@nostr-dev-kit/ndk-cache-dexie": "^2.6.33",
     "@nostr-dev-kit/ndk-hooks": "^1.2.3",
     "@nostr-dev-kit/ndk-wallet": "^0.6.2",
     "@reduxjs/toolkit": "^2.8.0",
+    "bitcoin-address-validation": "^3.0.0",
     "dexie": "^4.0.11",
     "nostr-tools": "^2.15.0",
     "nprogress": "^0.2.0",
@@ -25,7 +26,8 @@
     "react-dom": "^19.1.0",
     "react-qr-code": "^2.0.15",
     "react-redux": "^9.2.0",
-    "react-router": "^7.5.3"
+    "react-router": "^7.5.3",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.25.0",

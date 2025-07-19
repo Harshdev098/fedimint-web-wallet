@@ -1,84 +1,95 @@
-import { createContext, useCallback, useEffect, useState } from "react";
-import { FedimintWallet } from "@fedimint/core-web";
+import { createContext, useCallback, useEffect, useState, useContext } from "react";
+import { Wallet, setLogLevel, openWallet, isInitialized, initialize, hasWallet } from "@fedimint/core-web";
 import { useNavigate } from "react-router";
-import type { Wallet } from "../hooks/wallet.type";
-import webloader from '../assets/loader.webp'
+import webloader from '../assets/loader.webp';
 import logger from "../utils/logger";
-
-const wallet = new FedimintWallet();
+import { setError } from "../redux/slices/Alerts";
+import { setWalletStatus } from "../redux/slices/WalletSlice";
+import type { AppDispatch, RootState } from "../redux/store";
+import { useDispatch, useSelector } from "react-redux";
 
 interface WalletContextType {
     wallet: Wallet;
-    walletStatus: 'open' | 'closed' | 'opening';
-    setWalletStatus: React.Dispatch<React.SetStateAction<'open' | 'closed' | 'opening'>>;
-    isDebug: boolean,
-    toggleDebug: () => void
+    isDebug: boolean;
+    toggleDebug: () => void;
 }
 
-const WalletContext = createContext<WalletContextType>({
-    wallet,
-    walletStatus: "closed",
-    setWalletStatus: () => { },
-    isDebug: false,
-    toggleDebug: () => {}
-});
+// Use undefined as the default to enforce usage within provider
+const WalletContext = createContext<WalletContextType | undefined>(undefined);
 
 export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    const dispatch = useDispatch<AppDispatch>();
     const [loader, setLoader] = useState(true);
-    const [walletStatus, setWalletStatus] = useState<'open' | 'closed' | 'opening'>("closed");
-    const [isDebug, setIsDebug] = useState(localStorage.getItem("appDebug") === "true" ? true : false);
+    const [wallet, setWallet] = useState<Wallet | null>(null);
+    const {walletStatus}=useSelector((state:RootState)=>state.wallet)
+    const [isDebug, setIsDebug] = useState(localStorage.getItem("appDebug") === "true");
     const navigate = useNavigate();
-    (window as any).wallet = wallet;
-    if(localStorage.getItem('appDebug')==='true'){
-        wallet.setLogLevel('debug')
-    }
 
     const toggleDebug = useCallback(() => {
         setIsDebug((prev) => {
             const newDebugState = !prev;
             localStorage.setItem("appDebug", newDebugState.toString());
-            wallet.setLogLevel(newDebugState ? "debug" : 'none');
+            setLogLevel(newDebugState ? "debug" : 'none');
             return newDebugState;
         });
-        window.location.reload()
+        window.location.reload();
     }, []);
 
-    const checkFedStatus = useCallback(async () => {
-        const walletName = localStorage.getItem('walletName')
-        console.log("is debug ",isDebug)
-        if (wallet.isOpen()) {
-            logger.log("Wallet is already open");
-            setWalletStatus('open');
-            setLoader(false);
-            navigate('/wallet');
-            return;
-        }
-        logger.log("opening the wallet")
-        setWalletStatus('opening');
+    const InitializeAndOpenWallet = useCallback(async () => {
         try {
-            await wallet.open(walletName || 'fm-default');
-            if (wallet.isOpen()) {
-                logger.log("Wallet opened successfully");
-                setWalletStatus('open');
+            if (!isInitialized()) {
+                await initialize();
+                logger.log("sdk initialized");
+            }
+
+            if (localStorage.getItem('appDebug') === 'true') {
+                setLogLevel('debug');
+            }
+            const walletName = localStorage.getItem('lastUsedWallet');
+            const walletId = walletName || 'fm-default';
+
+            if (!hasWallet(walletId)) {
+                logger.log("No wallet found in storage");
+                dispatch(setWalletStatus('closed'));
+                setLoader(false);
+                navigate('/');
+                return;
+            }
+
+            dispatch(setWalletStatus('opening'));
+            const openedWallet = await openWallet(walletId);
+            if (openedWallet) {
+                logger.log("Wallet opened successfully", openedWallet);
+                setWallet(openedWallet);
+                (window as any).wallet = openedWallet;
+                dispatch(setWalletStatus('open'));
+                localStorage.setItem('activeFederation', openedWallet.federationId);
                 setLoader(false);
                 navigate('/wallet');
             } else {
+                logger.log("Failed to open wallet");
                 setWalletStatus('closed');
                 setLoader(false);
                 navigate('/');
             }
-        } catch (error) {
-            logger.log("Error opening or rejoining wallet:", error);
+        } catch (err) {
+            logger.error("Error initializing or opening wallet:", err);
             setWalletStatus('closed');
             setLoader(false);
+            dispatch(setError({
+                type: 'Opening Error',
+                message: err instanceof Error ? err.message : "Failed to initialize wallet",
+            }));
             navigate('/');
+            setTimeout(() => {
+                dispatch(setError(null));
+            }, 3000);
         }
-    }, []);
+    }, [dispatch, navigate]);
 
     useEffect(() => {
-        checkFedStatus();
-    }, [checkFedStatus]);
-
+        InitializeAndOpenWallet();
+    }, [InitializeAndOpenWallet]);
 
     if (loader) {
         return (
@@ -88,11 +99,27 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         );
     }
 
-    return (
-        <WalletContext.Provider value={{ wallet, walletStatus, setWalletStatus, isDebug, toggleDebug }}>
-            {children}
-        </WalletContext.Provider>
-    );
+    if (wallet && walletStatus === 'open') {
+        return (
+            <WalletContext.Provider value={{
+                wallet,
+                isDebug,
+                toggleDebug
+            }}>
+                {children}
+            </WalletContext.Provider>
+        );
+    }
+    // If wallet is not open, don't render children
+    return null;
+};
+
+export const useWallet = () => {
+    const context = useContext(WalletContext);
+    if (!context) {
+        throw new Error('useWallet must be used within WalletProvider');
+    }
+    return context;
 };
 
 export default WalletContext;

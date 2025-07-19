@@ -1,30 +1,34 @@
 import type { FederationConfig, FederationDetailResponse, FederationMeta, FederationMetaData, PreviewFederationResponse } from "../hooks/Federation.type";
-import type { Wallet } from "../hooks/wallet.type";
+import { generateMnemonic, getMnemonic, joinFederation, previewFederation, setMnemonic, Wallet } from '@fedimint/core-web'
 import type { JoinFedResponse } from "../hooks/Federation.type";
 import logger from "../utils/logger";
 
-export const JoinFederation = async (inviteCode: string, walletName: string, wallet: Wallet): Promise<JoinFedResponse> => {
+export const JoinFederation = async (inviteCode: string, walletName: string): Promise<JoinFedResponse> => {
     try {
         logger.log("Joining federation with invite code:", inviteCode, "and clientName:", walletName || 'fm-default');
-        const result = await wallet.joinFederation(inviteCode, walletName);
-
+        let mnemonics = await getMnemonic();
+        logger.log('mnemonic is ', mnemonics)
+        if (!mnemonics?.length) {
+            mnemonics = await generateMnemonic() as unknown as string[];
+            await setMnemonic(mnemonics);
+        }
+        logger.log('mnemonic is ', mnemonics)
+        const result = await joinFederation(inviteCode, walletName);
         if (result) {
-            const federationId = await wallet.federation.getFederationId();
-            logger.log("Federation ID:", federationId);
-            localStorage.setItem('activeFederation', federationId);
-            localStorage.setItem('walletName', walletName);
-            localStorage.setItem('joinDate', new Date().toDateString())
+            logger.log("Federation ID:", result.federationId);
+            localStorage.setItem('activeFederation', result.federationId);
+            localStorage.setItem('lastUsedWallet', walletName);
             return {
                 success: true,
-                message: `Joined federation ${federationId}`,
-                federationID: federationId || inviteCode
+                message: `Joined federation ${result.federationId}`,
+                federationID: result.federationId || inviteCode
             };
         } else {
             throw new Error('Failed to join federation');
         }
     } catch (err) {
         logger.error("JoinFederation error:", err);
-        throw new Error(`Failed to join federation: ${err}`);
+        throw new Error(`${err}`);
     }
 }
 
@@ -53,7 +57,7 @@ export const fetchMetaData = async (url: string, federationID: string | null): P
 
 export const fetchFederationDetails = async (wallet: Wallet, federationID: string | null): Promise<FederationDetailResponse> => {
     try {
-        const details = await wallet?.federation.getConfig() as FederationConfig;
+        const details = await wallet.federation.getConfig() as FederationConfig;
         logger.log('the config details are ', details)
         let meta: FederationMetaData | FederationMeta = details.meta;
         if (details.meta.meta_external_url) {
@@ -70,9 +74,9 @@ export const fetchFederationDetails = async (wallet: Wallet, federationID: strin
     }
 }
 
-export const previewFederation = async (wallet: Wallet, inviteCode: string): Promise<PreviewFederationResponse> => {
+export const previewFedWithInviteCode = async (inviteCode: string): Promise<PreviewFederationResponse> => {
     try {
-        const result = await wallet.previewFederation(inviteCode)
+        const result = await previewFederation(inviteCode)
         if (result) {
             logger.log("preview Federation result is ", result)
             const config = typeof result.config === 'string'
@@ -92,6 +96,7 @@ export const previewFederation = async (wallet: Wallet, inviteCode: string): Pro
                 }
             }
 
+            // returning a structured format result 
             const structuredResult = {
                 fedName: meta?.federation_name,
                 iconUrl: (meta as FederationMetaData)?.federation_icon_url,

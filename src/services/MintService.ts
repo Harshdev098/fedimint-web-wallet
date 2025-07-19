@@ -1,5 +1,6 @@
 import type { SpendNotesState } from "@fedimint/core-web";
-import type { MintSpendNotesResponse, Wallet, NotesByDenomonationResponse } from "../hooks/wallet.type";
+import type { MintSpendNotesResponse, NotesByDenomonationResponse } from "../hooks/wallet.type";
+import { Wallet } from "@fedimint/core-web";
 import type { AppDispatch } from "../redux/store";
 import logger from "../utils/logger";
 import { createNotification } from '../redux/slices/NotificationSlice'
@@ -23,7 +24,7 @@ export const SpendEcash = async (wallet: Wallet, amount: number): Promise<MintSp
 
 export const RedeemEcash = async (wallet: Wallet, notes: string): Promise<string> => {
     try {
-        const result = await wallet?.mint.redeemEcash(notes)
+        const result = await wallet.mint.redeemEcash(notes)
         logger.log("result in redeem ecash ", result)
         if (result) {
             return "Redeem Successfully";
@@ -37,7 +38,7 @@ export const RedeemEcash = async (wallet: Wallet, notes: string): Promise<string
 
 export const ParseEcashNotes = async (wallet: Wallet, notes: string): Promise<number> => {
     try {
-        const result = await wallet?.mint.parseNotes(notes)
+        const result = await wallet.mint.parseNotes(notes)
         logger.log("result of parseNotes is ", result)
         if (result) {
             return result;

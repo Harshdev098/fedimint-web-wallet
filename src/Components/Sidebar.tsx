@@ -1,76 +1,54 @@
-import { useContext } from "react"
 import { Link, useLocation } from "react-router"
-import HamburgerContext from "../context/hamburger"
-import whiteLogo from '../assets/logo-white.webp'
-import { useSelector } from 'react-redux'
-import type { RootState } from '../redux/store'
 
 export default function Sidebar() {
-    const { hamburger, setHamburger } = useContext(HamburgerContext)
-    const location = useLocation()
-    const notifications = useSelector((state: RootState) => state.notifications)
-    const { mode } = useSelector((state: RootState) => state.Mode)
-
+    const location=useLocation()
     const isActive = (path: string) => location.pathname === path
 
     return (
-        <section className={`sidebarContainer ${hamburger ? 'sidebarHidden' : ''} ${mode===true ? 'SidebarDarkMode' : undefined}`}>
-            <div>
-                <div className='sidebarImageBox'>
-                    <img src={whiteLogo} alt="logo" />
-                </div>
-                <div className='sidebarList'>
-                    <ul>
-                        <li className={isActive('/wallet') ? 'active' : ''}>
-                            <Link to='/wallet' onClick={() => window.innerWidth <= 870 && setHamburger(true)}>
-                                <i className="fa-solid fa-house"></i>Home
-                            </Link>
-                        </li>
-                        <li className={isActive('/wallet/settings') ? 'active' : ''}>
-                            <Link to='/wallet/settings' onClick={() => window.innerWidth <= 870 && setHamburger(true)}>
-                                <i className="fa-solid fa-gear"></i>Settings
-                            </Link>
-                        </li>
-                        <li className={isActive('/wallet/notifications') ? 'active' : ''}>
-                            <Link to='/wallet/notifications' onClick={() => window.innerWidth <= 870 && setHamburger(true)}>
-                                <i className="fa-solid fa-bell"></i>Notifications {notifications.count > 0 &&
-                                    <span style={{ backgroundColor: '#bb2828', color: 'white', borderRadius: '50%', padding: '0px 6px', fontSize: '15px' }}>
-                                        {notifications.count}
-                                    </span>}
-                            </Link>
-                        </li>
-                        <li className={isActive('/wallet/federation') ? 'active' : ''}>
-                            <Link to='/wallet/federation' onClick={() => window.innerWidth <= 870 && setHamburger(true)}>
-                                <i className="fa-solid fa-landmark"></i>Federation
-                            </Link>
-                        </li>
-                        <li className={isActive('/wallet/transactions') ? 'active' : ''}>
-                            <Link to='/wallet/transactions' onClick={() => window.innerWidth <= 870 && setHamburger(true)}>
-                                <i className="fa-solid fa-clock-rotate-left"></i>Transactions
-                            </Link>
-                        </li>
-                        <li className={isActive('/wallet/onchain') ? 'active' : ''}>
-                            <Link to='/wallet/onchain' onClick={() => window.innerWidth <= 870 && setHamburger(true)}>
-                                <i className="fa-solid fa-money-bill-transfer"></i>Withdraw/Deposit
-                            </Link>
-                        </li>
-                        <li className={isActive('/wallet/ecash') ? 'active' : ''}>
-                            <Link to='/wallet/ecash' onClick={() => window.innerWidth <= 870 && setHamburger(true)}>
-                                <i className="fa-solid fa-wallet"></i>ECashes
-                            </Link>
-                        </li>
-                        <li className={isActive('/wallet/invoice') ? 'active' : ''}>
-                            <Link to='/wallet/invoice' onClick={() => window.innerWidth <= 870 && setHamburger(true)}>
-                                <i className="fa-solid fa-file-invoice-dollar"></i>Invoice
-                            </Link>
-                        </li>
-                        <li className={isActive('/wallet/guardian') ? 'active' : ''}>
-                            <Link to='/wallet/guardian' onClick={() => window.innerWidth <= 870 && setHamburger(true)}>
-                                <i className="fa-solid fa-shield"></i>Guardians
-                            </Link>
-                        </li>
-                    </ul>
-                </div>
+        <section className='navigation-bar'>
+            {/* Wave SVG Background */}
+            <svg 
+                width="100%" 
+                height="100%" 
+                id="svg" 
+                className="wave-bg transition duration-300 ease-in-out delay-150" 
+                viewBox="0 0 1440 200" 
+                xmlns="http://www.w3.org/2000/svg"
+                preserveAspectRatio="none"
+            >
+                <defs>
+                    <linearGradient id="gradient" x1="0%" y1="50%" x2="100%" y2="50%">
+                        <stop offset="5%" stopColor="#f4f8fa"></stop>
+                        <stop offset="95%" stopColor="#f1f5f7"></stop>
+                    </linearGradient>
+                </defs>
+                <path 
+                    d="M 0,200 L 0,20 C 118.8,60 237.6,100 411,90 C 584.4,80 812.4,40 993,30 C 1173.6,20 1306.8,35 1440,40 L 1440,200 L 0,200 Z" 
+                    stroke="none" 
+                    strokeWidth="0" 
+                    fill="url(#gradient)" 
+                    fillOpacity="1" 
+                    className="transition-all duration-300 ease-in-out delay-150 path-0"
+                />
+            </svg>
+            
+            <div className="navigator">
+                <Link className={`navigator-icon ${isActive('/wallet/federation') ? 'active-nav' : ''}`} to={'/wallet/federation'}>
+                    <i className="fa-solid fa-landmark"></i>
+                </Link>
+                <p className="navigator-label">Federation</p>
+            </div>
+            <div className="navigator">
+                <Link className={`navigator-icon ${isActive('/wallet') ? 'active-nav' : ''}`} to={'/wallet'}>
+                    <i className="fa-solid fa-house"></i>
+                </Link>
+                <p className="navigator-label">Home</p>
+            </div>
+            <div className="navigator">
+                <Link className={`navigator-icon ${isActive('/wallet/settings') ? 'active-nav' : ''}`} to={'/wallet/settings'}>
+                    <i className="fa-solid fa-gear"></i>
+                </Link>
+                <p className="navigator-label">Settings</p>
             </div>
         </section>
     )

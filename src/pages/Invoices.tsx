@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useContext } from 'react';
-import WalletContext from '../context/wallet';
-import type { Transactions } from '@fedimint/core-web';
+import WalletContext, { useWallet } from '../context/wallet';
+// import type { Transactions } from '@fedimint/core-web';
 import type { InvoiceState } from '../hooks/wallet.type';
 import NProgress from 'nprogress';
 import LoadingContext from '../context/loader';
 import Alerts from '../Components/Alerts';
-import { Link } from 'react-router';
+// import { Link } from 'react-router';
 import logger from '../utils/logger';
 import '../style/Invoice.css'
 import { useSelector } from 'react-redux';
@@ -18,9 +18,9 @@ export default function Invoices() {
     const [invoiceStateList, setInvoiceStateList] = useState<InvoiceState[]>([]);
     const [invoicePendingList, setInvoicePendingList] = useState<InvoiceState[]>([])
     const [stateFilter, setStateFilter] = useState<string>('all')
-    const { wallet } = useContext(WalletContext)
+    const { wallet } = useWallet()
     const { setLoading } = useContext(LoadingContext)
-    const {error}=useSelector((state:RootState)=>state.Alert)
+    const { error } = useSelector((state: RootState) => state.Alert)
     const [currentPage, setCurrentPage] = useState(1)
     const pageLimint = 5
 
@@ -70,73 +70,73 @@ export default function Invoices() {
     }
 
     const handleInvoice = async () => {
-        NProgress.start()
-        setLoading(true)
-        try {
-            let currentState: string
-            const tx = await wallet.federation.listTransactions();
-            if (tx.length > 0) {
-                logger.log("transactions ", tx);
-                tx.forEach((transaction: Transactions) => {
-                    if (transaction.kind === 'ln' && transaction.type === "receive") {
-                        const { invoice, operationId, timestamp } = transaction
+        // NProgress.start()
+        // setLoading(true)
+        // try {
+        //     let currentState: string
+        //     const tx = await wallet.federation.listTransactions();
+        //     if (tx.length > 0) {
+        //         logger.log("transactions ", tx);
+        //         tx.forEach((transaction: Transactions) => {
+        //             if (transaction.kind === 'ln' && transaction.type === "receive") {
+        //                 const { invoice, operationId, timestamp } = transaction
 
-                        const unsubscribe = wallet.lightning.subscribeLnReceive(transaction.operationId,
-                            async (state) => {
-                                if (state === 'funded' || state === 'claimed') {
-                                    currentState = state
-                                } else if (typeof state === 'object' && 'waiting_for_payment' in state) {
-                                    currentState = 'waiting_for_payment';
-                                } else if (typeof state === 'object' && 'canceled' in state) {
-                                    currentState = 'canceled';
-                                }
-                                if (currentState) {
-                                    setInvoiceStateList((prev) =>
-                                        handleState(prev, currentState, invoice, operationId, new Date(timestamp).toLocaleString())
-                                    );
-                                }
-                            }, (error) => {
-                                logger.log("an error occured", error)
-                            })
-                        setTimeout(() => {
-                            unsubscribe?.();
-                        }, 600000);
-                    } else if (transaction.kind === 'ln' && transaction.type === "send") {
-                        const { invoice, operationId, timestamp } = transaction
+        //                 const unsubscribe = wallet.lightning.subscribeLnReceive(transaction.operationId,
+        //                     async (state) => {
+        //                         if (state === 'funded' || state === 'claimed') {
+        //                             currentState = state
+        //                         } else if (typeof state === 'object' && 'waiting_for_payment' in state) {
+        //                             currentState = 'waiting_for_payment';
+        //                         } else if (typeof state === 'object' && 'canceled' in state) {
+        //                             currentState = 'canceled';
+        //                         }
+        //                         if (currentState) {
+        //                             setInvoiceStateList((prev) =>
+        //                                 handleState(prev, currentState, invoice, operationId, new Date(timestamp).toLocaleString())
+        //                             );
+        //                         }
+        //                     }, (error) => {
+        //                         logger.log("an error occured", error)
+        //                     })
+        //                 setTimeout(() => {
+        //                     unsubscribe?.();
+        //                 }, 600000);
+        //             } else if (transaction.kind === 'ln' && transaction.type === "send") {
+        //                 const { invoice, operationId, timestamp } = transaction
 
-                        const unsubscribe = wallet.lightning.subscribeLnPay(transaction.operationId,
-                            async (state) => {
-                                if (state === 'created' || state === 'awaiting_change') {
-                                    currentState = state
-                                } else if (typeof state === 'object' && 'success' in state) {
-                                    currentState = 'success';
-                                } else if (typeof state === 'object' && 'canceled' in state) {
-                                    currentState = 'canceled';
-                                }
-                                if (currentState) {
-                                    setInvoicePendingList((prev) =>
-                                        handleState(prev, currentState, invoice, operationId, new Date(timestamp).toLocaleString())
-                                    );
-                                }
-                            }, (error) => {
-                                logger.log("an error occured", error)
-                            })
-                        setTimeout(() => {
-                            unsubscribe?.();
-                        }, 600000);
-                    }
-                });
-            }
-        } catch (err) {
-            logger.log("an error occured")
-            setError({type:'Invoice Error: ',message:String(err)})
-            setTimeout(() => {
-                setError(null)
-            }, 3000);
-        } finally {
-            NProgress.done()
-            setLoading(false)
-        }
+        //                 const unsubscribe = wallet.lightning.subscribeLnPay(transaction.operationId,
+        //                     async (state) => {
+        //                         if (state === 'created' || state === 'awaiting_change') {
+        //                             currentState = state
+        //                         } else if (typeof state === 'object' && 'success' in state) {
+        //                             currentState = 'success';
+        //                         } else if (typeof state === 'object' && 'canceled' in state) {
+        //                             currentState = 'canceled';
+        //                         }
+        //                         if (currentState) {
+        //                             setInvoicePendingList((prev) =>
+        //                                 handleState(prev, currentState, invoice, operationId, new Date(timestamp).toLocaleString())
+        //                             );
+        //                         }
+        //                     }, (error) => {
+        //                         logger.log("an error occured", error)
+        //                     })
+        //                 setTimeout(() => {
+        //                     unsubscribe?.();
+        //                 }, 600000);
+        //             }
+        //         });
+        //     }
+        // } catch (err) {
+        //     logger.log("an error occured")
+        //     setError({ type: 'Invoice Error: ', message: String(err) })
+        //     setTimeout(() => {
+        //         setError(null)
+        //     }, 3000);
+        // } finally {
+        //     NProgress.done()
+        //     setLoading(false)
+        // }
     }
 
     const handleFilter = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -158,37 +158,117 @@ export default function Invoices() {
     return (
         <>
             {error && <Alerts Error={error} />}
-            <div className="invoice-page">
-                <div className="invoice-header">
-                    <div>
-                        <h2>📄 Invoices</h2>
-                        <p>Manage your active and pending invoices</p>
+            <section className="transaction-container">
+                <div className="transaction-header">
+                    <h2 className="transaction-title"><i className="fa-solid fa-file-invoice-dollar" style={{fontSize:'1.4rem'}}></i> Invoices</h2>
+                    <p className="transaction-subtitle">View and search your recent transactions</p>
+                </div>
+                <div className="search-container">
+                    <div className="expiry-select">
+                        <label htmlFor="expiry">Invoice Expiry:</label>
+                        <select id="expiry" value={expiryTime} onChange={handleInvoiceExpiry}>
+                            {invoiceExpiryOptions.map((option, index) => (
+                                <option key={index} value={option}>{option}</option>
+                            ))}
+                        </select>
                     </div>
 
-                    <div className="invoice-controls">
-                        <div className="expiry-select">
-                            <label htmlFor="expiry">Invoice Expiry:</label>
-                            <select id="expiry" value={expiryTime} onChange={handleInvoiceExpiry}>
-                                {invoiceExpiryOptions.map((option, index) => (
-                                    <option key={index} value={option}>{option}</option>
-                                ))}
-                            </select>
-                        </div>
-
-                        <div className="expiry-select">
-                            <label htmlFor="states">Filter by Status:</label>
-                            <select id="states" value={stateFilter} onChange={handleFilter}>
-                                <option value="all">All</option>
-                                <option value="claimed">claimed</option>
-                                <option value="pending">pending</option>
-                                <option value="canceled">canceled</option>
-                            </select>
-                        </div>
+                    <div className="expiry-select">
+                        <label htmlFor="states">Filter by Status:</label>
+                        <select id="states" value={stateFilter} onChange={handleFilter}>
+                            <option value="all">All</option>
+                            <option value="claimed">claimed</option>
+                            <option value="pending">pending</option>
+                            <option value="canceled">canceled</option>
+                        </select>
                     </div>
                 </div>
 
-                <div className="invoice-table-section">
-                    <table className="invoice-table">
+                <ul className="transaction-list">
+                    <li className="transaction-item">
+                        <div className="transaction-icon received">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M12 5v14M5 12l7 7 7-7" />
+                            </svg>
+                        </div>
+                        <div className="transaction-content">
+                            <div className="transaction-main">
+                                <h3 className="transaction-type">Payment Received</h3>
+                                <p className="transaction-amount positive">+20 msat</p>
+                            </div>
+                            <div className="transaction-meta">
+                                <span className="transaction-timestamp">2 hours ago</span>
+                                <span className="transaction-status success">Completed</span>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+                <div className="pagination-container">
+                    <button className="pagination-button prev"
+                        disabled={currentPage === 1}
+                        onClick={() => setCurrentPage(currentPage - 1)}
+                    >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M15 18l-6-6 6-6" />
+                        </svg>
+                        Prev
+                    </button>
+                    <button className="pagination-button next"
+                        disabled={(currentPage * pageLimint) >= invoiceStateList.length}
+                        onClick={() => setCurrentPage(currentPage + 1)}
+                    >
+                        Next
+                    </button>
+                </div>
+            </section>
+
+            <section className="transaction-container">
+                <div className="transaction-header">
+                    <h2 className="transaction-title"><i className="fa-solid fa-file-invoice-dollar" style={{fontSize:'1.4rem'}}></i> Paid Invoices</h2>
+                    <p className="transaction-subtitle">View and search your recent transactions</p>
+                </div>
+                <ul className="transaction-list">
+                    <li className="transaction-item">
+                        <div className="transaction-icon received">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M12 5v14M5 12l7 7 7-7" />
+                            </svg>
+                        </div>
+                        <div className="transaction-content">
+                            <div className="transaction-main">
+                                <h3 className="transaction-type">Payment Received</h3>
+                                <p className="transaction-amount positive">+20 msat</p>
+                            </div>
+                            <div className="transaction-meta">
+                                <span className="transaction-timestamp">2 hours ago</span>
+                                <span className="transaction-status success">Completed</span>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+                <div className="pagination-container">
+                    <button className="pagination-button prev"
+                        disabled={currentPage === 1}
+                        onClick={() => setCurrentPage(currentPage - 1)}
+                    >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M15 18l-6-6 6-6" />
+                        </svg>
+                        Prev
+                    </button>
+                    <button className="pagination-button next"
+                        disabled={(currentPage * pageLimint) >= invoiceStateList.length}
+                        onClick={() => setCurrentPage(currentPage + 1)}
+                    >
+                        Next
+                    </button>
+                </div>
+            </section>
+        </>
+    );
+}
+
+{/* <table className="invoice-table">
                         <thead>
                             <tr>
                                 <th>S.No</th>
@@ -219,28 +299,10 @@ export default function Invoices() {
                                     </tr>
                                 ))}
                         </tbody>
-                    </table>
-                </div>
-                <div className="pagination-btn">
-                    <button className="pagination-button"
-                        disabled={currentPage === 1}
-                        onClick={() => setCurrentPage(currentPage - 1)}
-                    >
-                        Prev
-                    </button>
-                    <span className="pagination-info">Page {currentPage}</span>
-                    <button className="pagination-button"
-                        disabled={(currentPage * pageLimint) >= invoiceStateList.length}
-                        onClick={() => setCurrentPage(currentPage + 1)}
-                    >
-                        Next
-                    </button>
-                </div>
-            </div>
-            <div className='invoice-page'>
-                <div className="invoice-table-section">
-                    <h2>Paid Invoice Payments</h2>
-                    <table className="invoice-table">
+                    </table> */}
+
+
+{/* <table className="invoice-table">
                         <thead>
                             <tr>
                                 <th>S.No</th>
@@ -270,24 +332,4 @@ export default function Invoices() {
                                     </tr>
                                 ))}
                         </tbody>
-                    </table>
-                </div>
-                <div className="pagination-btn">
-                    <button className="pagination-button"
-                        disabled={currentPage === 1}
-                        onClick={() => setCurrentPage(currentPage - 1)}
-                    >
-                        Prev
-                    </button>
-                    <span className="pagination-info">Page {currentPage}</span>
-                    <button className="pagination-button"
-                        disabled={(currentPage * pageLimint) >= invoiceStateList.length}
-                        onClick={() => setCurrentPage(currentPage + 1)}
-                    >
-                        Next
-                    </button>
-                </div>
-            </div>
-        </>
-    );
-}
+                    </table> */}

@@ -2,7 +2,8 @@ import QrScanner from "qr-scanner";
 import { useContext, useEffect, useRef, useState, useCallback } from 'react'
 import { Link } from 'react-router'
 import QRCode from 'react-qr-code'
-import WalletContext from '../context/wallet'
+import { useWallet } from '../context/wallet'
+import '../style/Ecash.css'
 import { SpendEcash, RedeemEcash, ParseEcashNotes, subscribeSpend } from '../services/MintService'
 import { useSelector, useDispatch } from 'react-redux'
 import type { RootState, AppDispatch } from '../redux/store'
@@ -11,7 +12,6 @@ import LoadingContext from '../context/loader'
 import NProgress from 'nprogress'
 import Alerts from './Alerts'
 import { downloadQRCode } from '../services/DownloadQR';
-import { updateBalanceFromMsat } from "../redux/slices/Balance";
 import { convertToMsats, subscribeBalance } from "../services/BalanceService";
 import logger from "../utils/logger";
 import { setError, setResult } from "../redux/slices/Alerts";
@@ -25,29 +25,18 @@ export default function Ecash() {
     const scannerRef = useRef<QrScanner | null>(null)
     const amount = useRef<HTMLInputElement | null>(null)
     const [notes, setNotes] = useState('')
-    const { wallet } = useContext(WalletContext)
+    const { wallet } = useWallet()
     const { setLoading } = useContext(LoadingContext)
     const { SpendEcashResult, ParseEcashResult } = useSelector((state: RootState) => state.mint)
     const dispatch = useDispatch<AppDispatch>()
     const { currency } = useSelector((state: RootState) => state.balance)
     const { error, result } = useSelector((state: RootState) => state.Alert)
 
-    const subscribeBalanceChange = () => {
-        const unsubscribeBalance = wallet.balance.subscribeBalance((mSats) => {
-            dispatch(updateBalanceFromMsat(mSats));
-            setTimeout(() => {
-                unsubscribeBalance?.();
-            }, 10000);
-        });
-    }
 
     const handleSpendEcash = async (e: React.FormEvent) => {
         e.preventDefault()
         NProgress.start()
         setLoading(true)
-        if (!(wallet.isOpen())) {
-            await wallet?.open()
-        }
         try {
             setStatus(true)
 
@@ -81,9 +70,6 @@ export default function Ecash() {
         e.preventDefault()
         NProgress.start()
         setLoading(true)
-        if (!(wallet?.isOpen())) {
-            await wallet?.open();
-        }
         try {
             if (!notes) {
                 throw new Error("Notes value is required");
@@ -92,7 +78,7 @@ export default function Ecash() {
 
             const result = await RedeemEcash(wallet, notes);
             dispatch(setResult(result))
-            subscribeBalance(wallet,dispatch)
+            subscribeBalance(wallet, dispatch)
 
             setTimeout(() => {
                 dispatch(setResult(null))
@@ -178,69 +164,169 @@ export default function Ecash() {
         <>
             {(error || result) && <Alerts key={Date.now()} Error={error} Result={result} />}
             {openVideo && (
-                <div className="videoOverlay">
-                    <div className='videoRef'>
-                        <video width={'100%'} ref={videoRef}></video>
-                        <button onClick={() => { scannerRef.current?.stop(); setOpenVideo(false) }}>Close</button>
+                <div className="video-overlay">
+                    <div className="video-container">
+                        <div className="video-header">
+                            <h3>Scan QR Code</h3>
+                            <button
+                                className="close-btn"
+                                onClick={() => { scannerRef.current?.stop(); setOpenVideo(false) }}
+                            >
+                                <i className="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+                        <div className="video-wrapper">
+                            <video width={'100%'} ref={videoRef}></video>
+                        </div>
                     </div>
                 </div>
             )}
-            <section className="BalanceSection" style={{ marginTop: "30px" }}>
-                <div className="BalanceSectionTag">
-                    <button>Transact Ecashes</button>
-                </div>
 
-                <div className="EcashTransactionWrapper">
-                    <div className="SendSection">
-                        <h3 className="TransactionHeading"><i className="fa-solid fa-money-bill-transfer"></i> Generate Ecash & Spend</h3>
-                        <p style={{ marginTop: '0px' }}>You can change the currency from <Link to={'/settings'} style={{ color: '#0f61b9', textDecoration: 'none' }}><i className="fa-solid fa-gear"></i> Settings</Link></p>
-                        <form onSubmit={handleSpendEcash}>
-                            <label htmlFor="Ecashamount">Enter amount in {currency}:</label>
-                            <input type="decimal" id="Ecashamount" placeholder={`Enter amount in ${currency}`} inputMode='decimal' ref={amount} onChange={handleConversion} required />
-                            <button type="submit" disabled={status}>
+            <section className="ecash-section">
+                <div className="ecash-container">
+                    <div className="ecash-card spend-card">
+                        <div className="card-header">
+                            <div className="header-icon spend-icon">
                                 <i className="fa-solid fa-money-bill-transfer"></i>
-                                Generate & Spend
+                            </div>
+                            <div className="header-content">
+                                <h3 className="card-title">Generate Ecash & Spend</h3>
+                                <p className="card-subtitle">
+                                    You can change the currency from{' '}
+                                    <Link to={'/settings'} className="settings-link">
+                                        <i className="fa-solid fa-gear"></i> Settings
+                                    </Link>
+                                </p>
+                            </div>
+                        </div>
+
+                        <form onSubmit={handleSpendEcash} className="ecash-form">
+                            <div className="form-group">
+                                <label htmlFor="Ecashamount" className="form-label">
+                                    Enter amount in {currency}:
+                                </label>
+                                <div className="input-wrapper">
+                                    <input
+                                        type="decimal"
+                                        id="Ecashamount"
+                                        placeholder={`Enter amount in ${currency}`}
+                                        inputMode='decimal'
+                                        ref={amount}
+                                        onChange={handleConversion}
+                                        className="form-input"
+                                        required
+                                    />
+                                    <span className="currency-indicator">{currency}</span>
+                                </div>
+                            </div>
+
+                            <button type="submit" disabled={status} className="ecash-primary-btn spend-btn">
+                                <i className="fa-solid fa-money-bill-transfer"></i>
+                                <span>Generate & Spend</span>
                             </button>
                         </form>
+
                         {SpendEcashResult && (
-                            <div className='spendResult'>
-                                <button type="button" style={{ padding: '8px 13px', border: 'none', fontSize: '17px', borderRadius: '8px', cursor: 'pointer' }} onClick={() => { dispatch(setSpendResult(null)) }}>Clear</button>
-                                <div className='copyWrapper'>
-                                    <p id="spendNotesResult" className="copyText">{SpendEcashResult.notes}</p>
+                            <div className='spend-result'>
+                                <div className="result-header">
+                                    <h4>Generated Ecash</h4>
                                     <button
-                                        className="copyBtnOverlay"
-                                        onClick={() => {
-                                            navigator.clipboard.writeText(SpendEcashResult.notes);
-                                        }}
+                                        type="button"
+                                        className="clear-btn"
+                                        onClick={() => { dispatch(setSpendResult(null)) }}
                                     >
-                                        <i className="fa-regular fa-copy"></i>
+                                        Clear
                                     </button>
                                 </div>
 
-                                <div className='qrCode'>
-                                    <QRCode value={JSON.stringify(SpendEcashResult)} size={150} bgColor='white' fgColor='black' />
-                                    <button onClick={() => { downloadQRCode('ecash') }}>Download QR</button>
+                                <div className='copy-section'>
+                                    <div className="copy-wrapper">
+                                        <p id="spendNotesResult" className="notes-text">
+                                            {SpendEcashResult.notes}
+                                        </p>
+                                        <button
+                                            className="copy-btn"
+                                            onClick={() => {
+                                                navigator.clipboard.writeText(SpendEcashResult.notes);
+                                            }}
+                                        >
+                                            <i className="fa-regular fa-copy"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className='qr-section'>
+                                    <div className="qr-container">
+                                        <QRCode
+                                            value={JSON.stringify(SpendEcashResult)}
+                                            size={150}
+                                            bgColor='white'
+                                            fgColor='black'
+                                        />
+                                    </div>
+                                    <button
+                                        onClick={() => { downloadQRCode('ecash') }}
+                                        className="download-btn"
+                                    >
+                                        <i className="fa-solid fa-download"></i>
+                                        Download QR
+                                    </button>
                                 </div>
                             </div>
                         )}
                     </div>
 
-                    <div className="RecieveSection">
-                        <h3 className="TransactionHeading"><i className="fa-solid fa-hand-holding-dollar"></i> Redeem Ecash</h3>
-                        <form onSubmit={handleRedeemEcash}>
-                            <label htmlFor="notesvalue">Enter or Scan the notes:</label>
-                            <input type="text" id="notesvalue" placeholder="Enter the notes" value={notes} onChange={(e) => { setNotes(e.target.value) }} />
+                    <div className="ecash-card receive-card">
+                        <div className="card-header">
+                            <div className="header-icon receive-icon">
+                                <i className="fa-solid fa-hand-holding-dollar"></i>
+                            </div>
+                            <div className="header-content">
+                                <h3 className="card-title">Redeem Ecash</h3>
+                                <p className="card-subtitle">
+                                    Enter the notes manually or scan QR code
+                                </p>
+                            </div>
+                        </div>
+
+                        <form onSubmit={handleRedeemEcash} className="ecash-form">
+                            <div className="form-group">
+                                <label htmlFor="notesvalue" className="form-label">
+                                    Enter or Scan the notes:
+                                </label>
+                                <div className="textarea-wrapper">
+                                    <textarea
+                                        id="notesvalue"
+                                        placeholder="Enter the notes"
+                                        value={notes}
+                                        onChange={(e) => { setNotes(e.target.value) }}
+                                        className="form-textarea"
+                                    />
+                                </div>
+                            </div>
+
                             {ParseEcashResult && (
-                                <div>
-                                    <p style={{ fontSize: '17px', color: 'green' }}>{ParseEcashResult}</p>
+                                <div className="parse-result">
+                                    <div className="success-message">
+                                        <i className="fa-solid fa-circle-check"></i>
+                                        <span>{ParseEcashResult}</span>
+                                    </div>
                                 </div>
                             )}
-                            <div className="ButtonRow">
-                                <button type="submit" disabled={status}>
-                                    <i className="fa-solid fa-hand-holding-dollar"></i> Confirm Redeem
+
+                            <div className="button-group">
+                                <button type="submit" disabled={status} className="ecash-primary-btn redeem-btn">
+                                    <i className="fa-solid fa-hand-holding-dollar"></i>
+                                    <span>Confirm Redeem</span>
                                 </button>
-                                <button type="button" disabled={status} onClick={() => { setOpenVideo(true) }}>
+                                <button
+                                    type="button"
+                                    disabled={status}
+                                    onClick={() => { setOpenVideo(true) }}
+                                    className="secondary-btn scan-btn"
+                                >
                                     <i className="fa-solid fa-qrcode"></i>
+                                    <span>Scan QR</span>
                                 </button>
                             </div>
                         </form>

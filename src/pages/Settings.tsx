@@ -2,7 +2,7 @@ import { useState, useContext, useEffect } from 'react';
 import QRCode from 'react-qr-code';
 import { useSelector } from 'react-redux'
 import type { RootState } from '../redux/store'
-import WalletContext from '../context/wallet';
+import { useWallet } from '../context/wallet';
 import { convertFromMsat } from '../services/BalanceService';
 import LoadingContext from '../context/loader';
 import NProgress from 'nprogress';
@@ -20,7 +20,7 @@ export default function Settings() {
     const { setLoading } = useContext(LoadingContext);
     const { metaData } = useSelector((state: RootState) => state.federationdetails)
     const { currency } = useSelector((state: RootState) => state.balance)
-    const { wallet } = useContext(WalletContext)
+    const { wallet } = useWallet()
     const [balance, setBalance] = useState(0)
     const { error } = useSelector((state: RootState) => state.Alert)
 
