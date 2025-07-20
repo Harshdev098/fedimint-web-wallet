@@ -1,28 +1,30 @@
-import React, { useState, useEffect, useContext } from 'react';
-import WalletContext, { useWallet } from '../context/wallet';
+// import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect } from 'react';
+// import { useWallet } from '../context/WalletManager';
 // import type { Transactions } from '@fedimint/core-web';
-import type { InvoiceState } from '../hooks/wallet.type';
-import NProgress from 'nprogress';
-import LoadingContext from '../context/loader';
+// import type { InvoiceState } from '../hooks/wallet.type';
+// import NProgress from 'nprogress';
+// import LoadingContext from '../context/loader';
 import Alerts from '../Components/Alerts';
 // import { Link } from 'react-router';
-import logger from '../utils/logger';
+// import logger from '../utils/logger';
 import '../style/Invoice.css'
 import { useSelector } from 'react-redux';
 import type { RootState } from '../redux/store';
-import { setError } from '../redux/slices/Alerts';
+// import { setError } from '../redux/slices/Alerts';
 
 export default function Invoices() {
     const invoiceExpiryOptions = ['--Select--', '10 minutes', '20 min', '30 minutes', '40 min', '60 min', '180 min', '300 min', '480 min'];
     const [expiryTime, setExpiryTime] = useState('--Select--');
-    const [invoiceStateList, setInvoiceStateList] = useState<InvoiceState[]>([]);
-    const [invoicePendingList, setInvoicePendingList] = useState<InvoiceState[]>([])
+    // const [invoiceStateList, setInvoiceStateList] = useState<InvoiceState[]>([]);
+    // const [invoicePendingList, setInvoicePendingList] = useState<InvoiceState[]>([])
     const [stateFilter, setStateFilter] = useState<string>('all')
-    const { wallet } = useWallet()
-    const { setLoading } = useContext(LoadingContext)
+    const {federationId,walletId}=useSelector((state:RootState)=>state.activeFederation)
+    // const { wallet } = useWallet()
+    // const { setLoading } = useContext(LoadingContext)
     const { error } = useSelector((state: RootState) => state.Alert)
     const [currentPage, setCurrentPage] = useState(1)
-    const pageLimint = 5
+    // const pageLimint = 5
 
 
     const handleInvoiceExpiry = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -33,41 +35,41 @@ export default function Invoices() {
         localStorage.setItem('InvoiceExpiryTime', numericValue);
     };
 
-    const handleState = (prev: InvoiceState[], currentState: string, invoice: string, operationId: string, timeStamp: string) => {
-        const existingInvoice = prev.find((inv) => inv.invoiceId === invoice)
-        let location: { latitude: number; longitude: number } | null = null;
+    // const handleState = (prev: InvoiceState[], currentState: string, invoice: string, operationId: string, timeStamp: string) => {
+    //     const existingInvoice = prev.find((inv) => inv.invoiceId === invoice)
+    //     let location: { latitude: number; longitude: number } | null = null;
 
-        if (localStorage.getItem('locationAccess') === 'true') {
-            const storedLocations = localStorage.getItem('paymentLocations');
-            if (storedLocations) {
-                try {
-                    const locations = JSON.parse(storedLocations);
-                    if (locations[invoice]) {
-                        location = locations[invoice];
-                    }
-                } catch (error) {
-                    logger.error('Error parsing paymentLocations:', error);
-                }
-            }
-        }
+    //     if (localStorage.getItem('locationAccess') === 'true') {
+    //         const storedLocations = localStorage.getItem('paymentLocations');
+    //         if (storedLocations) {
+    //             try {
+    //                 const locations = JSON.parse(storedLocations);
+    //                 if (locations[invoice]) {
+    //                     location = locations[invoice];
+    //                 }
+    //             } catch (error) {
+    //                 logger.error('Error parsing paymentLocations:', error);
+    //             }
+    //         }
+    //     }
 
-        if (existingInvoice) {
-            return prev.map((inv) =>
-                inv.invoiceId === invoice
-                    ? { ...inv, status: currentState }
-                    : inv
-            );
-        } else {
-            const newInvoice: InvoiceState = {
-                invoiceId: invoice,
-                timestamp: timeStamp,
-                operationId: operationId,
-                status: currentState,
-                location: location
-            };
-            return [...prev, newInvoice];
-        }
-    }
+    //     if (existingInvoice) {
+    //         return prev.map((inv) =>
+    //             inv.invoiceId === invoice
+    //                 ? { ...inv, status: currentState }
+    //                 : inv
+    //         );
+    //     } else {
+    //         const newInvoice: InvoiceState = {
+    //             invoiceId: invoice,
+    //             timestamp: timeStamp,
+    //             operationId: operationId,
+    //             status: currentState,
+    //             location: location
+    //         };
+    //         return [...prev, newInvoice];
+    //     }
+    // }
 
     const handleInvoice = async () => {
         // NProgress.start()
@@ -153,14 +155,14 @@ export default function Invoices() {
 
     useEffect(() => {
         handleInvoice()
-    }, [])
+    }, [walletId,federationId])
 
     return (
         <>
             {error && <Alerts Error={error} />}
             <section className="transaction-container">
                 <div className="transaction-header">
-                    <h2 className="transaction-title"><i className="fa-solid fa-file-invoice-dollar" style={{fontSize:'1.4rem'}}></i> Invoices</h2>
+                    <h2 className="transaction-title"><i className="fa-solid fa-file-invoice-dollar" style={{fontSize:'1.4rem'}}></i> Your Invoices</h2>
                     <p className="transaction-subtitle">View and search your recent transactions</p>
                 </div>
                 <div className="search-container">
@@ -205,8 +207,8 @@ export default function Invoices() {
                 </ul>
                 <div className="pagination-container">
                     <button className="pagination-button prev"
-                        disabled={currentPage === 1}
-                        onClick={() => setCurrentPage(currentPage - 1)}
+                        // disabled={currentPage === 1}
+                        // onClick={() => setCurrentPage(currentPage - 1)}
                     >
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <path d="M15 18l-6-6 6-6" />
@@ -214,7 +216,7 @@ export default function Invoices() {
                         Prev
                     </button>
                     <button className="pagination-button next"
-                        disabled={(currentPage * pageLimint) >= invoiceStateList.length}
+                        // disabled={(currentPage * pageLimint) >= invoiceStateList.length}
                         onClick={() => setCurrentPage(currentPage + 1)}
                     >
                         Next
@@ -248,8 +250,8 @@ export default function Invoices() {
                 </ul>
                 <div className="pagination-container">
                     <button className="pagination-button prev"
-                        disabled={currentPage === 1}
-                        onClick={() => setCurrentPage(currentPage - 1)}
+                        // disabled={currentPage === 1}
+                        // onClick={() => setCurrentPage(currentPage - 1)}
                     >
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <path d="M15 18l-6-6 6-6" />
@@ -257,8 +259,8 @@ export default function Invoices() {
                         Prev
                     </button>
                     <button className="pagination-button next"
-                        disabled={(currentPage * pageLimint) >= invoiceStateList.length}
-                        onClick={() => setCurrentPage(currentPage + 1)}
+                        // disabled={(currentPage * pageLimint) >= invoiceStateList.length}
+                        // onClick={() => setCurrentPage(currentPage + 1)}
                     >
                         Next
                     </button>

@@ -2,7 +2,7 @@ import { useParams } from 'react-router'
 import { useSelector } from 'react-redux'
 import type { RootState } from '../redux/store'
 import { fetchFederationDetails } from '../services/FederationService'
-import { useWallet } from '../context/wallet';
+import { useWallet } from '../context/WalletManager';
 import { useContext, useState, useCallback } from 'react';
 import type { FederationDetailResponse } from '../hooks/Federation.type';
 import NProgress from 'nprogress';

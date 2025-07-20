@@ -1,13 +1,13 @@
-import { Link } from 'react-router';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../redux/store';
+import Guardians from './Guardian';
 
 export default function FederationDetails() {
     const { Details, metaData } = useSelector((state: RootState) => state.federationdetails);
 
     return (
-        <div className="page-background">
-            <section className="federation-glass-card">
+        <section className="page-background">
+            <div className="federation-glass-card">
                 <div className="Fedheader">
                     <img
                         src={metaData?.federation_icon_url}
@@ -72,10 +72,8 @@ export default function FederationDetails() {
                     </div>
                 </div>
 
-                <div className="footer-link">
-                    <Link to="/wallet/guardian"><i className="fa-solid fa-shield"></i> View Guardians</Link>
-                </div>
-            </section>
-        </div>
+                <Guardians />
+            </div>
+        </section>
     );
 }

@@ -1,17 +1,15 @@
 import { useRef, useContext } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import type { RootState, AppDispatch } from '../redux/store'
-import { setJoining, setFederationId } from '../redux/slices/ActiveFederation'
+import { setJoining, setWalletId } from '../redux/slices/ActiveWallet'
 import LoadingContext from '../context/loader'
 import Alerts from './Alerts'
 import { JoinFederation as JoinFederationService } from '../services/FederationService'
 import { setError } from '../redux/slices/Alerts'
 import QrScanner from 'qr-scanner'
 import NProgress from 'nprogress'
-import { fetchFederationDetails } from '../services/FederationService'
 import logger from '../utils/logger'
-import { setFederationDetails, setFederationMetaData } from '../redux/slices/FederationDetails'
-import { useWallet } from '../context/wallet'
+import { useWallet } from '../context/WalletManager'
 
 
 export default function AddFederation({ setJoinForm }: { setJoinForm: React.Dispatch<React.SetStateAction<boolean>> }) {
@@ -20,7 +18,7 @@ export default function AddFederation({ setJoinForm }: { setJoinForm: React.Disp
     const videoRef = useRef<HTMLVideoElement | null>(null)
     const scannerRef = useRef<QrScanner | null>(null)
     const { setLoading } = useContext(LoadingContext)
-    const { wallet } = useWallet()
+    const { setWallet,switchWallet } = useWallet()
     const dispatch = useDispatch<AppDispatch>()
     const { joining } = useSelector((state: RootState) => state.activeFederation)
     const { error } = useSelector((state: RootState) => state.Alert)
@@ -36,12 +34,14 @@ export default function AddFederation({ setJoinForm }: { setJoinForm: React.Disp
             NProgress.start()
             setLoading(true)
             const result = await JoinFederationService(code, walletName.current?.value || '')
-            logger.log('setting the federation id for new federation')
-            dispatch(setFederationId(result.federationID))
-            const fedDetails = await fetchFederationDetails(wallet, result.federationID);
-            logger.log("Federation Details:", fedDetails);
-            dispatch(setFederationDetails(fedDetails.details));
-            dispatch(setFederationMetaData(fedDetails.meta));
+            if (result) {
+                logger.log('setting new wallet ', result)
+                setWallet(result)
+                dispatch(setWalletId(result.id))
+                localStorage.setItem('activeWallet', result.id)
+                localStorage.setItem('lastUsedWallet',result.id)
+                await switchWallet(result.id)
+            }
         } catch (err) {
             dispatch(setError({ type: 'Join Federation: ', message: err instanceof Error ? err.message : String(err) }))
         } finally {

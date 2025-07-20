@@ -1,5 +1,5 @@
 import { createContext, useState, useEffect, useRef, useMemo, useCallback, useContext } from "react";
-import WalletContext from "./wallet";
+import WalletContext from "./WalletManager";
 import { handleDiscoverFederation, handleNWCConnection, handleNostrPayment } from "../services/nostrPayment";
 import NDK, { NDKEvent, NDKPrivateKeySigner } from '@nostr-dev-kit/ndk';
 import NDKCacheAdapterDexie from "@nostr-dev-kit/ndk-cache-dexie";
@@ -39,14 +39,19 @@ const NostrContext = createContext<NostrContextType>({
 });
 
 export const NostrProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const walletContext = useContext(WalletContext)
-    const wallet = walletContext?.wallet
-    const {walletStatus}=useSelector((state:RootState)=>state.wallet)
+    const walletContext = useContext(WalletContext);
+    const wallet = walletContext?.wallet;
+    const { walletStatus } = useSelector((state: RootState) => state.wallet);
 
     const [nwcEnabled, setNWCEnabled] = useState(false);
     const [nwcURL, setNWCURL] = useState<NostrContextType['nwcURL']>([]);
     const [connectionStatus, setConnectionStatus] = useState<NostrContextType['connectionStatus']>([]);
+    const [NostrAppName, setNostrAppName] = useState('');
+    const [NostrRelay, setNostrRelay] = useState<string | null>(null);
+    const [discoveredFederations, setDiscoveredFederations] = useState<DiscoveredFederation[]>([]);
     const ndkRef = useRef<NDK | null>(null);
+    const isNostrInitialized = useRef(false);
+
     const DEFAULT_RELAYS = [
         'wss://nostr.mutinywallet.com/',
         'wss://relay.damus.io',
@@ -59,35 +64,47 @@ export const NostrProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         'wss://nostr.bitcoiner.social',
     ];
 
-    const [NostrAppName, setNostrAppName] = useState('');
-    const [NostrRelay, setNostrRelay] = useState<string | null>(null);
     const [nwcRelays, setNWCRelays] = useState<string[]>(
         JSON.parse(localStorage.getItem('nwcRelays') || JSON.stringify(DEFAULT_RELAYS))
     );
-    const [discoveredFederations, setDiscoveredFederations] = useState<DiscoveredFederation[]>([]);
 
-    const cacheAdapter = new NDKCacheAdapterDexie({ dbName: "nwc-wallet-events" });
+    // Initialize NDK lazily in the background
+    const initializeNDK = useCallback(async () => {
+        if (isNostrInitialized.current) return;
+        isNostrInitialized.current = true;
 
-    useEffect(() => {
-        cacheAdapter.onReady(() => {
-            // logger.log("Dexie cache ready");
-        });
+        try {
+            const cacheAdapter = new NDKCacheAdapterDexie({ dbName: "nwc-wallet-events" });
+            await cacheAdapter.onReady(()=>{
+                // cache is ready
+            });
 
-        const ndk = new NDK({
-            autoConnectUserRelays: true,
-            cacheAdapter,
-            explicitRelayUrls: nwcRelays,
-        });
-        ndkRef.current = ndk;
+            const ndk = new NDK({
+                autoConnectUserRelays: true,
+                cacheAdapter,
+                explicitRelayUrls: nwcRelays,
+            });
+            ndkRef.current = ndk;
+
+            // Connect to relays in the background
+            ndk.connect().catch(err => {
+                logger.error("NDK connection failed", err);
+            });
+        } catch (err) {
+            logger.error("NDK initialization failed", err);
+            isNostrInitialized.current = false; // Allow retry on next render
+        }
     }, [nwcRelays]);
 
+    // Memoized connection status
     const isConnected = useMemo(
         () => connectionStatus.some(r => r.status === 'connected'),
         [connectionStatus]
     );
 
-    const waitForConnection = (): Promise<void> =>
-        new Promise((resolve, reject) => {
+    // Wait for relay connection without blocking
+    const waitForConnection = useCallback((): Promise<void> => {
+        return new Promise((resolve, reject) => {
             const ndk = ndkRef.current;
             if (!ndk) return reject(new Error('NDK not initialized'));
 
@@ -117,8 +134,10 @@ export const NostrProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
             check();
         });
+    }, [isConnected]);
 
-    const DiscoverFederation = async () => {
+    // Discover federations in the background
+    const DiscoverFederation = useCallback(async () => {
         try {
             logger.log("Discovering federation...");
             const ndk = ndkRef.current;
@@ -128,9 +147,10 @@ export const NostrProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         } catch (err) {
             logger.error("Federation discovery failed:", err);
         }
-    };
+    }, [waitForConnection]);
 
-    const generateNWCConnection = (appName: string, relay?: string) => {
+    // Generate NWC connection
+    const generateNWCConnection = useCallback((appName: string, relay?: string) => {
         const ndk = ndkRef.current;
         if (!ndk || !appName) return null;
 
@@ -142,9 +162,10 @@ export const NostrProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             localStorage.setItem('autoPayNostr', "true");
         }
         return connection;
-    };
+    }, []);
 
-    const updateRelay = (url: string) => {
+    // Update relay
+    const updateRelay = useCallback((url: string) => {
         setNWCRelays(prev => {
             const updated = [...prev, url];
             localStorage.setItem('nwcRelays', JSON.stringify(updated));
@@ -155,74 +176,90 @@ export const NostrProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             if (exists) return prev;
             return [...prev, { relay: url, status: 'pending' }];
         });
-    };
+    }, []);
 
-    const retryFailedEvents = async () => {
+    // Retry failed events
+    const retryFailedEvents = useCallback(async () => {
         const ndk = ndkRef.current;
         const failed = await ndk?.cacheAdapter?.getUnpublishedEvents?.();
         if (failed?.length) {
             for (const ev of failed) {
-                try { await ev.event.publish(); } catch { }
+                try {
+                    await ev.event.publish();
+                } catch {
+                    // Silent catch to avoid blocking
+                }
             }
         }
-    };
+    }, []);
 
+    // Set NWC URI from localStorage
     const setNwcURI = useCallback(() => {
-        const walletKeys = JSON.parse(localStorage.getItem('WalletNostrKeys') || '{}')
-        const clientRelayKeys = JSON.parse(localStorage.getItem('ClientRelayKeys') || '{}')
-        logger.log("getting keys from storage for setting nwcuri", clientRelayKeys)
+        const walletKeys = JSON.parse(localStorage.getItem('WalletNostrKeys') || '{}');
+        const clientRelayKeys = JSON.parse(localStorage.getItem('ClientRelayKeys') || '{}');
+        logger.log("getting keys from storage for setting nwcuri", clientRelayKeys);
         if (walletKeys && clientRelayKeys) {
             const uris = Object.entries(clientRelayKeys).map(([appName, value]) => {
                 const { clientSecretKey, relay } = value as { clientSecretKey: string; relay?: string };
                 const effectiveRelay = relay || 'wss://relay.getalby.com/v1';
-                let result = {
+                return {
                     appName,
-                    nwcUri: `nostr+walletconnect://${walletKeys.walletNostrPubKey}?relay=${effectiveRelay}&secret=${clientSecretKey}`
+                    nwcUri: `nostr+walletconnect://${walletKeys.walletNostrPubKey}?relay=${effectiveRelay}&secret=${clientSecretKey}`,
                 };
-                return result;
             });
-
             setNWCURL(uris);
         }
-    }, [])
+    }, []);
 
+    // Handle Nostr events and connections
     useEffect(() => {
+        // Initialize NDK in the background
+        initializeNDK();
+
         const ndk = ndkRef.current;
         if (!ndk) return;
 
-        ndk.pool.on('relay:connect', relay => {
+        // Set up relay event listeners
+        const handleRelayConnect = (relay: any) => {
             logger.log("Relay connected:", relay.url);
             setConnectionStatus(prev => {
                 const exists = prev.find(r => r.relay === relay.url);
                 return exists
-                    ? prev.map(r => r.relay === relay.url ? { ...r, status: 'connected' } : r)
+                    ? prev.map(r => (r.relay === relay.url ? { ...r, status: 'connected' } : r))
                     : [...prev, { relay: relay.url, status: 'connected' }];
             });
-        });
+        };
 
-        ndk.pool.on('relay:disconnect', relay => {
+        const handleRelayDisconnect = (relay: any) => {
             logger.log("Relay disconnected:", relay.url);
             setConnectionStatus(prev =>
                 prev.map(r =>
                     r.relay === relay.url ? { ...r, status: 'disconnected' } : r
                 )
             );
-        });
+        };
 
-        ndk.connect().then(() => {
-            if (localStorage.getItem('nwcEnabled')) {
-                setNWCEnabled(true);
-                retryFailedEvents();
-            }
-        }).catch(err => {
-            logger.error("NDK connection failed", err);
-        });
-    }, []);
+        ndk.pool.on('relay:connect', handleRelayConnect);
+        ndk.pool.on('relay:disconnect', handleRelayDisconnect);
 
+        // Check for existing NWC enabled state
+        if (localStorage.getItem('nwcEnabled')) {
+            setNWCEnabled(true);
+            retryFailedEvents();
+        }
+
+        // Cleanup
+        return () => {
+            ndk.pool.off('relay:connect', handleRelayConnect);
+            ndk.pool.off('relay:disconnect', handleRelayDisconnect);
+        };
+    }, [initializeNDK, retryFailedEvents]);
+
+    // Handle Nostr payments and info events
     useEffect(() => {
         const runNostrNWC = async () => {
             const ndk = ndkRef.current;
-            if (!ndk) return;
+            if (!ndk || !wallet || walletStatus !== 'open') return;
 
             const walletKeys = JSON.parse(localStorage.getItem('WalletNostrKeys') || '{}');
             if (!walletKeys.walletNostrSecretKey) return;
@@ -243,20 +280,21 @@ export const NostrProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 logger.error("Info event publish failed", err);
             }
 
-            if(localStorage.getItem('autoPayNostr')==='true' && wallet){
-                if(confirm('Nostr Confirmation')){
+            if (localStorage.getItem('autoPayNostr') === 'true' && wallet) {
+                if (confirm('Nostr Confirmation')) {
                     await handleNostrPayment(wallet, walletKeys.walletNostrSecretKey, walletKeys.walletNostrPubKey, ndk);
                 }
-            } else if (localStorage.getItem('autoPayNostr') === "false" && wallet) {
+            } else if (localStorage.getItem('autoPayNostr') === 'false' && wallet) {
                 await handleNostrPayment(wallet, walletKeys.walletNostrSecretKey, walletKeys.walletNostrPubKey, ndk);
             }
+
+            setNwcURI();
         };
 
         if (nwcEnabled && wallet && walletStatus === 'open') {
-            runNostrNWC()
-            setNwcURI()
+            runNostrNWC();
         }
-    }, [nwcEnabled, walletStatus]);
+    }, [nwcEnabled, wallet, walletStatus, setNwcURI]);
 
     return (
         <NostrContext.Provider value={{

@@ -2,7 +2,7 @@ import QrScanner from "qr-scanner";
 import { useContext, useEffect, useRef, useState, useCallback } from 'react'
 import { Link } from 'react-router'
 import QRCode from 'react-qr-code'
-import { useWallet } from '../context/wallet'
+import { useWallet } from '../context/WalletManager'
 import '../style/Ecash.css'
 import { SpendEcash, RedeemEcash, ParseEcashNotes, subscribeSpend } from '../services/MintService'
 import { useSelector, useDispatch } from 'react-redux'
@@ -15,6 +15,7 @@ import { downloadQRCode } from '../services/DownloadQR';
 import { convertToMsats, subscribeBalance } from "../services/BalanceService";
 import logger from "../utils/logger";
 import { setError, setResult } from "../redux/slices/Alerts";
+import { setCurrency } from '../redux/slices/Balance';
 
 
 export default function Ecash() {
@@ -32,6 +33,11 @@ export default function Ecash() {
     const { currency } = useSelector((state: RootState) => state.balance)
     const { error, result } = useSelector((state: RootState) => state.Alert)
 
+    const handleCurrencyChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const selectedCurrency = e.target.value;
+        dispatch(setCurrency(selectedCurrency));
+        localStorage.setItem('walletCurrency', selectedCurrency)
+    }
 
     const handleSpendEcash = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -205,18 +211,23 @@ export default function Ecash() {
                                 <label htmlFor="Ecashamount" className="form-label">
                                     Enter amount in {currency}:
                                 </label>
-                                <div className="input-wrapper">
+                                <div className="input-group">
                                     <input
                                         type="decimal"
                                         id="Ecashamount"
+                                        className="amount-input"
                                         placeholder={`Enter amount in ${currency}`}
                                         inputMode='decimal'
                                         ref={amount}
                                         onChange={handleConversion}
-                                        className="form-input"
                                         required
                                     />
-                                    <span className="currency-indicator">{currency}</span>
+                                    <select className="currency-select" value={currency} onChange={handleCurrencyChange}>
+                                        <option value={'msat'}>msat</option>
+                                        <option value={'sat'}>sat</option>
+                                        <option value={'usd'}>USD</option>
+                                        <option value={'euro'}>EURO</option>
+                                    </select>
                                 </div>
                             </div>
 

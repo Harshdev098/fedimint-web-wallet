@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import type { RootState } from '../redux/store'
 import { setMode } from '../redux/slices/Mode';
 import logger from "../utils/logger";
-import { useWallet } from "../context/wallet";
+import { useWallet } from "../context/WalletManager";
 import { setCurrency } from '../redux/slices/Balance';
 import { cleanup } from "@fedimint/core-web";
 import { useNavigate } from "react-router";

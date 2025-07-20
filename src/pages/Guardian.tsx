@@ -17,7 +17,7 @@ export default function Guardians() {
 
     return (
         <section className="guardian-section">
-            <h2><i className="fa-solid fa-shield"></i> GUARDIANS</h2>
+            <h2 style={{fontSize:'1.5rem'}}><i className="fa-solid fa-shield"></i> Federation Guardians</h2>
             <p className="subtitle">Information about the active guardians</p>
 
             <div className="guardian-list">

@@ -1,5 +1,5 @@
-import { useContext, useCallback } from 'react';
-import { useWallet } from '../context/wallet';
+import { useContext, useEffect } from 'react';
+import { useWallet } from '../context/WalletManager';
 import { NoteCountByDenomination } from '../services/MintService';
 import { useSelector, useDispatch } from 'react-redux';
 import type { RootState, AppDispatch } from '../redux/store';
@@ -18,19 +18,21 @@ interface EcashNotesProps {
     onClose: () => void;
 }
 
-export default function EcashSetting({isOpen,onClose}:EcashNotesProps) {
+export default function EcashSetting({ isOpen, onClose }: EcashNotesProps) {
     const { wallet } = useWallet();
     const dispatch = useDispatch<AppDispatch>();
     const { setLoading } = useContext(LoadingContext);
     const { NotesByDenomonation } = useSelector((state: RootState) => state.mint);
-    const { UTXOSet } = useSelector((state: RootState) => state.wallet);
+    const { walletId } = useSelector((state: RootState) => state.activeFederation);
+    // const { UTXOSet } = useSelector((state: RootState) => state.wallet);
     const { error } = useSelector((state: RootState) => state.Alert)
 
     if (!isOpen) return null;
 
-    useCallback(() => {
+    useEffect(() => {
         const handleNoteCount = async () => {
             try {
+                logger.log('fetching note count')
                 const result = await NoteCountByDenomination(wallet);
                 dispatch(setNotesByDenomination(result));
             } catch (err) {
@@ -58,7 +60,7 @@ export default function EcashSetting({isOpen,onClose}:EcashNotesProps) {
             NProgress.done();
             setLoading(false);
         }
-    }, [wallet, dispatch, setLoading]);
+    }, [wallet, dispatch, setLoading, walletId]);
 
     const renderNoteCount = () => {
         if (!NotesByDenomonation || Object.keys(NotesByDenomonation).length === 0) {
@@ -77,19 +79,19 @@ export default function EcashSetting({isOpen,onClose}:EcashNotesProps) {
         ));
     };
 
-    const getUTXOCount = (label: string, utxos?: any[]) => (
-        <div className="note-card" key={label}>
-            <div className="note-value">{label}</div>
-            <div className="note-count">{utxos?.length || 0} UTXO{utxos?.length === 1 ? '' : 's'}</div>
-        </div>
-    );
+    // const getUTXOCount = (label: string, utxos?: any[]) => (
+    //     <div className="note-card" key={label}>
+    //         <div className="note-value">{label}</div>
+    //         <div className="note-count">{utxos?.length || 0} UTXO{utxos?.length === 1 ? '' : 's'}</div>
+    //     </div>
+    // );
 
     return (
         <>
             {error && <Alerts Error={error} Result="" />}
             <div className='modalOverlay'>
                 <div className='ecashNotes'>
-                    <button type='button' className='closeBtn' onClick={()=> onClose()} >
+                    <button type='button' className='closeBtn' onClick={() => onClose()} >
                         <i className="fa-solid fa-xmark"></i>
                     </button>
                     <div className="section-header">

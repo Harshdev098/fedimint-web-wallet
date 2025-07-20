@@ -1,28 +1,23 @@
 import type { FederationConfig, FederationDetailResponse, FederationMeta, FederationMetaData, PreviewFederationResponse } from "../hooks/Federation.type";
-import { generateMnemonic, getMnemonic, joinFederation, previewFederation, setMnemonic, Wallet } from '@fedimint/core-web'
-import type { JoinFedResponse } from "../hooks/Federation.type";
+import { generateMnemonic, getMnemonic, joinFederation, previewFederation, Wallet } from '@fedimint/core-web'
 import logger from "../utils/logger";
 
-export const JoinFederation = async (inviteCode: string, walletName: string): Promise<JoinFedResponse> => {
+export const JoinFederation = async (inviteCode: string, walletName: string): Promise<Wallet> => {
     try {
-        logger.log("Joining federation with invite code:", inviteCode, "and clientName:", walletName || 'fm-default');
+        logger.log("Joining federation with invite code:", inviteCode);
         let mnemonics = await getMnemonic();
         logger.log('mnemonic is ', mnemonics)
+
         if (!mnemonics?.length) {
             mnemonics = await generateMnemonic() as unknown as string[];
-            await setMnemonic(mnemonics);
         }
+        
         logger.log('mnemonic is ', mnemonics)
-        const result = await joinFederation(inviteCode, walletName);
+        const result = await joinFederation(inviteCode);
+        logger.log('join federation result ',result)
+
         if (result) {
-            logger.log("Federation ID:", result.federationId);
-            localStorage.setItem('activeFederation', result.federationId);
-            localStorage.setItem('lastUsedWallet', walletName);
-            return {
-                success: true,
-                message: `Joined federation ${result.federationId}`,
-                federationID: result.federationId || inviteCode
-            };
+            return result
         } else {
             throw new Error('Failed to join federation');
         }
@@ -66,7 +61,7 @@ export const fetchFederationDetails = async (wallet: Wallet, federationID: strin
                 meta = fetchedMeta;
             }
         }
-        localStorage.setItem('FedMetaData', JSON.stringify(meta))
+        
         return { details, meta }
     } catch (err) {
         logger.log(err)

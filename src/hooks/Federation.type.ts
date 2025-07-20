@@ -34,12 +34,6 @@ export type FederationDetailResponse = {
 
 export type FederationID = string
 
-export type JoinFedResponse = {
-    success: boolean,
-    message: string,
-    federationID: FederationID
-}
-
 export type PreviewFederationResponse={
     fedName:string,
     consensousVersion:{ major: number; minor: number }

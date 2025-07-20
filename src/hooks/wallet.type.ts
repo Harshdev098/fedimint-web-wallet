@@ -6,6 +6,12 @@ export type MintSpendNotesResponse = {
   operationId:string
 }
 
+export type WalletList={
+  fedName:string,
+  clientName:string,
+  icon:string
+}
+
 export type MintRedeemStates =
   | 'Created'
   | 'UserCanceledProcessing'

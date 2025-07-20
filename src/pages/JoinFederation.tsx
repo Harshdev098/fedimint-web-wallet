@@ -5,7 +5,7 @@ import { useSelector, useDispatch } from 'react-redux'
 import type { RootState, AppDispatch } from '../redux/store'
 import Alerts from '../Components/Alerts'
 import Navbar from '../Components/Navbar'
-import { setJoining, setFederationId, setNewJoin } from '../redux/slices/ActiveFederation'
+import { setJoining, setFederationId, setNewJoin, setWalletId } from '../redux/slices/ActiveWallet'
 import { setError } from '../redux/slices/Alerts'
 import LoadingContext from '../context/loader'
 import { JoinFederation as JoinFederationService, previewFedWithInviteCode } from '../services/FederationService'
@@ -39,9 +39,12 @@ export default function JoinFederation() {
             NProgress.start()
             setLoading(true)
             const result = await JoinFederationService(code || inviteCode, walletName.current?.value || 'fm-default')
-            dispatch(setFederationId(result.federationID))
             dispatch(setWalletStatus('open'))
-            localStorage.setItem('activeFederation', result.federationID)
+            dispatch(setFederationId(result.federationId))
+            dispatch(setWalletId(result.id))
+            localStorage.setItem('activeFederation', result.federationId);
+            localStorage.setItem('lastUsedWallet', result.id);
+            localStorage.setItem('activeWallet', result.id)
             dispatch(setNewJoin(true))
             navigate('/wallet')
         } catch (err) {

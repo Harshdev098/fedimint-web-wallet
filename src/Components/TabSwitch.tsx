@@ -52,7 +52,7 @@ export default function TabSwitch() {
                     onClick={() => setTab(3)}
                 >
                     <i className="fa-brands fa-bitcoin"></i> Onchain
-                    <span className="tooltip-text">On-chain Bitcoin activity</span>
+                    <span className="tooltip-text">On-chain Bitcoin Transactions</span>
                 </button>
             </div>
             {renderContent()}

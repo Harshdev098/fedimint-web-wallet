@@ -18,7 +18,7 @@ export const fetchBalance = async (wallet: Wallet): Promise<BalanceResponse> => 
     }
 }
 
-export const subscribeBalance = async (wallet: Wallet,dispatch:AppDispatch) => {
+export const subscribeBalance = async (wallet: Wallet, dispatch: AppDispatch) => {
     const unsubscribeBalance = wallet.balance.subscribeBalance((mSats) => {
         dispatch(updateBalanceFromMsat(mSats));
         setTimeout(() => {

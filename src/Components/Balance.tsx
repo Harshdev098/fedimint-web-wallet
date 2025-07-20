@@ -1,6 +1,6 @@
 // import QrScanner from "qr-scanner"
 import { useContext, useEffect, useState } from "react"
-import { useWallet } from "../context/wallet"
+import { useWallet } from "../context/WalletManager"
 import { useDispatch, useSelector } from 'react-redux'
 import type { RootState, AppDispatch } from '../redux/store'
 import { setError } from "../redux/slices/Alerts"
@@ -10,6 +10,7 @@ import NProgress from 'nprogress'
 import LoadingContext from '../context/loader'
 import LighningPayment from "./LighningPayment"
 import EcashSetting from "../pages/EcashSetting"
+import logger from "../utils/logger"
 
 
 export default function Balance() {
@@ -17,7 +18,7 @@ export default function Balance() {
     const dispatch = useDispatch<AppDispatch>()
     const { balance } = useSelector((state: RootState) => state.balance)
     const { setLoading } = useContext(LoadingContext)
-    const { federationId } = useSelector((state: RootState) => state.activeFederation)
+    const { federationId,walletId } = useSelector((state: RootState) => state.activeFederation)
     const { currency } = useSelector((state: RootState) => state.balance)
     const { error } = useSelector((state: RootState) => state.Alert)
     const [OpenEcashNotes,setOpenEcashNotes]=useState<boolean>(false)
@@ -26,6 +27,7 @@ export default function Balance() {
     useEffect(() => {
         const run = async () => {
             try {
+                logger.log('fetching balance')
                 NProgress.start()
                 setLoading(true)
                 const msats=await wallet.balance.getBalance()
@@ -39,7 +41,7 @@ export default function Balance() {
             }
         }
         run()
-    }, [federationId, currency])
+    }, [federationId, currency,walletId])
 
 
     return (
