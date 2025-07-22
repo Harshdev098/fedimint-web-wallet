@@ -1,6 +1,6 @@
 import type { NDKEvent as NDKEventTYpe, NDKPrivateKeySigner } from "@nostr-dev-kit/ndk";
 import NDK,{NDKEvent} from "@nostr-dev-kit/ndk";
-import type { Wallet } from "../hooks/wallet.type";
+import { Wallet } from "@fedimint/core-web";
 import logger from "../utils/logger";
 
 export async function handleZapRequest(

@@ -2,8 +2,8 @@ import { useParams } from 'react-router'
 import { useSelector } from 'react-redux'
 import type { RootState } from '../redux/store'
 import { fetchFederationDetails } from '../services/FederationService'
-import WalletContext from '../context/wallet';
-import { useContext, useState, useEffect } from 'react';
+import { useWallet } from '../context/WalletManager';
+import { useContext, useState, useCallback } from 'react';
 import type { FederationDetailResponse } from '../hooks/Federation.type';
 import NProgress from 'nprogress';
 import LoadingContext from '../context/loader';
@@ -13,12 +13,13 @@ import logger from '../utils/logger';
 
 export default function Federation() {
     const { Details } = useSelector((state: RootState) => state.federationdetails)
-    const { wallet } = useContext(WalletContext);
+    const {federationId}=useSelector((state:RootState)=>state.activeFederation)
+    const { wallet } = useWallet();
     const { fedId } = useParams()
     const { setLoading } = useContext(LoadingContext);
     const [details, setDetails] = useState<FederationDetailResponse | null>(null)
 
-    useEffect(() => {
+    useCallback(() => {
         const fetchFederationData = async () => {
             if (fedId) {
                 try {
@@ -39,7 +40,7 @@ export default function Federation() {
         }
         logger.log("fetching the details")
         fetchFederationData()
-    }, [])
+    }, [federationId])
 
 
     return (

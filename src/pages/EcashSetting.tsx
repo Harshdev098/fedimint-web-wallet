@@ -1,5 +1,5 @@
-import { useEffect, useContext } from 'react';
-import WalletContext from '../context/wallet';
+import { useContext, useEffect } from 'react';
+import { useWallet } from '../context/WalletManager';
 import { NoteCountByDenomination } from '../services/MintService';
 import { useSelector, useDispatch } from 'react-redux';
 import type { RootState, AppDispatch } from '../redux/store';
@@ -13,17 +13,26 @@ import Alerts from '../Components/Alerts';
 import logger from '../utils/logger';
 import '../style/Ecash.css'
 
-export default function EcashSetting() {
-    const { wallet } = useContext(WalletContext);
+interface EcashNotesProps {
+    isOpen: boolean;
+    onClose: () => void;
+}
+
+export default function EcashSetting({ isOpen, onClose }: EcashNotesProps) {
+    const { wallet } = useWallet();
     const dispatch = useDispatch<AppDispatch>();
     const { setLoading } = useContext(LoadingContext);
     const { NotesByDenomonation } = useSelector((state: RootState) => state.mint);
-    const { UTXOSet } = useSelector((state: RootState) => state.wallet);
-    const {error}=useSelector((state:RootState)=>state.Alert)
+    const { walletId } = useSelector((state: RootState) => state.activeFederation);
+    // const { UTXOSet } = useSelector((state: RootState) => state.wallet);
+    const { error } = useSelector((state: RootState) => state.Alert)
+
+    if (!isOpen) return null;
 
     useEffect(() => {
         const handleNoteCount = async () => {
             try {
+                logger.log('fetching note count')
                 const result = await NoteCountByDenomination(wallet);
                 dispatch(setNotesByDenomination(result));
             } catch (err) {
@@ -36,7 +45,7 @@ export default function EcashSetting() {
                 const result = await getUTXOSet(wallet);
                 dispatch(setUTXOSet(result));
             } catch (err) {
-                dispatch(setError({type:'UTXO Error: ',message:err instanceof Error ? err.message : String(err)}));
+                dispatch(setError({ type: 'UTXO Error: ', message: err instanceof Error ? err.message : String(err) }));
                 setTimeout(() => {
                     dispatch(setError(null))
                 }, 3000);
@@ -51,7 +60,7 @@ export default function EcashSetting() {
             NProgress.done();
             setLoading(false);
         }
-    }, [wallet, dispatch, setLoading]);
+    }, [wallet, dispatch, setLoading, walletId]);
 
     const renderNoteCount = () => {
         if (!NotesByDenomonation || Object.keys(NotesByDenomonation).length === 0) {
@@ -70,26 +79,32 @@ export default function EcashSetting() {
         ));
     };
 
-    const getUTXOCount = (label: string, utxos?: any[]) => (
-        <div className="note-card" key={label}>
-            <div className="note-value">{label}</div>
-            <div className="note-count">{utxos?.length || 0} UTXO{utxos?.length === 1 ? '' : 's'}</div>
-        </div>
-    );
+    // const getUTXOCount = (label: string, utxos?: any[]) => (
+    //     <div className="note-card" key={label}>
+    //         <div className="note-value">{label}</div>
+    //         <div className="note-count">{utxos?.length || 0} UTXO{utxos?.length === 1 ? '' : 's'}</div>
+    //     </div>
+    // );
 
     return (
         <>
             {error && <Alerts Error={error} Result="" />}
-            <div className="ecash-container">
-                <div className="section-header">
-                    <h2>Ecash Notes</h2>
-                    <div className="divider"></div>
+            <div className='modalOverlay'>
+                <div className='ecashNotes'>
+                    <button type='button' className='closeBtn' onClick={() => onClose()} >
+                        <i className="fa-solid fa-xmark"></i>
+                    </button>
+                    <div className="section-header">
+                        <h2>Ecash Notes</h2>
+                        <div className="divider"></div>
+                    </div>
+                    <div className="note-grid">
+                        {renderNoteCount()}
+                    </div>
                 </div>
-                <div className="note-grid">
-                    {renderNoteCount()}
-                </div>
+            </div>
 
-                <div className="section-header">
+            {/* <div className="section-header">
                     <h2>Federation Wallet UTXOs</h2>
                     <div className="divider"></div>
                 </div>
@@ -99,8 +114,7 @@ export default function EcashSetting() {
                     {getUTXOCount("Unsigned Change UTXOs", UTXOSet?.unsigned_change_utxos)}
                     {getUTXOCount("Unconfirmed PegOut UTXOs", UTXOSet?.unconfirmed_peg_out_utxos)}
                     {getUTXOCount("Unconfirmed Change UTXOs", UTXOSet?.unconfirmed_change_utxos)}
-                </div>
-            </div>
+                </div> */}
         </>
     );
 }

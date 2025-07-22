@@ -2,7 +2,7 @@ import { useState, useContext, useEffect } from 'react';
 import QRCode from 'react-qr-code';
 import { useSelector } from 'react-redux'
 import type { RootState } from '../redux/store'
-import WalletContext from '../context/wallet';
+import { useWallet } from '../context/WalletManager';
 import { convertFromMsat } from '../services/BalanceService';
 import LoadingContext from '../context/loader';
 import NProgress from 'nprogress';
@@ -14,24 +14,32 @@ import Footer from '../Components/Footer';
 import BasicSettings from '../Components/BasicSettings';
 import { setError } from '../redux/slices/Alerts';
 import '../style/Settings.css'
+import { getWalletInfo } from '@fedimint/core-web';
 
 
 export default function Settings() {
     const { setLoading } = useContext(LoadingContext);
     const { metaData } = useSelector((state: RootState) => state.federationdetails)
     const { currency } = useSelector((state: RootState) => state.balance)
-    const { wallet } = useContext(WalletContext)
+    const { wallet } = useWallet()
     const [balance, setBalance] = useState(0)
+    const [joinDate,setJoinDate]=useState<number | undefined>(undefined)
+    const [lastAccess,setLastAccess]=useState<number | undefined>(undefined)
+    const {federationId,walletId}=useSelector((state:RootState)=>state.activeFederation)
     const { error } = useSelector((state: RootState) => state.Alert)
 
 
-    const fetchBalance = async () => {
+    const fetchBasicWalletDetails = async () => {
         try {
             NProgress.start()
             setLoading(true)
             const result = await wallet.balance.getBalance()
             const convertedAmount = await convertFromMsat(result, currency)
             setBalance(convertedAmount)
+            const joinDate=getWalletInfo(walletId)?.createdAt
+            const lastAccess=getWalletInfo(walletId)?.lastAccessedAt
+            setJoinDate(joinDate)
+            setLastAccess(lastAccess)
         } catch (err) {
             setError({ type: 'Balance Error: ', message: err instanceof Error ? err.message : String(err) })
             setTimeout(() => {
@@ -44,8 +52,8 @@ export default function Settings() {
     }
 
     useEffect(() => {
-        fetchBalance()
-    }, [balance, currency])
+        fetchBasicWalletDetails();
+    }, [balance, currency,federationId,walletId])
 
     return (
         <>
@@ -63,7 +71,11 @@ export default function Settings() {
                         </div>
                         <div className="wallet-item">
                             <span className="wallet-label">Join Date:</span>
-                            <span className="wallet-value">{localStorage.getItem('joinDate') || 'N/A'}</span>
+                            <span className="wallet-value">{joinDate ? new Date(joinDate).toLocaleString() : 'N/A'}</span>
+                        </div>
+                        <div className="wallet-item">
+                            <span className="wallet-label">Last Accessed:</span>
+                            <span className="wallet-value">{lastAccess ? new Date(lastAccess).toLocaleString() : 'N/A'}</span>
                         </div>
                         <div className="wallet-item">
                             <span className="wallet-label">Navigate to other wallet:</span>

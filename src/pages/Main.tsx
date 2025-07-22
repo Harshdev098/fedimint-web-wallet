@@ -1,30 +1,21 @@
-import { useContext, useEffect } from 'react';
+import { useEffect } from 'react';
 import Sidebar from '../Components/Sidebar';
 import { Outlet } from 'react-router';
-import { fetchFederationDetails } from '../services/FederationService';
-import WalletContext from '../context/wallet';
 import { useDispatch, useSelector } from 'react-redux';
 import type { RootState, AppDispatch } from '../redux/store';
-import { setFederationDetails, setFederationMetaData, setGuardianStatus } from '../redux/slices/FederationDetails';
-import { setError } from '../redux/slices/Alerts';
-import { setCurrency } from '../redux/slices/Balance';
-import { setFederationId } from '../redux/slices/ActiveFederation';
-import { setNewJoin } from '../redux/slices/ActiveFederation';
+import { setGuardianStatus } from '../redux/slices/FederationDetails';
+import { setNewJoin } from '../redux/slices/ActiveWallet';
 import Alerts from '../Components/Alerts';
-import LoadingContext from '../context/loader';
-import NProgress from 'nprogress';
 import Header from '../Components/Header';
-import type { FederationConfig } from '@fedimint/core-web';
-import logger from '../utils/logger';
+import { type FederationConfig } from '@fedimint/core-web';
 
 export default function Main() {
-    const { wallet, walletStatus } = useContext(WalletContext);
     const dispatch = useDispatch<AppDispatch>();
     const { Details, metaData } = useSelector((state: RootState) => state.federationdetails);
-    const { setLoading } = useContext(LoadingContext);
-    const { federationId, newJoin } = useSelector((state: RootState) => state.activeFederation);
-    const {mode}=useSelector((state:RootState)=>state.Mode)
-    const {error}=useSelector((state:RootState)=>state.Alert)
+    const { newJoin } = useSelector((state: RootState) => state.activeFederation);
+    const { mode } = useSelector((state: RootState) => state.Mode)
+    const { error } = useSelector((state: RootState) => state.Alert)
+    const { walletStatus } = useSelector((state: RootState) => state.wallet)
 
     const checkGuardianStatus = async (Details: FederationConfig) => {
         if (Details.api_endpoints && typeof Details.api_endpoints === 'object') {
@@ -76,46 +67,6 @@ export default function Main() {
     };
 
     useEffect(() => {
-        const handleFederationDetails = async () => {
-            logger.log("wallet status in federation details ", walletStatus)
-            const activeFederation = localStorage.getItem('activeFederation');
-            try {
-                NProgress.start();
-                setLoading(true);
-                let FederationID = federationId || activeFederation;
-                if (!FederationID) {
-                    FederationID = await wallet.federation.getFederationId()
-                    localStorage.setItem('activeFederation', FederationID)
-                    dispatch(setFederationId(FederationID))
-                }
-                const result = await fetchFederationDetails(wallet, FederationID);
-                logger.log("Federation Details:", result);
-                dispatch(setFederationDetails(result.details));
-                dispatch(setFederationMetaData(result.meta));
-                if (!(localStorage.getItem('walletCurrency'))) {
-                    localStorage.setItem('walletCurrency', 'sat')
-                }
-                setCurrency(localStorage.getItem('walletCurrency') || 'sat')
-                logger.log("new join is ", newJoin)
-                logger.log("welcome message", result.meta.welcome_message)
-            } catch (err) {
-                logger.error("Error fetching federation details:", err);
-                dispatch(setError({type:'Config Error: ', message:`${err}`}));
-                setTimeout(() => {
-                    dispatch(setError(null));
-                }, 3000);
-            } finally {
-                NProgress.done();
-                setLoading(false);
-            }
-        };
-
-        if (walletStatus === 'open' && (!Details || !metaData)) {
-            handleFederationDetails();
-        }
-    }, [walletStatus, federationId, Details, metaData, dispatch, setLoading]);
-
-    useEffect(() => {
         let interval: ReturnType<typeof setInterval> | undefined;
         if (Details && walletStatus === 'open') {
             checkGuardianStatus(Details)
@@ -127,22 +78,24 @@ export default function Main() {
         return () => clearInterval(interval);
     }, [Details, walletStatus])
 
-return (
-    walletStatus === 'open' && (
-        <main className='MainWalletContainer'>
-            {error && <Alerts Error={error} />}
-            {metaData?.welcome_message && newJoin === true && <Alerts Result={metaData.welcome_message} onDismiss={() => { dispatch(setNewJoin(false)) }} />}
-            {metaData?.federation_expiry_timestamp && (
-                <Alerts
-                    Result={`${metaData.welcome_message} federation Expiry time: ${new Date(metaData.federation_expiry_timestamp * 1000).toLocaleString()}`}
-                />
-            )}
-            <Sidebar />
-            <section className={`WalletContentSection ${mode===true ? 'DarkMode' : 'WhiteMode'}`}>
-                <Header />
-                {metaData && Details && <Outlet />}
-            </section>
-        </main>
-    )
-);
+    return (
+        walletStatus === 'open' && metaData && Details && (
+            <main className='MainWalletContainer'>
+                {error && <Alerts Error={error} />}
+                {metaData?.welcome_message && newJoin === true && <Alerts Result={metaData.welcome_message} onDismiss={() => { dispatch(setNewJoin(false)) }} />}
+                {metaData?.federation_expiry_timestamp && (
+                    <Alerts
+                        Result={`${metaData.welcome_message} federation Expiry time: ${new Date(metaData.federation_expiry_timestamp * 1000).toLocaleString()}`}
+                    />
+                )}
+
+                <section className={`WalletContentSection ${mode === true ? 'DarkMode' : 'WhiteMode'}`}>
+                    <Header />
+                    {<Outlet />}
+                </section>
+
+                <Sidebar />
+            </main>
+        )
+    );
 }

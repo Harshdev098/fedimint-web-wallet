@@ -16,29 +16,16 @@
 nav {
     padding: 12px 24px;
     margin: 0;
-    background: #ffffff;
+    background: #f5fbfe;
     border-bottom: 1px solid #f1f5f9;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 /* Elegant Background */
 .JoinFedContainer {
-    background: linear-gradient(135deg, #fafbfc 0%, #f1f5f9 100%);
+    background: #e4eef3;
     min-height: 100vh;
     position: relative;
-}
-
-.JoinFedContainer::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: 
-        radial-gradient(circle at 25% 25%, rgba(99, 102, 241, 0.03) 0%, transparent 50%),
-        radial-gradient(circle at 75% 75%, rgba(168, 85, 247, 0.03) 0%, transparent 50%);
-    pointer-events: none;
 }
 
 /* Compact Section Layout */
@@ -75,6 +62,7 @@ nav {
         opacity: 0;
         transform: translateY(20px);
     }
+
     100% {
         opacity: 1;
         transform: translateY(0);
@@ -85,11 +73,7 @@ nav {
 .JoinFedDiv div h2 {
     font-size: 2.5rem;
     font-weight: 700;
-    color: #1e293b;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: #111827;
     margin-bottom: 12px;
     letter-spacing: -0.02em;
     line-height: 1.2;
@@ -113,8 +97,8 @@ nav {
     align-items: stretch;
     border-radius: 12px;
     overflow: hidden;
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
+    background: #f7f9fa;
+    border: 1px solid #a7c3e9;
     transition: all 0.2s ease;
     animation: slideUp 0.4s ease-out 0.1s both;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
@@ -131,6 +115,7 @@ nav {
         opacity: 0;
         transform: translateY(15px);
     }
+
     100% {
         opacity: 1;
         transform: translateY(0);
@@ -142,11 +127,11 @@ nav {
         width: 90vw;
         max-width: 340px;
     }
-    
+
     .JoinFedDiv div h2 {
         font-size: 2rem;
     }
-    
+
     .JoinFedDiv div p {
         font-size: 0.95rem;
     }
@@ -194,7 +179,8 @@ nav {
     padding: 24px;
     gap: 16px;
     margin: 0;
-    background: #ffffff;
+    border-radius: 12px;
+    background: #f7f9fa;
     border-radius: 0 0 12px 12px;
 }
 
@@ -310,7 +296,8 @@ footer div {
     flex-wrap: wrap;
 }
 
-footer a, footer i {
+footer a,
+footer i {
     color: #64748b;
     font-size: 20px;
     transition: all 0.2s ease;
@@ -322,7 +309,8 @@ footer a, footer i {
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
-footer a:hover, footer i:hover {
+footer a:hover,
+footer i:hover {
     color: #3b82f6;
     background: rgba(255, 255, 255, 0.9);
     border-color: #bfdbfe;
@@ -361,50 +349,51 @@ footer a:hover, footer i:hover {
     nav {
         padding: 12px 20px;
     }
-    
+
     .JoinFedSection {
         padding: 30px 20px;
         min-height: calc(100vh - 160px);
     }
-    
+
     .JoinFedForm {
         padding: 24px;
         gap: 18px;
     }
-    
+
     .JoinFedDiv div h2 {
         font-size: 2.2rem;
     }
-    
+
     .JoinFedDiv div p {
         font-size: 1rem;
         margin-bottom: 28px;
     }
-    
+
     .JoinMethod button {
         font-size: 15px;
         padding: 10px 16px;
     }
-    
+
     .JoinFedForm input {
         font-size: 16px;
         padding: 13px 15px;
     }
-    
+
     .JoinFedForm button[type="submit"] {
         font-size: 15px;
         padding: 13px 20px;
     }
-    
+
     .form-para {
         font-size: 13px !important;
     }
-    
+
     footer {
         padding: 32px 0;
     }
-    
-    footer a, footer i {
+
+    footer a,
+    footer i {
         font-size: 18px;
         padding: 10px;
     }
@@ -415,49 +404,50 @@ footer a:hover, footer i:hover {
         width: 95vw;
         max-width: 340px;
     }
-    
+
     .JoinFedForm {
         padding: 20px;
         gap: 16px;
     }
-    
+
     .JoinMethod button {
         font-size: 13px;
         padding: 9px 14px;
     }
-    
+
     .JoinFedDiv div h2 {
         font-size: 2rem;
     }
-    
+
     .JoinFedDiv div p {
         font-size: 0.95rem;
         margin-bottom: 24px;
     }
-    
+
     .JoinFedForm input {
         font-size: 16px;
         padding: 12px 14px;
     }
-    
+
     .JoinFedForm button[type="submit"] {
         font-size: 15px;
         padding: 12px 18px;
     }
-    
+
     .form-para {
         font-size: 13px !important;
     }
-    
+
     footer {
         padding: 28px 0;
     }
-    
+
     footer div {
         gap: 16px;
     }
-    
-    footer a, footer i {
+
+    footer a,
+    footer i {
         font-size: 16px;
         padding: 10px;
     }
@@ -467,19 +457,19 @@ footer a:hover, footer i:hover {
     .JoinFedDiv div h2 {
         font-size: 1.8rem;
     }
-    
+
     .JoinFedDiv div p {
         font-size: 0.9rem;
     }
-    
+
     .JoinFedForm {
         padding: 16px;
     }
-    
+
     .JoinFedForm input {
         padding: 11px 13px;
     }
-    
+
     .JoinFedForm button[type="submit"] {
         padding: 11px 16px;
     }
@@ -600,13 +590,25 @@ footer a:hover, footer i:hover {
 
 /* Modern styles for federation discovery component */
 @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
 }
 
 @keyframes slideUp {
-    from { transform: translateY(40px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
+    from {
+        transform: translateY(40px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
 }
 
 .federation-discovery .previewData {
@@ -630,10 +632,7 @@ footer a:hover, footer i:hover {
     margin: 0 0 28px;
     font-size: 28px;
     font-weight: 700;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: #111827;
     letter-spacing: -0.5px;
 }
 
@@ -644,27 +643,27 @@ footer a:hover, footer i:hover {
 }
 
 .federation-discovery .previewCard li {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  position: relative;
-  border-radius: 16px;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-  overflow: hidden;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    position: relative;
+    border-radius: 16px;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .federation-discovery .previewCard li .arrow-container {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  cursor: pointer;
-  padding: 4px;
-  margin-right: 60px;
-  align-items: center;
-  justify-content: center;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    cursor: pointer;
+    padding: 4px;
+    margin-right: 60px;
+    align-items: center;
+    justify-content: center;
 }
 
 .federation-discovery .previewCard li::before {
@@ -706,10 +705,10 @@ footer a:hover, footer i:hover {
 }
 
 .federation-discovery .previewCard li .fed-info {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
 }
 
 .federation-discovery .previewCard li .join-button-right {
@@ -820,26 +819,26 @@ footer a:hover, footer i:hover {
         padding: 24px;
         max-width: calc(100vw - 40px);
     }
-    
+
     .federation-discovery .previewCard h3 {
         font-size: 24px;
         margin-bottom: 24px;
     }
-    
+
     .federation-discovery .previewCard li {
         padding: 16px 20px;
         gap: 12px;
     }
-    
+
     .federation-discovery .previewCard li img {
         width: 40px;
         height: 40px;
     }
-    
+
     .federation-discovery .previewCard li h4 {
         font-size: 16px;
     }
-    
+
     .federation-discovery .previewCard li p {
         font-size: 13px;
     }
@@ -946,14 +945,14 @@ footer div i:hover {
     background-color: #1a1a40;
 }
 
-.divider {
+.option-divider {
     text-align: center;
     font-size: 17px;
     position: relative;
     margin: 10px 0;
 }
 
-.divider p {
+.option-divider p {
     display: inline-block;
     padding: 0 10px;
     background: white;
@@ -961,7 +960,7 @@ footer div i:hover {
     z-index: 2;
 }
 
-.divider::before {
+.option-divider::before {
     content: '';
     height: 1px;
     width: 100%;

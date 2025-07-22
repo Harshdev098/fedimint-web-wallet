@@ -1,5 +1,6 @@
-import type { Wallet,WalletSummary } from "../hooks/wallet.type";
+import type { WalletSummary } from "../hooks/wallet.type";
 import logger from "../utils/logger";
+import { Wallet } from "@fedimint/core-web";
 
 export const getUTXOSet = async (wallet: Wallet) : Promise<WalletSummary> => {
     try {

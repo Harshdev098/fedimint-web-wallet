@@ -1,12 +1,15 @@
-import { FedimintWallet } from "@fedimint/core-web"
-
-export type Wallet = FedimintWallet
 
 export type BalanceResponse = number
 
 export type MintSpendNotesResponse = {
   notes:string,
   operationId:string
+}
+
+export type WalletList={
+  fedName:string,
+  clientName:string,
+  icon:string
 }
 
 export type MintRedeemStates =

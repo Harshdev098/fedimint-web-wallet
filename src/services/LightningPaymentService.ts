@@ -1,4 +1,5 @@
-import type { CreateInvoiceResponse, InvoicePaymentResponse, Wallet } from "../hooks/wallet.type";
+import type { CreateInvoiceResponse, InvoicePaymentResponse } from "../hooks/wallet.type";
+import { Wallet } from "@fedimint/core-web";
 import logger from "../utils/logger";
 import type { AppDispatch } from '../redux/store'
 import { createNotification } from '../redux/slices/NotificationSlice'

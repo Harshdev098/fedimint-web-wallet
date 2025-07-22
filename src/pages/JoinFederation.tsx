@@ -5,16 +5,16 @@ import { useSelector, useDispatch } from 'react-redux'
 import type { RootState, AppDispatch } from '../redux/store'
 import Alerts from '../Components/Alerts'
 import Navbar from '../Components/Navbar'
-import { setJoining, setFederationId, setNewJoin } from '../redux/slices/ActiveFederation'
+import { setJoining, setFederationId, setNewJoin, setWalletId } from '../redux/slices/ActiveWallet'
 import { setError } from '../redux/slices/Alerts'
-import WalletContext from '../context/wallet'
 import LoadingContext from '../context/loader'
-import { JoinFederation as JoinFederationService, previewFederation } from '../services/FederationService'
+import { JoinFederation as JoinFederationService, previewFedWithInviteCode } from '../services/FederationService'
 import QrScanner from 'qr-scanner'
 import NProgress from 'nprogress'
 import type { PreviewFederationResponse } from '../hooks/Federation.type'
 import logger from '../utils/logger'
 import DiscoverFederation from '../Components/DiscoverFederation'
+import { setWalletStatus } from '../redux/slices/WalletSlice'
 import '../style/JoinFederation.css'
 
 
@@ -28,24 +28,27 @@ export default function JoinFederation() {
     const [showFederations, setShowFederation] = useState<boolean>(false)
     const [previewFederationData, setPreviewFederationData] = useState<PreviewFederationResponse | null>(null)
     const navigate = useNavigate()
-    const { wallet, setWalletStatus } = useContext(WalletContext)
     const { setLoading } = useContext(LoadingContext)
     const dispatch = useDispatch<AppDispatch>()
     const { joining } = useSelector((state: RootState) => state.activeFederation)
-    const {error}=useSelector((state:RootState)=>state.Alert)
+    const { error } = useSelector((state: RootState) => state.Alert)
 
     const handleJoinFederation = async (code?: string): Promise<void> => {
         dispatch(setJoining(true))
         try {
             NProgress.start()
             setLoading(true)
-            const result = await JoinFederationService(code || inviteCode, walletName.current?.value || 'fm-default', wallet)
-            dispatch(setFederationId(result.federationID))
-            setWalletStatus('open')
+            const result = await JoinFederationService(code || inviteCode, walletName.current?.value || 'fm-default')
+            dispatch(setWalletStatus('open'))
+            dispatch(setFederationId(result.federationId))
+            dispatch(setWalletId(result.id))
+            localStorage.setItem('activeFederation', result.federationId);
+            localStorage.setItem('lastUsedWallet', result.id);
+            localStorage.setItem('activeWallet', result.id)
             dispatch(setNewJoin(true))
             navigate('/wallet')
         } catch (err) {
-            dispatch(setError({type:'Join Error:',message:`${err}`}))
+            dispatch(setError({ type: 'Join Error:', message: `${err}` }))
             setTimeout(() => {
                 dispatch(setError(null))
             }, 4000);
@@ -64,12 +67,12 @@ export default function JoinFederation() {
             }
             NProgress.start()
             setLoading(true)
-            const result = await previewFederation(wallet, inviteCode)
+            const result = await previewFedWithInviteCode(inviteCode)
             logger.log("result is ", result)
             setPreviewFederationData(result)
             setOpenPreviewFederation(true)
         } catch (err) {
-            dispatch(setError({type:'Preview Error:', message:`${err}`}))
+            dispatch(setError({ type: 'Preview Error:', message: `${err}` }))
             setTimeout(() => {
                 dispatch(setError(null))
             }, 3000);
@@ -100,14 +103,14 @@ export default function JoinFederation() {
                     logger.log("Camera started successfully");
                 }).catch((err) => {
                     logger.error("Camera access denied:", err);
-                    dispatch(setError({type:'QR Error: ',message:`${err}`}))
+                    dispatch(setError({ type: 'QR Error: ', message: `${err}` }))
                     setTimeout(() => {
                         dispatch(setError(null))
                     }, 3000);
                 });
             } catch (err) {
                 logger.log("an error occured while scanning")
-                dispatch(setError({type:'QR Error: ',message:`Error occured while scanning`}))
+                dispatch(setError({ type: 'QR Error: ', message: `Error occured while scanning` }))
             }
         }
     }
@@ -137,7 +140,7 @@ export default function JoinFederation() {
                                                     <span><b>Guardians:</b> {previewFederationData.totalGuardians}</span>
                                                     <span><b>Max stable Balance:</b> {previewFederationData.maxBalance}</span>
                                                     <span><b>Message:</b> {previewFederationData.welcomeMessage}</span>
-                                                    <span><b>Onchain deposit:</b> {previewFederationData.onChainDeposit==='true' ? 'Disabled' : 'Enabled'}</span>
+                                                    <span><b>Onchain deposit:</b> {previewFederationData.onChainDeposit === 'true' ? 'Disabled' : 'Enabled'}</span>
                                                     <span><b>Services(modules):</b> {previewFederationData.modules && Object.values(previewFederationData.modules).length > 0
                                                         ? Object.values(previewFederationData.modules).map((m) => m.kind).join(', ')
                                                         : 'N/A'}

@@ -1,5 +1,5 @@
 import { configureStore } from "@reduxjs/toolkit";
-import ActiveFederationSlice from "./slices/ActiveFederation";
+import ActiveWalletSlice from "./slices/ActiveWallet";
 import BalanceSlice from "./slices/Balance";
 import FederationDetailsSlice from "./slices/FederationDetails";
 import MintSlice from "./slices/Mint";
@@ -13,7 +13,7 @@ import AlertSlice from "./slices/Alerts";
 
 export const store=configureStore({
     reducer:{
-        activeFederation: ActiveFederationSlice,
+        activeFederation: ActiveWalletSlice,
         balance: BalanceSlice,
         federationdetails: FederationDetailsSlice,
         mint: MintSlice,

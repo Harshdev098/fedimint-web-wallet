@@ -1,4 +1,4 @@
-// import type { Transactions } from "@fedimint/core-web";
+// import type { EcashTransaction, LightningTransaction, Transactions } from "@fedimint/core-web";
 import logger from "../utils/logger";
 
 export const downloadQRCode = (downloadName: string) => {
@@ -38,14 +38,14 @@ export const downloadQRCode = (downloadName: string) => {
 //         headers.join(','),
 //         ...transactions.map(tx =>
 //             [
-//                 `"${tx.timeStamp}"`,
-//                 tx.paymentType,
+//                 `"${tx.timestamp}"`,
+//                 tx.kind,
 //                 tx.type,
-//                 tx.amount,
+//                 (tx as EcashTransaction).amountMsats,
 //                 tx.operationId,
 //                 tx.outcome,
-//                 tx.gateway,
-// 				tx.invoice
+//                 (tx as LightningTransaction).gateway,
+// 				(tx as LightningTransaction).invoice
 //             ].join(',')
 //         )
 //     ];

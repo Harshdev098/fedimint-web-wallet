@@ -38,6 +38,7 @@ export default function Nostr() {
 
     return (
         <div className="settings-container">
+            {/* Nostr Wallet Connect Section */}
             <div className="settings-section">
                 <h2 className="section-title">Nostr Wallet Connect</h2>
 
@@ -110,7 +111,7 @@ export default function Nostr() {
                                 onChange={(e) => setNostrRelay(e.target.value)}
                             />
                             <p className="form-help">
-                                You can give a preferred relay for the specific app, Fedimint will use a default relay if not provided
+                                You can give a preferred relay for the specific app, Fedimint will use a getalby relay as default to generate the URI
                             </p>
                         </div>
 

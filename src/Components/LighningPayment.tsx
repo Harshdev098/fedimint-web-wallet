@@ -9,13 +9,13 @@ import type { RootState, AppDispatch } from '../redux/store'
 import { CreateInvoice, PayInvoice, subscribeLnPay, subscribeLnReceive } from '../services/LightningPaymentService'
 import LoadingContext from '../context/loader'
 import NProgress from 'nprogress'
-import WalletContext from '../context/wallet'
+import { useWallet } from '../context/WalletManager'
 import Alerts from './Alerts'
 import { downloadQRCode } from '../services/DownloadQR';
 import { convertToMsats } from '../services/BalanceService';
-import { Link } from 'react-router';
 import logger from '../utils/logger';
 import { setError } from '../redux/slices/Alerts';
+import { setCurrency } from '../redux/slices/Balance';
 
 
 export default function LighningPayment() {
@@ -29,14 +29,20 @@ export default function LighningPayment() {
     const [openRecieveBox, setOpenRecieveBox] = useState(false)
     const [openSendBox, setOpenSendBox] = useState<boolean>(false)
     const [openVideo, setOpenVideo] = useState<boolean>(false)
-    const { wallet } = useContext(WalletContext)
+    const { wallet } = useWallet()
     const { setLoading } = useContext(LoadingContext)
     const dispatch = useDispatch<AppDispatch>()
     const { Invoice, InvoiceOperationId, payInvoiceResult, payStatus } = useSelector((state: RootState) => state.Lightning)
     const { error } = useSelector((state: RootState) => state.Alert)
     const { currency } = useSelector((state: RootState) => state.balance)
     const { metaData } = useSelector((state: RootState) => state.federationdetails)
+    const { walletId } = useSelector((state: RootState) => state.activeFederation)
 
+    const handleCurrencyChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const selectedCurrency = e.target.value;
+        dispatch(setCurrency(selectedCurrency));
+        localStorage.setItem('walletCurrency', selectedCurrency)
+    }
 
     const handleCreateInvoice = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -49,7 +55,7 @@ export default function LighningPayment() {
             }
             let unsubscribe: (() => void);
             // const amountValue = await convertToSats(convertedAmount,currency)
-            logger.log("amount value is", convertedAmountInMSat)
+            logger.log("amount value and wallet is", convertedAmountInMSat, walletId, wallet)
             const result = await CreateInvoice(wallet, convertedAmountInMSat, (description.current?.value ?? '').trim());
             logger.log('Create invoice result:', result);
             dispatch(setInvoice(result.invoice));
@@ -62,7 +68,7 @@ export default function LighningPayment() {
             }, 300000);
         } catch (err) {
             logger.error('Create Invoice Error:', err);
-            dispatch(setError({ type: 'Invoice Error: ', message: err instanceof Error ? err.message : 'Failed to create invoice' }));
+            dispatch(setError({ type: 'Invoice Error: ', message: err instanceof Error ? err.message : String(err) }));
             setTimeout(() => {
                 dispatch(setError(null))
             }, 3000);
@@ -126,7 +132,7 @@ export default function LighningPayment() {
             setTimeout(() => unsubscribe?.(), 300000);
         } catch (err) {
             logger.error('handlePayInvoice error:', err);
-            dispatch(setError({ type: 'Payment Error: ', message: err instanceof Error ? err.message : 'Failed to pay invoice' }));
+            dispatch(setError({ type: 'Payment Error: ', message: err instanceof Error ? err.message : String(err) }));
             setTimeout(() => {
                 dispatch(setError(null))
             }, 3000);
@@ -191,11 +197,27 @@ export default function LighningPayment() {
                         <button type='button' className='closeBtn' onClick={() => { setOpenRecieveBox(false); dispatch(setInvoice(null)); setConvertedAmountInMSat(0) }}>
                             <i className="fa-solid fa-xmark"></i>
                         </button>
-                        <h2>Create Invoice</h2>
-                        <p style={{ marginTop: '0px', textAlign: 'center' }}>You can change the currency from <Link to={'/settings'} style={{ color: '#0f61b9', textDecoration: 'none' }}><i className="fa-solid fa-gear"></i> Settings</Link></p>
+                        <h2><i className="fa-solid fa-bolt"></i> Create Lightning Invoice</h2>
                         <form onSubmit={handleCreateInvoice}>
                             <label htmlFor='amountvalue'>Enter amount in {currency}:</label>
-                            <input type="decimal" id='amountvalue' inputMode='decimal' placeholder={`Enter amount in ${currency}`} ref={amount} onChange={handleConversion} required />
+                            <div className="input-group">
+                                <input
+                                    type="decimal"
+                                    id='amountvalue'
+                                    className="amount-input"
+                                    inputMode='decimal'
+                                    placeholder={`Enter amount in ${currency}`}
+                                    ref={amount}
+                                    onChange={handleConversion}
+                                    required
+                                />
+                                <select className="currency-select" value={currency} onChange={handleCurrencyChange}>
+                                    <option value={'msat'}>msat</option>
+                                    <option value={'sat'}>sat</option>
+                                    <option value={'usd'}>USD</option>
+                                    <option value={'euro'}>EURO</option>
+                                </select>
+                            </div>
                             <label>Enter description:</label>
                             <input type="text" placeholder='Enter the description' ref={description} />
                             <button type='submit' disabled={status}>Create</button>
@@ -228,7 +250,7 @@ export default function LighningPayment() {
                         <button type='button' className='closeBtn' onClick={() => { setOpenSendBox(false); dispatch(setPayInvoiceResult(null)) }}>
                             <i className="fa-solid fa-xmark"></i>
                         </button>
-                        <h2>Pay Invoice</h2>
+                        <h2><i className="fa-solid fa-bolt"></i> Pay Lightning Invoice</h2>
                         <form onSubmit={handlePayInvoice}>
                             <label htmlFor='invoice'>Enter the invoice:</label>
                             <input type="text" id='invoice' placeholder='Enter the Invoice' ref={invoice} required />

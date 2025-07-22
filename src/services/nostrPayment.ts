@@ -1,13 +1,14 @@
 import NDK, { NDKEvent, NDKPrivateKeySigner, NDKUser, type NDKFilter } from "@nostr-dev-kit/ndk";
 import { PayInvoice } from "../services/LightningPaymentService";
-import type { Wallet } from "../hooks/wallet.type";
+import { Wallet } from "@fedimint/core-web";
 import { hexToBytes, bytesToHex } from "@noble/hashes/utils";
 import { generateSecretKey, getPublicKey } from "nostr-tools";
-import type { CreateBolt11Response, LnReceiveState } from "@fedimint/core-web";
+// import type { CreateBolt11Response, LightningTransaction, LnReceiveState, Transactions } from "@fedimint/core-web";
+import type { CreateBolt11Response, LnPayState, LnReceiveState } from "@fedimint/core-web";
 import { handleZapRequest } from "./ZapService";
 import logger from "../utils/logger";
 import type { DiscoveredFederation } from "../hooks/Federation.type";
-import { previewFederation } from "./FederationService";
+import { previewFedWithInviteCode } from "./FederationService";
 
 const invoiceStore = new Map<string, string>();
 
@@ -78,7 +79,6 @@ export const handleNWCConnection = (ndk: NDK, relay: string | null, appName: str
 };
 
 export const handleDiscoverFederation = async (
-    wallet: Wallet,
     ndk: NDK,
     setState: (feds: DiscoveredFederation[]) => void,
     discoveredFederations: DiscoveredFederation[]
@@ -102,7 +102,6 @@ export const handleDiscoverFederation = async (
 
         try {
             await processFederationEvent(
-                wallet,
                 event,
                 discoveredFederations,
                 setState,
@@ -130,7 +129,6 @@ export const handleDiscoverFederation = async (
 }
 
 const processFederationEvent = async (
-    wallet: Wallet,
     event: NDKEvent,
     discoveredFederations: DiscoveredFederation[],
     setState: (feds: DiscoveredFederation[]) => void,
@@ -180,7 +178,7 @@ const processFederationEvent = async (
     processingFederationIds.add(federationId)
 
     try {
-        const previewResult = await previewFederation(wallet, inviteCode)
+        const previewResult = await previewFedWithInviteCode(inviteCode)
         if (discoveredFederations.some((f) => f.federationID === federationId)) {
             logger.log('Federation was discovered while processing:', federationId)
             return
@@ -368,7 +366,7 @@ export const handleNostrPayment = async (wallet: Wallet, walletNostrSecretKey: s
     const CheckBalance = async () => {
         try {
             const msats = await new Promise<number>((resolve, reject) => {
-                const unsubscribe = wallet.balance.subscribeBalance((msats) => {
+                const unsubscribe = wallet.balance.subscribeBalance((msats:number) => {
                     resolve(msats);
                     unsubscribe?.();
                 });
@@ -470,7 +468,7 @@ export const handleNostrPayment = async (wallet: Wallet, walletNostrSecretKey: s
             return new Promise((resolve, reject) => {
                 const unsubscribe = wallet?.lightning.subscribeLnPay(
                     invoiceResult.id,
-                    async (state) => {
+                    async (state:LnPayState) => {
                         if (typeof state === 'object' && 'success' in state) {
                             resolve({
                                 result_type: 'pay_invoice',
@@ -487,7 +485,7 @@ export const handleNostrPayment = async (wallet: Wallet, walletNostrSecretKey: s
                             });
                         }
                     },
-                    (error) => {
+                    (error:any) => {
                         logger.error("Error in subscription:", error);
                         resolve({
                             result: undefined,
@@ -549,10 +547,6 @@ export const handleNostrPayment = async (wallet: Wallet, walletNostrSecretKey: s
         //             metadata: {},
         //         };
         //     });
-        return {
-            result:null,
-            error:null
-        }
 
         //     return {
         //         result_type: "list_transactions",
@@ -560,6 +554,10 @@ export const handleNostrPayment = async (wallet: Wallet, walletNostrSecretKey: s
         //             transactions
         //         }
         //     };
+        return {
+            result_type:"list_transactions",
+            result:{}
+        }
         // } catch (error: any) {
         //     return {
         //         result_type: "list_transactions",
@@ -593,7 +591,7 @@ export const handleNostrPayment = async (wallet: Wallet, walletNostrSecretKey: s
         return new Promise((resolve, reject) => {
             const unsubscribe = wallet?.lightning.subscribeLnReceive(
                 operationId,
-                async (state) => {
+                async (state:LnReceiveState) => {
                     if (state === 'claimed') {
                         resolve({
                             result: {
@@ -619,7 +617,7 @@ export const handleNostrPayment = async (wallet: Wallet, walletNostrSecretKey: s
                         });
                     }
                 },
-                (error) => {
+                (error:any) => {
                     logger.error("Error in subscription:", error);
                     resolve({
                         result: null,

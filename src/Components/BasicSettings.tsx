@@ -3,8 +3,9 @@ import { useDispatch, useSelector } from 'react-redux'
 import type { RootState } from '../redux/store'
 import { setMode } from '../redux/slices/Mode';
 import logger from "../utils/logger";
-import WalletContext from "../context/wallet";
+import { useWallet } from "../context/WalletManager";
 import { setCurrency } from '../redux/slices/Balance';
+import { cleanup } from "@fedimint/core-web";
 import { useNavigate } from "react-router";
 import LoadingContext from '../context/loader';
 import NProgress from 'nprogress';
@@ -19,7 +20,7 @@ export default function BasicSettings() {
     const { metaData } = useSelector((state: RootState) => state.federationdetails)
     const [enabledLocation, setEnabledLocation] = useState(localStorage.getItem('locationAccess') === 'true' ? true : false)
     const { mode } = useSelector((state: RootState) => state.Mode)
-    const { wallet, isDebug, toggleDebug } = useContext(WalletContext)
+    const { isDebug, toggleDebug } = useWallet()
     const { currency } = useSelector((state: RootState) => state.balance)
     const { federationId } = useSelector((state: RootState) => state.activeFederation)
     const { setLoading } = useContext(LoadingContext);
@@ -97,11 +98,8 @@ export default function BasicSettings() {
         try {
             NProgress.start()
             setLoading(true)
-            await wallet.cleanup();
+            await cleanup();
             logger.log('wallet cleanup called')
-            await wallet.waitForOpen().catch(() => {
-                logger.log('Wallet is closed');
-            });
             indexedDB.deleteDatabase(`${localStorage.getItem('walletName')}`);
             localStorage.removeItem('walletName')
             localStorage.removeItem('activeFederation')
@@ -109,11 +107,7 @@ export default function BasicSettings() {
             localStorage.removeItem('ClientRelayKeys')
             localStorage.removeItem('nwcRelays')
             localStorage.removeItem('nwcEnabled')
-            if (!wallet.isOpen()) {
-                logger.log('wallet open ', wallet.isOpen())
-                navigate('/')
-                window.location.reload()
-            }
+            navigate('/')
         } catch (err) {
             logger.log("an error occured")
             setError({ type: 'Federation Error: ', message: err instanceof Error ? err.message : String(err) })
@@ -295,7 +289,7 @@ export default function BasicSettings() {
                                     <h3>{metaData.federation_name}</h3>
                                 </div>
                                 <div className="federation-actions">
-                                    <a href={`/fedimint-web-wallet/federation/${federationId || localStorage.getItem('activeFederation')}`} className="action-btn view-btn">
+                                    <a href={`/fedimint-web-wallet/federation/${federationId || localStorage.getItem('activeFederation')}`} className="fed-action-btn view-btn">
                                         {/* <i className="fa-solid fa-arrow-up-right-from-square"></i> */}
                                         View
                                     </a>
