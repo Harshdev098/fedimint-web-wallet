@@ -99,3 +99,10 @@ export type Transaction= {
   type:string
   outcome:string
 }
+export type onchainTxDetail={
+  txid:string,
+  fee:number,
+  timestamp:number,
+  status:string,
+  height:string
+}

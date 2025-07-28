@@ -16,14 +16,14 @@
 nav {
     padding: 12px 24px;
     margin: 0;
-    background: #f5fbfe;
+    background: #f5f9fa;
     border-bottom: 1px solid #f1f5f9;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 /* Elegant Background */
 .JoinFedContainer {
-    background: #e4eef3;
+    background: #eff4f6;
     min-height: 100vh;
     position: relative;
 }
@@ -53,6 +53,11 @@ nav {
     width: 100%;
 }
 
+@media (max-width:500px) {
+    .JoinFedDiv{
+        width: 60vw;
+    }
+}
 .JoinFedDiv div {
     text-align: center;
 }
@@ -496,7 +501,6 @@ footer i:hover {
     max-width: 480px;
     box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
     position: relative;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     max-height: 90vh;
     overflow-y: auto;
 }
@@ -551,7 +555,6 @@ footer i:hover {
 
 .previewCard li::after {
     content: "\f061";
-    font-family: "Font Awesome 6 Free";
     font-weight: 900;
     font-size: 16px;
     color: #6c757d;
@@ -623,7 +626,6 @@ footer i:hover {
     padding: 32px;
     max-width: 520px;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15), 0 8px 20px rgba(0, 0, 0, 0.1);
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     border: 1px solid rgba(255, 255, 255, 0.2);
     animation: slideUp 0.4s ease-out;
 }
@@ -772,7 +774,6 @@ footer i:hover {
     margin: 0;
     font-size: 14px;
     color: #666;
-    font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
     background: rgba(213, 203, 203, 0.05);
     padding: 4px 8px;
     border-radius: 6px;

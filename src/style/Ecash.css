@@ -2,12 +2,12 @@
 
 .section-header {
     text-align: center;
-    margin-bottom: 30px;
+    margin-bottom: 20px;
 }
 
 h2 {
-    font-size: 1.5rem;
-    color: #1a3c6d;
+    font-size: 1.8rem;
+    color: #326278;
     margin-bottom: 10px;
     text-transform: uppercase;
 }
@@ -101,9 +101,8 @@ h2 {
 /* ecash payments styling  */
 
 .ecash-section {
-    padding: clamp(20px, 4vw, 32px);
+    padding: 4rem 2rem;
     background-color: #e4eef3;
-    min-height: 100vh;
 }
 
 .ecash-container {
@@ -168,7 +167,7 @@ h2 {
 .card-title {
     font-size: 1.4rem;
     font-weight: 700;
-    color: #111827;
+    color: #1a3c6d;
     margin: 0 0 8px 0;
     letter-spacing: -0.02em;
 }
@@ -214,7 +213,12 @@ h2 {
 .input-wrapper {
     position: relative;
 }
-
+.amount-input:focus{
+    outline: none;
+    border-color: #2176FF;
+    background-color: #FFFFFF;
+    box-shadow: 0 0 0 4px rgba(33, 118, 255, 0.1);
+}
 .form-input {
     width: 100%;
     padding: 16px 20px;
@@ -225,13 +229,6 @@ h2 {
     background-color: #F9FAFB;
     transition: all 0.2s ease;
     box-sizing: border-box;
-}
-
-.form-input:focus {
-    outline: none;
-    border-color: #2176FF;
-    background-color: #FFFFFF;
-    box-shadow: 0 0 0 4px rgba(33, 118, 255, 0.1);
 }
 
 .form-input::placeholder {
@@ -425,7 +422,6 @@ h2 {
 }
 
 .notes-text {
-    font-family: 'Courier New', monospace;
     font-size: 0.875rem;
     color: #374151;
     word-break: break-all;

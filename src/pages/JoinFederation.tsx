@@ -1,4 +1,4 @@
-import { useState, useRef, useContext } from 'react'
+import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router'
 import { Link } from 'react-router'
 import { useSelector, useDispatch } from 'react-redux'
@@ -6,11 +6,10 @@ import type { RootState, AppDispatch } from '../redux/store'
 import Alerts from '../Components/Alerts'
 import Navbar from '../Components/Navbar'
 import { setJoining, setFederationId, setNewJoin, setWalletId } from '../redux/slices/ActiveWallet'
-import { setError } from '../redux/slices/Alerts'
-import LoadingContext from '../context/loader'
+import { setErrorWithTimeout } from '../redux/slices/Alerts'
 import { JoinFederation as JoinFederationService, previewFedWithInviteCode } from '../services/FederationService'
 import QrScanner from 'qr-scanner'
-import NProgress from 'nprogress'
+import { startProgress,doneProgress } from '../utils/ProgressBar'
 import type { PreviewFederationResponse } from '../hooks/Federation.type'
 import logger from '../utils/logger'
 import DiscoverFederation from '../Components/DiscoverFederation'
@@ -28,7 +27,6 @@ export default function JoinFederation() {
     const [showFederations, setShowFederation] = useState<boolean>(false)
     const [previewFederationData, setPreviewFederationData] = useState<PreviewFederationResponse | null>(null)
     const navigate = useNavigate()
-    const { setLoading } = useContext(LoadingContext)
     const dispatch = useDispatch<AppDispatch>()
     const { joining } = useSelector((state: RootState) => state.activeFederation)
     const { error } = useSelector((state: RootState) => state.Alert)
@@ -36,8 +34,7 @@ export default function JoinFederation() {
     const handleJoinFederation = async (code?: string): Promise<void> => {
         dispatch(setJoining(true))
         try {
-            NProgress.start()
-            setLoading(true)
+            startProgress()
             const result = await JoinFederationService(code || inviteCode, walletName.current?.value || 'fm-default')
             dispatch(setWalletStatus('open'))
             dispatch(setFederationId(result.federationId))
@@ -48,14 +45,10 @@ export default function JoinFederation() {
             dispatch(setNewJoin(true))
             navigate('/wallet')
         } catch (err) {
-            dispatch(setError({ type: 'Join Error:', message: `${err}` }))
-            setTimeout(() => {
-                dispatch(setError(null))
-            }, 4000);
+            dispatch(setErrorWithTimeout({ type: 'Join Error:', message: `${err}` }))
         } finally {
             dispatch(setJoining(false))
-            NProgress.done()
-            setLoading(false)
+            doneProgress()
         }
     }
 
@@ -65,20 +58,15 @@ export default function JoinFederation() {
             if (!(inviteCode)) {
                 throw new Error('please enter inviteCode')
             }
-            NProgress.start()
-            setLoading(true)
+            startProgress()
             const result = await previewFedWithInviteCode(inviteCode)
             logger.log("result is ", result)
             setPreviewFederationData(result)
             setOpenPreviewFederation(true)
         } catch (err) {
-            dispatch(setError({ type: 'Preview Error:', message: `${err}` }))
-            setTimeout(() => {
-                dispatch(setError(null))
-            }, 3000);
+            dispatch(setErrorWithTimeout({ type: 'Preview Error:', message: `${err}` }))
         } finally {
-            NProgress.done()
-            setLoading(false)
+            doneProgress()
         }
     }
 
@@ -103,14 +91,11 @@ export default function JoinFederation() {
                     logger.log("Camera started successfully");
                 }).catch((err) => {
                     logger.error("Camera access denied:", err);
-                    dispatch(setError({ type: 'QR Error: ', message: `${err}` }))
-                    setTimeout(() => {
-                        dispatch(setError(null))
-                    }, 3000);
+                    dispatch(setErrorWithTimeout({ type: 'QR Error: ', message: `${err}` }))
                 });
             } catch (err) {
                 logger.log("an error occured while scanning")
-                dispatch(setError({ type: 'QR Error: ', message: `Error occured while scanning` }))
+                dispatch(setErrorWithTimeout({ type: 'QR Error: ', message: `Error occured while scanning` }))
             }
         }
     }

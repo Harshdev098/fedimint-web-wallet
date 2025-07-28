@@ -4,10 +4,11 @@ import { isInitialized, initialize, hasWallet, listClients, setLogLevel } from "
 import './style/App.css'
 import JoinFederation from './pages/JoinFederation'
 import Wallet from './Wallet'
-import { LoadingProvider } from './context/loader'
+import { LoadingProvider } from './context/Loading.tsx'
 import 'nprogress/nprogress.css'
 import Federations from './pages/Federations'
 import { WalletManagerProvider } from './context/WalletManager.tsx'
+import { NostrProvider } from './context/nostr.tsx'
 import webloader from './assets/loader.webp'
 import logger from "./utils/logger"
 
@@ -33,13 +34,17 @@ function AppInitializer({ children }: { children: React.ReactNode }) {
 
                 // If we have a target wallet ID and it exists, navigate to wallet
                 if (targetWalletId && hasWallet(targetWalletId)) {
-                    logger.log("Found existing wallet, navigating to /wallet")
-                    navigate('/wallet')
+                    logger.log("Found existing wallet")
+                    if (!window.location.pathname.startsWith('/fedimint-web-wallet/wallet')) {
+                        navigate('/wallet');
+                    }
                 } else if (walletList.length > 0) {
                     // If we have wallets but no specific target, use the first one
                     localStorage.setItem('activeWallet', walletList[0].id)
                     localStorage.setItem('lastUsedWallet', walletList[0].id)
-                    navigate('/wallet')
+                    if (!window.location.pathname.startsWith('/fedimint-web-wallet/wallet')) {
+                        navigate('/wallet');
+                    }
                 } else {
                     logger.log("No wallets found, staying on join page")
                     // Only navigate if we're not already on the home page
@@ -47,7 +52,6 @@ function AppInitializer({ children }: { children: React.ReactNode }) {
                         navigate('/')
                     }
                 }
-
                 setIsAppReady(true)
             } catch (error) {
                 logger.error("Failed to initialize app:", error)
@@ -55,7 +59,6 @@ function AppInitializer({ children }: { children: React.ReactNode }) {
                 navigate('/')
             }
         }
-
         initializeApp()
     }, [])
 
@@ -71,22 +74,28 @@ function AppInitializer({ children }: { children: React.ReactNode }) {
 }
 
 function App() {
+    // Wallet routes with both WalletManager and Nostr contexts
     const WalletRoutes = () => {
         return (
             <WalletManagerProvider>
-                <Routes>
-                    <Route path="/*" element={<Wallet />} />
-                </Routes>
+                <NostrProvider>
+                    <Routes>
+                        <Route path="/*" element={<Wallet />} />
+                    </Routes>
+                </NostrProvider>
             </WalletManagerProvider>
         )
     }
 
+    // Federation routes with both contexts
     const FederationRoutes = () => {
         return (
             <WalletManagerProvider>
-                <Routes>
-                    <Route path='/*' element={<Federations />} />
-                </Routes>
+                <NostrProvider>
+                    <Routes>
+                        <Route path='/*' element={<Federations />} />
+                    </Routes>
+                </NostrProvider>
             </WalletManagerProvider>
         )
     }

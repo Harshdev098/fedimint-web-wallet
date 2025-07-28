@@ -1,20 +1,17 @@
-import { useRef, useState, useContext, useEffect } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import QrScanner from "qr-scanner";
-import receiveIcon from '../assets/recieve-icon.png'
-import sendIcon from '../assets/send-icon.png'
 import QRCode from 'react-qr-code'
 import { setInvoice, setInvoiceOperationId, setPayInvoiceResult } from '../redux/slices/LightningPayment'
 import { useSelector, useDispatch } from 'react-redux'
 import type { RootState, AppDispatch } from '../redux/store'
 import { CreateInvoice, PayInvoice, subscribeLnPay, subscribeLnReceive } from '../services/LightningPaymentService'
-import LoadingContext from '../context/loader'
-import NProgress from 'nprogress'
+import { startProgress, doneProgress } from '../utils/ProgressBar';
 import { useWallet } from '../context/WalletManager'
 import Alerts from './Alerts'
 import { downloadQRCode } from '../services/DownloadQR';
 import { convertToMsats } from '../services/BalanceService';
 import logger from '../utils/logger';
-import { setError } from '../redux/slices/Alerts';
+import { setErrorWithTimeout } from '../redux/slices/Alerts';
 import { setCurrency } from '../redux/slices/Balance';
 
 
@@ -30,13 +27,13 @@ export default function LighningPayment() {
     const [openSendBox, setOpenSendBox] = useState<boolean>(false)
     const [openVideo, setOpenVideo] = useState<boolean>(false)
     const { wallet } = useWallet()
-    const { setLoading } = useContext(LoadingContext)
     const dispatch = useDispatch<AppDispatch>()
-    const { Invoice, InvoiceOperationId, payInvoiceResult, payStatus } = useSelector((state: RootState) => state.Lightning)
+    const { Invoice, payInvoiceResult, payStatus } = useSelector((state: RootState) => state.Lightning)
     const { error } = useSelector((state: RootState) => state.Alert)
     const { currency } = useSelector((state: RootState) => state.balance)
     const { metaData } = useSelector((state: RootState) => state.federationdetails)
     const { walletId } = useSelector((state: RootState) => state.activeFederation)
+
 
     const handleCurrencyChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const selectedCurrency = e.target.value;
@@ -46,9 +43,8 @@ export default function LighningPayment() {
 
     const handleCreateInvoice = async (e: React.FormEvent) => {
         e.preventDefault();
-        NProgress.start();
+        startProgress();
         setStatus(true);
-        setLoading(true);
         try {
             if (!convertedAmountInMSat || convertedAmountInMSat <= 0) {
                 throw new Error('Amount must be greater than 0');
@@ -68,13 +64,9 @@ export default function LighningPayment() {
             }, 300000);
         } catch (err) {
             logger.error('Create Invoice Error:', err);
-            dispatch(setError({ type: 'Invoice Error: ', message: err instanceof Error ? err.message : String(err) }));
-            setTimeout(() => {
-                dispatch(setError(null))
-            }, 3000);
+            dispatch(setErrorWithTimeout({ type: 'Invoice Error: ', message: err instanceof Error ? err.message : String(err) }));
         } finally {
-            NProgress.done();
-            setLoading(false);
+            doneProgress();
             setStatus(false);
             if (amount.current) {
                 amount.current.value = '';
@@ -84,9 +76,8 @@ export default function LighningPayment() {
 
     const handlePayInvoice = async (e: React.FormEvent, QRData?: string) => {
         e.preventDefault();
-        NProgress.start();
+        startProgress();
         setStatus(true);
-        setLoading(true);
         const invoiceValue = (invoice.current?.value)?.trim() || QRData
         try {
             if (!invoiceValue) {
@@ -132,13 +123,9 @@ export default function LighningPayment() {
             setTimeout(() => unsubscribe?.(), 300000);
         } catch (err) {
             logger.error('handlePayInvoice error:', err);
-            dispatch(setError({ type: 'Payment Error: ', message: err instanceof Error ? err.message : String(err) }));
-            setTimeout(() => {
-                dispatch(setError(null))
-            }, 3000);
+            dispatch(setErrorWithTimeout({ type: 'Payment Error: ', message: err instanceof Error ? err.message : String(err) }));
         } finally {
-            NProgress.done();
-            setLoading(false);
+            doneProgress();
             setStatus(false);
         }
     };
@@ -165,8 +152,7 @@ export default function LighningPayment() {
                 logger.log("QR scanning started.")
             }).catch((err) => {
                 logger.error("QR scanning failed:", err)
-                dispatch(setError({ type: 'QR Error: ', message: 'camera access denied' }))
-                setTimeout(() => dispatch(setError(null)), 3000)
+                dispatch(setErrorWithTimeout({ type: 'QR Error: ', message: 'camera access denied' }))
             })
         }
 
@@ -197,7 +183,8 @@ export default function LighningPayment() {
                         <button type='button' className='closeBtn' onClick={() => { setOpenRecieveBox(false); dispatch(setInvoice(null)); setConvertedAmountInMSat(0) }}>
                             <i className="fa-solid fa-xmark"></i>
                         </button>
-                        <h2><i className="fa-solid fa-bolt"></i> Create Lightning Invoice</h2>
+                        <h2 style={{ marginBottom: '4px' }}><i className="fa-solid fa-bolt"></i> Create Lightning Invoice</h2>
+                        <p className='title-span'>Receive eCash directly from the Lightning network</p>
                         <form onSubmit={handleCreateInvoice}>
                             <label htmlFor='amountvalue'>Enter amount in {currency}:</label>
                             <div className="input-group">
@@ -218,13 +205,14 @@ export default function LighningPayment() {
                                     <option value={'euro'}>EURO</option>
                                 </select>
                             </div>
-                            <label>Enter description:</label>
-                            <input type="text" placeholder='Enter the description' ref={description} />
+                            <label htmlFor='description'>Enter description:</label>
+                            <input type="text" id='description' className='amount-input' placeholder='Enter the description' ref={description} />
                             <button type='submit' disabled={status}>Create</button>
                         </form>
                         {Invoice && (
                             <div className='createInvoiceResult'>
                                 <div className='qrCode'>
+                                    <QRCode value={JSON.stringify(Invoice)} onClick={() => { logger.log("invoice in qr is ", JSON.stringify(Invoice)) }} size={150} bgColor='white' fgColor='black' />
                                     <div className='copyWrapper'>
                                         <p><b>Invoice:</b> {Invoice}</p>
                                         <button
@@ -234,8 +222,6 @@ export default function LighningPayment() {
                                             }}
                                         ><i className="fa-regular fa-copy"></i></button>
                                     </div>
-                                    <p style={{ margin: '12px' }}><b>OperationID:</b> {InvoiceOperationId}</p>
-                                    <QRCode value={JSON.stringify(Invoice)} onClick={() => { logger.log("invoice in qr is ", JSON.stringify(Invoice)) }} size={150} bgColor='white' fgColor='black' />
                                     <button type='button' onClick={() => downloadQRCode('invoice')}>Download QR</button>
                                 </div>
                             </div>
@@ -250,10 +236,11 @@ export default function LighningPayment() {
                         <button type='button' className='closeBtn' onClick={() => { setOpenSendBox(false); dispatch(setPayInvoiceResult(null)) }}>
                             <i className="fa-solid fa-xmark"></i>
                         </button>
-                        <h2><i className="fa-solid fa-bolt"></i> Pay Lightning Invoice</h2>
+                        <h2 style={{ marginBottom: '4px' }}><i className="fa-solid fa-bolt"></i> Pay Lightning Invoice</h2>
+                        <p className='title-span'>Send ecash via Lightning network</p>
                         <form onSubmit={handlePayInvoice}>
                             <label htmlFor='invoice'>Enter the invoice:</label>
-                            <input type="text" id='invoice' placeholder='Enter the Invoice' ref={invoice} required />
+                            <input type="text" className='amount-input' id='invoice' placeholder='Enter the Invoice' ref={invoice} required />
                             <button type='submit' disabled={status}>Pay Invoice</button>
                         </form>
                         {payInvoiceResult && (
@@ -269,12 +256,21 @@ export default function LighningPayment() {
                 </div>
             )}
 
-            <div className='BalanceSectionActions'>
-                <button onClick={() => { setOpenRecieveBox(true) }}><img src={receiveIcon} alt="" width={'20px'} /> Recieve</button>
-                <button onClick={() => { setOpenSendBox(true) }}><img src={sendIcon} alt="" width={'20px'} /> Send</button>
-            </div>
-            <div className="TransactionsWithQR">
-                <button onClick={() => { setOpenVideo(true) }}><i className="fa-solid fa-qrcode"></i> Scan QR</button>
+            <div className="BalanceSectionActionsWrapper">
+                <div className="BalanceSectionActions">
+                    <button onClick={() => setOpenRecieveBox(true)}>
+                        <i className="fa-solid fa-angles-down"></i> Receive
+                    </button>
+                    <button onClick={() => setOpenSendBox(true)}>
+                        <i className="fa-solid fa-angles-up"></i> Send
+                    </button>
+                </div>
+
+                <div className="TransactionsWithQR">
+                    <button onClick={() => setOpenVideo(true)}>
+                        <i className="fa-solid fa-qrcode"></i> Scan QR
+                    </button>
+                </div>
             </div>
         </>
     )

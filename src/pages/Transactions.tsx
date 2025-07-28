@@ -1,8 +1,9 @@
 // import { useEffect, useState, useCallback } from 'react';
+import { useState } from 'react';
 // import { useContext } from 'react';
 // import { useWallet } from '../context/WalletManager';
 import Alerts from '../Components/Alerts';
-// import NProgress from 'nprogress';
+// import { startProgress,doneProgress } from '../utils/ProgressBar';
 // import LoadingContext from '../context/loader';
 // import type { EcashTransaction, WalletTransaction, LightningTransaction, Transactions } from '@fedimint/core-web';
 // import type { EpochTime } from '../hooks/Federation.type';
@@ -10,13 +11,15 @@ import Alerts from '../Components/Alerts';
 // import type { Transaction } from '../hooks/wallet.type';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../redux/store';
-// import { setError } from '../redux/slices/Alerts';
+import { useNavigate } from 'react-router';
+// import { setErrorWithTimeout } from '../redux/slices/Alerts';
 // import { parseBolt11Invoice } from '@fedimint/core-web';
 
 
 export default function Transactions() {
     // const { wallet } = useWallet();
-    // const { setLoading } = useContext(LoadingContext);
+    const navigate = useNavigate()
+    // const { setLoader } = useContext(LoadingContext);
     // const [query, setQuery] = useState<string>('');
     // const [transactions, setTransactions] = useState<Transaction[]>([]);
     // const [totalSpending, setTotalSpending] = useState<number>(0)
@@ -32,12 +35,14 @@ export default function Transactions() {
     // const limit = 4;
     // const [hasMore, setHasMore] = useState(true);
     const { error } = useSelector((state: RootState) => state.Alert)
+    const [expandedId, setExpandedId] = useState<string | null>(null);
 
 
     // const fetchOperations = async (page: number, reset = false) => {
     // try {
-    //     NProgress.start();
-    //     setLoading(true);
+    //     startProgress();
+    //    setLoader(true)
+    // setLoaderMessage('fetching transactions')
     //     const lastSeenParam = reset ? undefined : lastSeen ?? undefined;
     //     logger.log('Calling listTransactions:', { limit, lastSeen: lastSeenParam, page });
 
@@ -94,11 +99,10 @@ export default function Transactions() {
     //     setCurrentPage(page);
     // } catch (err) {
     //     logger.error('Error fetching operations:', err);
-    //     setError({ type: 'Transaction Error: ', message: err instanceof Error ? err.message : String(err) })
-    //     setTimeout(() => setError(null), 3000);
+    //     setErrorWithTimeout({ type: 'Transaction Error: ', message: err instanceof Error ? err.message : String(err) })
     // } finally {
-    //     NProgress.done();
-    //     setLoading(false);
+    //     doneProgress();
+    //    setLoader(false)
     // }
     // };
 
@@ -153,8 +157,7 @@ export default function Transactions() {
     // const memoizeSearch = useCallback(
     //     async (query: string) => {
     //         try {
-    //             NProgress.start();
-    //             setLoading(true);
+    //             startProgress();
 
     //             const result = await wallet.federation.getOperation(query);
     //             if (!result) {
@@ -239,14 +242,12 @@ export default function Transactions() {
     //             setTransactions([mappedTx]);
     //         } catch (err) {
     //             logger.error('Search error:', err);
-    //             setError({ type: 'Transaction Error: ', message: err instanceof Error ? err.message : String(err) });
-    //             setTimeout(() => setError(null), 3000);
+    //             setErrorWithTimeout({ type: 'Transaction Error: ', message: err instanceof Error ? err.message : String(err) });
     //         } finally {
-    //             NProgress.done();
-    //             setLoading(false);
+    //             doneProgress();
     //         }
     //     },
-    //     [wallet, setLoading]
+    //     [wallet]
     // );
 
 
@@ -271,30 +272,174 @@ export default function Transactions() {
     //     }
     // };
 
+    const toggleExpanded = (id: string) => {
+        setExpandedId(prev => (prev === id ? null : id));
+    };
+
     return (
         <>
             {error && <Alerts key={Date.now()} Error={error} Result={''} />}
-            <section className="transaction-container">
-                <div className="transaction-header">
-                    <h2 className="transaction-title"><i className="fa-solid fa-clock-rotate-left" style={{ fontSize: '1.4rem' }}></i> Your Transactions</h2>
-                    <p className="transaction-subtitle">View and search your recent transactions</p>
-                </div>
-                <div className="search-container">
-                    <div className="search-wrapper">
-                        <svg className="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <circle cx="11" cy="11" r="8"></circle>
-                            <path d="m21 21-4.35-4.35"></path>
-                        </svg>
-                        <input
-                            type="text"
-                            placeholder="Search by Operation ID..."
-                            // value={query}
-                            // onChange={(e) => setQuery(e.target.value)}
-                            className="search-input"
-                        />
+
+            <header className="sticky-header">
+                <button className="back-button" onClick={() => navigate('/wallet')}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M19 12H5M12 19l-7-7 7-7" />
+                    </svg>
+                </button>
+                <h1 className="header-title">Transactions</h1>
+            </header>
+
+            <section className="activities-wrapper">
+                <div className="activities-container">
+                    {/* Header Section */}
+                    <div className="activities-header">
+                        <div className="header-content">
+                            <div className="header-icon">
+                                <i className="fa-solid fa-clock-rotate-left"></i>
+                            </div>
+                            <h1 className="activities-title">Transaction history</h1>
+                            <p className="activities-subtitle">Track and manage your transactions</p>
+                        </div>
+                    </div>
+
+                    {/* Search Section */}
+                    <div className="search-section">
+                        <div className="search-container">
+                            <div className="search-icon">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <circle cx="11" cy="11" r="8" />
+                                    <path d="M21 21l-4.35-4.35" />
+                                </svg>
+                            </div>
+                            <input
+                                type="text"
+                                placeholder="Search transactions..."
+                                className="search-input"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Transaction List */}
+                    <div className="transaction-section">
+                        <div className="transaction-item">
+                            <div className="transaction-main" onClick={() => toggleExpanded('dsfsd')}>
+                                <div className="transaction-left">
+                                    <div className="transaction-icon received">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                            <path d="M12 5v14M5 12l7 7 7-7" />
+                                        </svg>
+                                    </div>
+                                    <div className="transaction-info">
+                                        <h3 className="transaction-type">Payment Received</h3>
+                                        <p className="transaction-time">2 hours ago</p>
+                                        <span className="transaction-method">Lightning Network</span>
+                                    </div>
+                                </div>
+
+                                <div className="transaction-right">
+                                    <div className="transaction-amount-section">
+                                        <p className="transaction-amount positive">+2,000</p>
+                                        <span className="transaction-currency">SAT</span>
+                                    </div>
+                                    <span className="transaction-status success">Claimed</span>
+                                    <button className="expand-button">
+                                        <svg
+                                            className={`expand-icon ${expandedId === 'dsfsd' ? 'expanded' : ''}`}
+                                            width="16"
+                                            height="16"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            strokeWidth="2"
+                                        >
+                                            <path d="M6 9l6 6 6-6" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Expanded Details */}
+                            {expandedId === 'dsfsd' && (
+                                <div className="transaction-details">
+                                    <div className="details-container">
+                                        <div className="details-row">
+                                            <div className="detail-group">
+                                                <span className="detail-label">Transaction Type</span>
+                                                <span className="detail-value">Lightning Payment</span>
+                                            </div>
+                                            <div className="detail-group">
+                                                <span className="detail-label">Operation ID</span>
+                                                <span className="detail-value">sdfsdfsd</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="details-row">
+                                            <div className="detail-group">
+                                                <span className="detail-label">Status</span>
+                                                <span className="detail-value status-success">Completed</span>
+                                            </div>
+                                            <div className="detail-group">
+                                                <span className="detail-label">Network Fees</span>
+                                                <span className="detail-value">23 SAT</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="detail-group full-width">
+                                            <span className="detail-label">Invoice Hash</span>
+                                            <span className="detail-value hash">sdfsdfs...</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
-                {/* {transactions.length > 0 ?
+            </section>
+        </>
+    );
+}
+
+
+{/* <div className="pagination-container">
+                    <button className="pagination-button prev">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M15 18l-6-6 6-6" />
+                        </svg>
+                        Previous
+                    </button>
+                    <button className="pagination-button next">
+                        Next
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M9 18l6-6-6-6" />
+                        </svg>
+                    </button>
+                </div> */}
+
+{/* {txBalanceType ? (
+                    <div className='TxSummary'>
+                        <div className="summary-card">
+                            <div className="card-label">Spending Result</div>
+                            <div className="card-value">{txBalanceType}</div>
+                            <div className="card-comment">{txBalanceType==='positive' ? "🧮 Great Job! You're saving more than you spend" : txBalanceType==='negative' ? `📉 Overspent` : '⚖️ Even: No gain, no loss'}</div>
+                        </div>
+                        <div className="summary-card">
+                            <div className="card-label">Total Spending</div>
+                            <div className="card-value">{totalSpending}</div>
+                        </div>
+                        <div className="summary-card">
+                            <div className="card-label">Total Received</div>
+                            <div className="card-value">{totalRecieve}</div>
+                        </div>
+                        <div className="summary-card">
+                            <div className="card-label">Net Spending</div>
+                            <div className="card-value">{txBalance}</div>
+                        </div>
+                    </div>
+                ) : (
+                    <p>Extracting your payment summary</p>
+                )} */}
+
+{/* {transactions.length > 0 ?
                     <ul className="transaction-list">
                         {transactions.map((tx, key) => (
                             <li className="transaction-item" key={key}>
@@ -324,112 +469,3 @@ export default function Transactions() {
                     </ul>
                     : <p style={{ textAlign: 'center' }}>0 Transactions found</p>
                 } */}
-                <ul className='transaction-list'>
-                    <li className="transaction-item">
-                        <div className="transaction-icon received">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M12 5v14M5 12l7 7 7-7" />
-                            </svg>
-                        </div>
-
-                        <div className="transaction-content">
-                            <div className="transaction-main">
-                                <h3 className="transaction-type">Payment Received</h3>
-                                <p className="transaction-amount positive">+20 msat</p>
-                            </div>
-                            <div className="transaction-meta">
-                                <span className="transaction-timestamp">2 hours ago</span>
-                                <span className="transaction-status success">Completed</span>
-                            </div>
-                        </div>
-                    </li>
-                </ul>
-                <div className="pagination-container">
-                    <button
-                        // onClick={handlePrev}
-                        // disabled={currentPage === 1}
-                        className="pagination-button prev"
-                    >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M15 18l-6-6 6-6" />
-                        </svg>
-                        Previous
-                    </button>
-                    <button
-                        // onClick={handleNext}
-                        // disabled={!hasMore}
-                        className="pagination-button next"
-                    >
-                        Next
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M9 18l6-6-6-6" />
-                        </svg>
-                    </button>
-                </div>
-            </section>
-        </>
-    );
-}
-
-{/* {txBalanceType ? (
-                    <div className='TxSummary'>
-                        <div className="summary-card">
-                            <div className="card-label">Spending Result</div>
-                            <div className="card-value">{txBalanceType}</div>
-                            <div className="card-comment">{txBalanceType==='positive' ? "🧮 Great Job! You're saving more than you spend" : txBalanceType==='negative' ? `📉 Overspent` : '⚖️ Even: No gain, no loss'}</div>
-                        </div>
-                        <div className="summary-card">
-                            <div className="card-label">Total Spending</div>
-                            <div className="card-value">{totalSpending}</div>
-                        </div>
-                        <div className="summary-card">
-                            <div className="card-label">Total Received</div>
-                            <div className="card-value">{totalRecieve}</div>
-                        </div>
-                        <div className="summary-card">
-                            <div className="card-label">Net Spending</div>
-                            <div className="card-value">{txBalance}</div>
-                        </div>
-                    </div>
-                ) : (
-                    <p>Extracting your payment summary</p>
-                )} */}
-
-{/* <table className="notifications-table">
-                        <thead>
-                            <tr>
-                                <th>SNo.</th>
-                                <th>Payment Type</th>
-                                <th>Type</th>
-                                <th>Timestamp</th>
-                                <th>Amount(sat)</th>
-                                <th>Operation ID</th>
-                                <th>Outcome</th>
-                                <th>Gateway</th>
-                                <th>Invoice</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {/* {transactions.length > 0 ? (
-                                transactions.map((tx, index) => (
-                                    <tr key={index}>
-                                        <td>{(currentPage - 1) * limit + index + 1}</td>
-                                        <td>{tx.kind}</td>
-                                        <td>{tx.type}</td>
-                                        <td>{tx.timestamp}</td>
-                                        <td>{tx.amountMsats}</td>
-                                        <td>{tx.operationId}</td>
-                                        <td>{tx.outcome}</td>
-                                        <td>{tx.gateway}</td>
-                                        <td>{tx.invoice.slice(0,20)}...</td>
-                                    </tr>
-                                ))
-                            ) : (
-                                <tr>
-                                    <td colSpan={7} style={{ textAlign: 'center' }}>
-                                        No transaction record found!
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table> */}

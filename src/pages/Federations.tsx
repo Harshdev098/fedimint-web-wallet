@@ -3,10 +3,9 @@ import { useSelector } from 'react-redux'
 import type { RootState } from '../redux/store'
 import { fetchFederationDetails } from '../services/FederationService'
 import { useWallet } from '../context/WalletManager';
-import { useContext, useState, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import type { FederationDetailResponse } from '../hooks/Federation.type';
-import NProgress from 'nprogress';
-import LoadingContext from '../context/loader';
+import { startProgress,doneProgress } from '../utils/ProgressBar';
 import Guardians from './Guardian';
 import logger from '../utils/logger';
 
@@ -16,7 +15,6 @@ export default function Federation() {
     const {federationId}=useSelector((state:RootState)=>state.activeFederation)
     const { wallet } = useWallet();
     const { fedId } = useParams()
-    const { setLoading } = useContext(LoadingContext);
     const [details, setDetails] = useState<FederationDetailResponse | null>(null)
 
     useCallback(() => {
@@ -24,15 +22,13 @@ export default function Federation() {
             if (fedId) {
                 try {
                     logger.log("fed id is ", fedId)
-                    NProgress.start();
-                    setLoading(true);
+                    startProgress();
                     const result = await fetchFederationDetails(wallet, fedId)
                     setDetails(result)
                 } catch (err) {
                     logger.log("an error occured ", err)
                 } finally {
-                    NProgress.done();
-                    setLoading(false)
+                    doneProgress();
                 }
             } else {
                 logger.log("federation id not got")

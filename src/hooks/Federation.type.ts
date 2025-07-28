@@ -3,6 +3,46 @@ export interface InviteCode {
 }
 export type DiscoveredFederation = PreviewFederationResponse & {inviteCode: string}
 
+export interface BaseModule {
+  id: number;
+  kind: string;
+  version?: { major: number; minor: number };
+  network?: string;
+  finality_delay?: number;
+  [key: string]: unknown;
+}
+
+export interface LNModule extends BaseModule {
+  kind: 'ln';
+  threshold_pub_key: string;
+  fee_consensus: { contract_input: number; contract_output: number };
+}
+
+export interface MintModule extends BaseModule {
+  kind: 'mint';
+  fee_consensus: { base: number; parts_per_million: number };
+  max_notes_per_denomination?: number;
+}
+
+export interface WalletModule extends BaseModule {
+  kind: 'wallet';
+  peg_in_descriptor: string;
+  fee_consensus: { peg_in_abs: number; peg_out_abs: number };
+  default_bitcoin_rpc?: { kind: string; url: string };
+}
+
+export interface MetaModule extends BaseModule {
+  kind: 'meta';
+  raw: string;
+}
+
+export type FederationModule =
+  | LNModule
+  | MintModule
+  | WalletModule
+  | MetaModule
+  | BaseModule;
+
 export type FederationMeta = {
     federation_name: string;
     meta_external_url?: string;
@@ -24,7 +64,7 @@ export type FederationConfig = {
     broadcast_public_keys: Record<number, string>;
     consensus_version: { major: number; minor: number };
     meta: FederationMeta;
-    modules: Record<number, any>;
+    modules: Record<number, FederationModule>;
 };
 
 export type FederationDetailResponse = {

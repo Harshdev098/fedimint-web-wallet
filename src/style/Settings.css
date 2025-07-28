@@ -2,7 +2,6 @@
   max-width: 800px;
   margin: 0 auto;
   padding: 20px;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   color: #333;
   line-height: 1.6;
 }
@@ -15,7 +14,7 @@
 
 .settings-section {
   background: white;
-  border-radius: 16px;
+  border-radius: 12px;
   padding: 10px;
   margin: 10px;
   box-shadow: 0 2px 16px rgba(0, 0, 0, 0.08);
@@ -23,15 +22,15 @@
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.DarkMode .settings-section{
-    background-color: #222;
-    border: none;
+.DarkMode .settings-section {
+  background-color: #222;
+  border: none;
 }
 
 .section-title {
   font-size: 24px;
   font-weight: 700;
-  color: #1a1a1a;
+  color: #111827;
   margin: 0 0 20px 0;
   padding-bottom: 12px;
   border-bottom: 2px solid #f8f9fa;
@@ -40,7 +39,7 @@
 .subsection-title {
   font-size: 18px;
   font-weight: 600;
-  color: #1a1a1a;
+  color: #374151;
   margin: 0 0 16px 0;
 }
 
@@ -48,12 +47,15 @@
 .connection-list {
   margin-bottom: 24px;
 }
-.DarkMode .subsection-title{
-    color: white;
+
+.DarkMode .subsection-title {
+  color: white;
 }
-.DarkMode .form-label{
-    color: white;
+
+.DarkMode .form-label {
+  color: white;
 }
+
 .connection-cards {
   display: flex;
   flex-direction: column;
@@ -88,7 +90,6 @@
   flex: 1;
   margin: 0;
   font-size: 12px;
-  font-family: monospace;
   word-break: break-all;
   cursor: pointer;
 }
@@ -129,8 +130,8 @@
 }
 
 .status-message.info {
-  background: #d1ecf1;
-  color: #0c5460;
+  background: #d1e3f1;
+  color: #326278;
   border: 1px solid #bee5eb;
 }
 
@@ -147,10 +148,39 @@
 }
 
 .form-label {
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 600;
-  color: #1a1a1a;
+  color: #374151;
   margin-bottom: 4px;
+}
+
+.tooltip-container {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+}
+
+.tooltip-text {
+  visibility: hidden;
+  background: #333;
+  color: #fff;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  position: absolute;
+  bottom: 125%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  opacity: 0;
+  transition: opacity 0.15s ease-in-out;
+}
+
+.tooltip-container:hover .tooltip-text,
+.tooltip-text.show {
+  visibility: visible;
+  opacity: 1;
 }
 
 .form-input {
@@ -180,7 +210,7 @@
   justify-content: center;
   gap: 8px;
   padding: 12px 24px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #7cacdc 0%, #3a79b7 100%);
   color: white;
   border: none;
   border-radius: 8px;
@@ -253,9 +283,17 @@
 }
 
 @keyframes pulse {
-  0% { opacity: 1; }
-  50% { opacity: 0.5; }
-  100% { opacity: 1; }
+  0% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
+
+  100% {
+    opacity: 1;
+  }
 }
 
 
@@ -268,7 +306,7 @@
   align-items: center;
   gap: 6px;
   padding: 12px 20px;
-  background: #28a745;
+  background: #2176FF;
   color: white;
   border: none;
   border-radius: 8px;
@@ -289,7 +327,7 @@
 }
 
 .info-card {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #7cacdc 0%, #3a79b7 100%);
   border-radius: 12px;
   padding: 20px;
   color: white;
@@ -333,23 +371,24 @@
   justify-content: space-between;
   align-items: center;
   padding: 8px;
-  background: #f8f9fa;
+  background: #f5f8fa;
   border-radius: 12px;
   border: 1px solid #e9ecef;
   transition: all 0.2s ease;
 }
 
-.DarkMode .setting-item{
-    background-color: rgb(46, 46, 46);
-    border: none;
-}
-.DarkMode .setting-info h3,
-.DarkMode .setting-info p{
-    color: white;
+.DarkMode .setting-item {
+  background-color: rgb(46, 46, 46);
+  border: none;
 }
 
-.DarkMode .setting-item:hover{
-    background-color: rgb(52, 52, 52);
+.DarkMode .setting-info h3,
+.DarkMode .setting-info p {
+  color: white;
+}
+
+.DarkMode .setting-item:hover {
+  background-color: rgb(52, 52, 52);
 }
 
 .setting-item:hover {
@@ -373,17 +412,21 @@
 .setting-control {
   flex-shrink: 0;
 }
-.auto-withdrawal{
-    flex-direction: column;
+
+.auto-withdrawal {
+  flex-direction: column;
 }
-.setting-control form input{
-    padding: 8px;
-    font-size: 17px;
+
+.setting-control form input {
+  padding: 8px;
+  font-size: 17px;
 }
-.setting-control form button{
-    padding: 8px;
-    font-size: 17px;
+
+.setting-control form button {
+  padding: 8px;
+  font-size: 17px;
 }
+
 .setting-control form {
   display: flex;
   align-items: center;
@@ -460,11 +503,11 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-.toggle-switch input:checked + .toggle-slider {
+.toggle-switch input:checked+.toggle-slider {
   background: #4CAF50;
 }
 
-.toggle-switch input:checked + .toggle-slider:before {
+.toggle-switch input:checked+.toggle-slider:before {
   transform: translateX(24px);
 }
 
@@ -500,7 +543,7 @@
 
 .config-select:focus {
   outline: none;
-  border-color: #4CAF50;
+  border-color: #2176FF;
 }
 
 .export-btn {
@@ -508,7 +551,7 @@
   align-items: center;
   gap: 8px;
   padding: 12px 20px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #7cacdc 0%, #3a79b7 100%);
   color: white;
   border: none;
   border-radius: 8px;
@@ -597,49 +640,49 @@
   .modern-settings {
     padding: 16px;
   }
-  
+
   .settings-section {
     padding: 20px;
   }
-  
+
   .section-title {
     font-size: 20px;
   }
-  
+
   .info-cards {
     grid-template-columns: 1fr;
   }
-  
+
   .setting-item {
     flex-direction: column;
     align-items: flex-start;
     gap: 12px;
   }
-  
+
   .setting-control {
     align-self: flex-end;
   }
-  
+
   .config-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .federation-card {
     flex-direction: column;
     align-items: flex-start;
     gap: 16px;
   }
-  
+
   .federation-actions {
     align-self: flex-end;
   }
-  
+
   .relay-card {
     flex-direction: column;
     align-items: flex-start;
     gap: 8px;
   }
-  
+
   .connection-uri {
     flex-direction: column;
     align-items: flex-start;
@@ -651,23 +694,23 @@
   .modern-settings {
     padding: 12px;
   }
-  
+
   .settings-section {
     padding: 16px;
   }
-  
+
   .setting-item {
     padding: 16px;
   }
-  
+
   .federation-card {
     padding: 16px;
   }
-  
+
   .connection-card {
     padding: 12px;
   }
-  
+
   .relay-card {
     padding: 12px;
   }
@@ -687,7 +730,7 @@
   justify-content: center;
   width: 48px;
   height: 48px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #7cacdc 0%, #3a79b7 100%);
   color: white;
   border-radius: 12px;
   text-decoration: none;
@@ -753,7 +796,7 @@
   .community-links {
     gap: 12px;
   }
-  
+
   .community-link {
     width: 40px;
     height: 40px;
@@ -762,133 +805,235 @@
 }
 
 .wallet-container {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    flex-wrap: wrap-reverse;
-    width: 80%;
-    max-width: 800px;
-    margin: 0 auto;
-    gap: 16px;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  flex-wrap: wrap-reverse;
+  width: 80%;
+  border-radius: 12px;
+  background-color: #ffffff;
+  max-width: 800px;
+  margin: 24px auto;
+  padding: 12px;
+  gap: 16px;
 }
 
 .wallet-details {
-    flex: 1 1 40%;
-    min-width: 300px;
-    padding: 16px;
-    background-color: #ffffff;
-    border-radius: 12px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  flex: 1 1 40%;
+  min-width: 300px;
+  padding: 12px;
+  border-right: 1px solid #b2bdc6;
+}
+
+@media (max-width:860px) {
+  .wallet-details {
+    border-top: 1px solid #b2bdc6;
+    border-right: none;
+  }
 }
 
 .DarkMode .wallet-details,
 .DarkMode .invite-code,
-.DarkMode .qr-code-wrapper{
-    background-color: #222;
-    color: white;
+.DarkMode .qr-code-wrapper {
+  background-color: #222;
+  color: white;
 }
 
 .DarkMode .setting-label,
 .DarkMode .language-label {
-    color: #ccc;
+  color: #ccc;
 }
 
 .DarkMode .setting-div {
-    background-color: #2b2b2b;
-    color: white;
+  background-color: #2b2b2b;
+  color: white;
 }
 
 .DarkMode .setting-options {
-    background-color: #333;
-    color: white;
+  background-color: #333;
+  color: white;
 }
 
 .DarkMode .federation-list li {
-    background-color: #2a2a2a;
-    color: white;
+  background-color: #2a2a2a;
+  color: white;
 }
 
 .wallet-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 8px 0;
-    border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #e5e7eb;
 }
 
 .wallet-item:last-child {
-    border-bottom: none;
+  border-bottom: none;
+}
+
+.mnemonic-item {
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.mnemonic-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 8px 0;
+}
+
+.mnemonic-toggle {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  color: #2176FF;
+}
+
+
+.mnemonic-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.mnemonic-word {
+  background: #F1F5F9;
+  color: #111827;
+  font-size: 13px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-weight: 500;
+  box-shadow: inset 0 0 0 1px #d1d5db;
+}
+
+.DarkMode .mnemonic-word {
+  background: #292929;
+  color: #eee;
+  box-shadow: inset 0 0 0 1px #444;
 }
 
 .wallet-label {
-    font-size: 15px;
-    font-weight: 500;
-    color: #666666;
+  font-size: 15px;
+  font-weight: 500;
+  color: #666666;
 }
 
 .wallet-value {
-    font-size: 15px;
-    font-weight: 400;
-    color: #333333;
-    word-break: break-all;
+  font-size: 15px;
+  font-weight: 400;
+  color: #333333;
+  word-break: break-all;
 }
+
 .DarkMode .wallet-value,
 .DarkMode .wallet-item,
-.DarkMode .wallet-label{
-    color: #b3b3b3;
-    border: none;
+.DarkMode .wallet-label {
+  color: #b3b3b3;
+  border: none;
 }
 
 .invite-code {
-    flex: 1 1 40%;
-    min-width: 300px;
-    padding: 16px;
-    text-align: center;
+  flex: 1 1 40%;
+  min-width: 300px;
+  padding: 16px;
+  text-align: center;
 }
 
 .qr-code-wrapper {
-    display: inline-block;
-    padding: 20px;
-    background: white;
-    border-radius: 16px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.qr-code-wrapper:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+  display: inline-block;
+  padding: 20px;
 }
 
 .qr-code-wrapper svg {
-    width: 150px;
-    height: 150px;
-    background: #ffffff;
-    border: 4px solid #ffffff;
-    border-radius: 8px;
-    display: block;
-    margin: 0 auto 12px;
+  width: 150px;
+  height: 150px;
+  background: #ffffff;
+  border: 4px solid #ffffff;
+  border-radius: 8px;
+  display: block;
+  margin: 0 auto 12px;
 }
 
 .invite-code-text {
-    font-size: 16px;
-    font-weight: 400;
-    color: #4b5563;
-    margin: 8px 0;
+  font-size: 16px;
+  font-weight: 400;
+  color: #4b5563;
+  margin: 8px 0;
 }
 
 .invite-code-value {
-    font-size: 14px;
-    font-weight: 500;
-    color: #1f2937;
-    background: #f1f5f9;
-    padding: 6px 12px;
-    border-radius: 6px;
-    display: inline-block;
-    margin-top: 8px;
-    word-break: break-all;
+  font-size: 14px;
+  font-weight: 500;
+  color: #1f2937;
+  background: #f1f5f9;
+  padding: 6px 12px;
+  border-radius: 6px;
+  display: inline-block;
+  margin-top: 8px;
+  word-break: break-all;
 }
-.DarkMode .invite-code-value{
-    background-color: #292929;
-    color: white;
+
+.DarkMode .invite-code-value {
+  background-color: #292929;
+  color: white;
+}
+
+.simple-warning {
+  background: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 6px;
+  padding: 10px;
+  margin: 10px 0;
+  font-size: 13px;
+}
+
+.simple-warning p {
+  margin: 2px 0;
+  color: #856404;
+}
+
+.DarkMode .simple-warning {
+  background: #2d2111;
+  border-color: #b7791f;
+}
+
+.DarkMode .simple-warning p {
+  color: #ffeaa7;
+}
+
+.mnemonic-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #2176FF;
+  color: white;
+  border: none;
+  padding: 0.6rem 1.1rem;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.mnemonic-toggle span {
+  font-size: 13px;
+}
+
+/* Copy all button */
+.copy-all-btn {
+  background: #2176FF;
+  color: white;
+  border: none;
+  padding: 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+/* Remove the old copy icon styling */
+.mnemonic-copy {
+  display: none;
 }

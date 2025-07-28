@@ -1,5 +1,5 @@
 // import type { PeginResponse } from "../hooks/wallet.type";
-// import type { Wallet } from "../hooks/wallet.type";
+// import { Wallet } from "@fedimint/core-web";
 // import logger from "../utils/logger";
 
 // export const PegIn=async(wallet:Wallet) : Promise<PeginResponse>=>{

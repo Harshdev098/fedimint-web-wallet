@@ -4,7 +4,7 @@ import { Wallet } from "@fedimint/core-web";
 import type { AppDispatch } from "../redux/store";
 import logger from "../utils/logger";
 import { createNotification } from '../redux/slices/NotificationSlice'
-import { setError } from "../redux/slices/Alerts";
+import { setErrorWithTimeout } from "../redux/slices/Alerts";
 
 export const SpendEcash = async (wallet: Wallet, amount: number): Promise<MintSpendNotesResponse> => {
     try {
@@ -82,7 +82,7 @@ export const subscribeSpend = (wallet:Wallet,operationId:string,dispatch:AppDisp
         },
         (error) => {
             logger.error("Spend notes subscription error:", error);
-            dispatch(setError({ type: 'Subscription Error: ', message: error }))
+            dispatch(setErrorWithTimeout({ type: 'Subscription Error: ', message: error }))
         }
     );
     return unsubscribe;

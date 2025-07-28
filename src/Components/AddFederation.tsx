@@ -2,12 +2,12 @@ import { useRef, useContext } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import type { RootState, AppDispatch } from '../redux/store'
 import { setJoining, setWalletId } from '../redux/slices/ActiveWallet'
-import LoadingContext from '../context/loader'
+import LoadingContext from '../context/Loading'
 import Alerts from './Alerts'
 import { JoinFederation as JoinFederationService } from '../services/FederationService'
-import { setError } from '../redux/slices/Alerts'
+import { setErrorWithTimeout } from '../redux/slices/Alerts'
 import QrScanner from 'qr-scanner'
-import NProgress from 'nprogress'
+import { startProgress,doneProgress } from '../utils/ProgressBar'
 import logger from '../utils/logger'
 import { useWallet } from '../context/WalletManager'
 
@@ -17,8 +17,8 @@ export default function AddFederation({ setJoinForm }: { setJoinForm: React.Disp
     const walletName = useRef<HTMLInputElement | null>(null)
     const videoRef = useRef<HTMLVideoElement | null>(null)
     const scannerRef = useRef<QrScanner | null>(null)
-    const { setLoading } = useContext(LoadingContext)
-    const { setWallet,switchWallet } = useWallet()
+    const { setLoader, setLoaderMessage } = useContext(LoadingContext)
+    const { setWallet, switchWallet } = useWallet()
     const dispatch = useDispatch<AppDispatch>()
     const { joining } = useSelector((state: RootState) => state.activeFederation)
     const { error } = useSelector((state: RootState) => state.Alert)
@@ -31,24 +31,25 @@ export default function AddFederation({ setJoinForm }: { setJoinForm: React.Disp
         dispatch(setJoining(true))
 
         try {
-            NProgress.start()
-            setLoading(true)
+            startProgress()
+            setLoader(true)
+            setLoaderMessage('Joining the Federation...')
             const result = await JoinFederationService(code, walletName.current?.value || '')
             if (result) {
                 logger.log('setting new wallet ', result)
                 setWallet(result)
                 dispatch(setWalletId(result.id))
                 localStorage.setItem('activeWallet', result.id)
-                localStorage.setItem('lastUsedWallet',result.id)
+                localStorage.setItem('lastUsedWallet', result.id)
                 await switchWallet(result.id)
             }
         } catch (err) {
-            dispatch(setError({ type: 'Join Federation: ', message: err instanceof Error ? err.message : String(err) }))
+            dispatch(setErrorWithTimeout({ type: 'Join Federation: ', message: err instanceof Error ? err.message : String(err) }))
         } finally {
             dispatch(setJoining(false))
-            NProgress.done()
-            setLoading(false)
+                doneProgress()
             setJoinForm(false)
+            setLoader(false)
         }
     }
 
@@ -72,17 +73,11 @@ export default function AddFederation({ setJoinForm }: { setJoinForm: React.Disp
                     logger.log("Camera started successfully");
                 }).catch((err) => {
                     logger.log("Camera access denied:", err);
-                    dispatch(setError({ type: 'QR Error: ', message: 'Camera access denied!' }))
-                    setTimeout(() => {
-                        dispatch(setError(null))
-                    }, 2000);
+                    dispatch(setErrorWithTimeout({ type: 'QR Error: ', message: 'Camera access denied!' }))
                 });
             } catch (err) {
                 logger.log("an error occured while scanning")
-                dispatch(setError({ type: 'QR Error: ', message: "Error occured while scanning" }))
-                setTimeout(() => {
-                    dispatch(setError(null))
-                }, 2000);
+                dispatch(setErrorWithTimeout({ type: 'QR Error: ', message: "Error occured while scanning" }))
             }
         }
     }
