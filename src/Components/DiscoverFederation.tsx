@@ -56,7 +56,7 @@ export default function DiscoverFederation({ setShowFederation, showFederations,
                                                 <span><b>Guardians:</b> {fed.totalGuardians}</span>
                                                 <span><b>Max stable Balance:</b> {fed.maxBalance}</span>
                                                 <span><b>Message:</b> {fed.welcomeMessage}</span>
-                                                <span><b>Onchain deposit:</b> {fed.onChainDeposit==='true' ? 'Disabled' : 'Enabled'}</span>
+                                                <span><b>Onchain deposit:</b> {fed.onChainDeposit === 'true' ? 'Disabled' : 'Enabled'}</span>
                                                 <span><b>Services(modules):</b> {fed.modules && Object.values(fed.modules).length > 0
                                                     ? Object.values(fed.modules).map((m) => m.kind).join(', ')
                                                     : 'N/A'}

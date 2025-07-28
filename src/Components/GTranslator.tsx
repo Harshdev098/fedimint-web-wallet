@@ -13,7 +13,7 @@
 
 // export default function GTranslateWidget() {
 //     const [loaded, setLoaded] = useState(false)
-//     const [error, setError] = useState('')
+//     const [error, setErrorWithTimeout] = useState('')
 
 //     useEffect(() => {
 //         const loadGTranslateScript = (): Promise<void> => {
@@ -33,7 +33,7 @@
 //                     resolve();
 //                 };
 //                 script.onerror = () => {
-//                     setError("can't load script")
+//                     setErrorWithTimeout("can't load script")
 //                     setLoaded(true)
 //                     reject()
 //                 };

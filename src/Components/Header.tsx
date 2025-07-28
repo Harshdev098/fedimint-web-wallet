@@ -1,22 +1,19 @@
 import { useDispatch, useSelector } from 'react-redux'
 import type { AppDispatch, RootState } from '../redux/store'
 import { Link } from 'react-router'
-import { useState, useContext, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useWallet } from '../context/WalletManager'
-import NProgress from 'nprogress'
-import LoadingContext from '../context/loader'
-import { setError } from '../redux/slices/Alerts'
+import { startProgress,doneProgress } from '../utils/ProgressBar'
+import { setErrorWithTimeout } from '../redux/slices/Alerts'
 import AddFederation from './AddFederation'
 import Notifications from './Notifications'
 import logger from '../utils/logger'
-import { updateBalanceFromMsat } from '../redux/slices/Balance'
 import Alerts from './Alerts'
 
 export default function Header() {
     const dispatch = useDispatch<AppDispatch>()
     const [joinForm, setJoinForm] = useState(false)
     const { wallet, switchWallet, refreshActiveWallet, availableWalletList, isLoadingAvailableFederations } = useWallet()
-    const { setLoading } = useContext(LoadingContext)
     const [ActiveFederation, setActiveFederation] = useState<{ name: string | undefined, fedId: string | undefined }>({ name: undefined, fedId: undefined })
     const { walletId } = useSelector((state: RootState) => state.activeFederation)
     const { metaData, Details } = useSelector((state: RootState) => state.federationdetails)
@@ -54,35 +51,23 @@ export default function Header() {
 
     const handleRefresh = async () => {
         try {
-            NProgress.start()
-            setLoading(true)
+            startProgress()
             await refreshActiveWallet()
-            const msat = await wallet.balance.getBalance()
-            updateBalanceFromMsat(msat)
         } catch (err) {
-            dispatch(setError({ type: 'Error: ', message: "An error occured" }))
-            setTimeout(() => {
-                dispatch(setError(null))
-            }, 3000);
+            dispatch(setErrorWithTimeout({ type: 'Error: ', message: "An error occured" }))
         } finally {
-            NProgress.done()
-            setLoading(false)
+            doneProgress()
         }
     }
 
     const handleSwitch = async (id: string) => {
         try {
-            NProgress.start()
-            setLoading(true)
+            startProgress()
             await switchWallet(id)
         } catch (err) {
-            dispatch(setError({ type: 'Wallet Switch: ', message: err instanceof Error ? err.message : String(err) }))
-            setTimeout(() => {
-                setError(null)
-            }, 3000);
+            dispatch(setErrorWithTimeout({ type: 'Wallet Switch: ', message: err instanceof Error ? err.message : String(err) }))
         } finally {
-            setLoading(false)
-            NProgress.done()
+            doneProgress()
         }
     }
 

@@ -1,4 +1,4 @@
-import { useState, useContext, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useDispatch, useSelector } from 'react-redux'
 import type { RootState } from '../redux/store'
 import { setMode } from '../redux/slices/Mode';
@@ -7,11 +7,10 @@ import { useWallet } from "../context/WalletManager";
 import { setCurrency } from '../redux/slices/Balance';
 import { cleanup } from "@fedimint/core-web";
 import { useNavigate } from "react-router";
-import LoadingContext from '../context/loader';
-import NProgress from 'nprogress';
+import { startProgress,doneProgress } from "../utils/ProgressBar";
 // import { DownloadTransactionsCSV } from "../services/DownloadQR";
 import Alerts from "./Alerts";
-import { setError,setResult } from "../redux/slices/Alerts";
+import { setErrorWithTimeout, setResult } from "../redux/slices/Alerts";
 import validate from 'bitcoin-address-validation';
 
 
@@ -23,10 +22,11 @@ export default function BasicSettings() {
     const { isDebug, toggleDebug } = useWallet()
     const { currency } = useSelector((state: RootState) => state.balance)
     const { federationId } = useSelector((state: RootState) => state.activeFederation)
-    const { setLoading } = useContext(LoadingContext);
-    const { error,result } = useSelector((state: RootState) => state.Alert)
+    const { error, result } = useSelector((state: RootState) => state.Alert)
     const [autoWithdrawAddress, setAutoWithdrawAddress] = useState<string | null>(localStorage.getItem('autoWithdraw'))
     const [isValidAddress, setIsValidAddress] = useState(false)
+    const [withdrawalBox, setWithdrawalBox] = useState<boolean>(false)
+    const [thresholdAmount,setThresholdAmount]=useState<number | undefined>(metaData?.max_stable_balance_msats)
     const navigate = useNavigate()
 
 
@@ -57,19 +57,16 @@ export default function BasicSettings() {
             localStorage.setItem('autoWithdrawalValue', autoWithdrawAddress)
             logger.log('saved!')
             dispatch(setResult('Saved!'))
-            setTimeout(() => {
-                dispatch(setResult(null))
-            }, 2000);
         }
     }
 
     const validateAddress = useCallback(() => {
         if (autoWithdrawAddress) {
             try {
-                if (validate(autoWithdrawAddress)===true) {
+                if (validate(autoWithdrawAddress) === true) {
                     setIsValidAddress(true)
                     return true;
-                }else{
+                } else {
                     setIsValidAddress(false)
                     return false;
                 }
@@ -79,13 +76,13 @@ export default function BasicSettings() {
                 return false;
             }
         }
-    },[autoWithdrawAddress])
-    
-    useEffect(()=>{
-        if(autoWithdrawAddress){
+    }, [autoWithdrawAddress])
+
+    useEffect(() => {
+        if (autoWithdrawAddress) {
             validateAddress()
         }
-    },[autoWithdrawAddress])
+    }, [autoWithdrawAddress])
 
     const toggleMode = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newValue = e.target.checked
@@ -96,8 +93,7 @@ export default function BasicSettings() {
 
     const handleLeaveFederations = async () => {
         try {
-            NProgress.start()
-            setLoading(true)
+            startProgress()
             await cleanup();
             logger.log('wallet cleanup called')
             indexedDB.deleteDatabase(`${localStorage.getItem('walletName')}`);
@@ -110,32 +106,23 @@ export default function BasicSettings() {
             navigate('/')
         } catch (err) {
             logger.log("an error occured")
-            setError({ type: 'Federation Error: ', message: err instanceof Error ? err.message : String(err) })
-            setTimeout(() => {
-                setError(null)
-            }, 3000);
+            setErrorWithTimeout({ type: 'Federation Error: ', message: err instanceof Error ? err.message : String(err) })
         } finally {
-            NProgress.done()
-            setLoading(false)
+            doneProgress()
         }
     }
 
     const handleDownloadTransactions = async () => {
         // try {
-        //     NProgress.start()
-        //     setLoading(true)
+        //     startProgress()
         //     const transactions = await wallet.federation.listTransactions()
         //     if (transactions.length === 0) throw new Error("0 Transactions found")
         //     DownloadTransactionsCSV(transactions)
         // } catch (err) {
         //     logger.log('an error occured')
-        //     setError({type:'Transaction Error',message:err instanceof Error ? err.message : String(err)})
-        //     setTimeout(() => {
-        //         setError(null)
-        //     }, 3000);
+        //     setErrorWithTimeout({type:'Transaction Error',message:err instanceof Error ? err.message : String(err)})
         // } finally {
-        //     NProgress.done()
-        //     setLoading(false)
+        //     doneProgress()
         // }
     }
 
@@ -143,6 +130,28 @@ export default function BasicSettings() {
         <>
             {error && <Alerts Error={error} />}
             {result && <Alerts Result={result} />}
+
+            {withdrawalBox && <div className="modalOverlay">
+                <div className='createInvoice'>
+                    <button type='button' className='closeBtn' onClick={() => setWithdrawalBox(false)}>
+                        <i className="fa-solid fa-xmark"></i>
+                    </button>
+                    <h2><i className="fa-solid fa-bolt"></i> Set Invoice Description</h2>
+                    <form onSubmit={handleAutoWithdrawal}>
+                        <label htmlFor='amountvalue'>Enter the external onchain address:</label>
+                        <input
+                            type="text"
+                            id='amountvalue'
+                            value={autoWithdrawAddress ?? ''}
+                            onChange={(e) => setAutoWithdrawAddress(e.target.value)}
+                            required
+                        />
+                        <label>Enter the threshold amount in msat (optional)</label>
+                        <input type="numeric" value={thresholdAmount} onChange={(e)=>setThresholdAmount(Number(e.target.value))} />
+                        <button type='submit' disabled={!isValidAddress}>Set</button>
+                    </form>
+                </div>
+            </div>}
 
             <div className="settings-container">
                 {/* Federation Information Section */}
@@ -240,16 +249,10 @@ export default function BasicSettings() {
                                 </label>
                             </div>
                         </div>
-                        <div className="setting-item auto-withdrawal">
+                        <div className="setting-item auto-withdrawal" onClick={() => setWithdrawalBox(true)} style={{ cursor: 'pointer' }}>
                             <div className="setting-info">
                                 <h3>Auto Withdraw to External Address</h3>
                                 <p>Enabling auto withdraw will auto withdraw the amount to external address if amount increased from the max stable balance of federation</p>
-                            </div>
-                            <div className="setting-control">
-                                <form onSubmit={handleAutoWithdrawal}>
-                                    <input type="text" placeholder="Enter the external address(onchain)" value={autoWithdrawAddress ?? ''} onChange={(e) => setAutoWithdrawAddress(e.target.value) } />
-                                    <button type="submit" style={{ backgroundColor: isValidAddress ? '#4CAF50' : '#c0c2c4' }} disabled={!isValidAddress}><i className="fa-solid fa-circle-check"></i></button>
-                                </form>
                             </div>
                         </div>
                     </div>

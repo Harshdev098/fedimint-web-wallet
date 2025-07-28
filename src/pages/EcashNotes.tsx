@@ -1,4 +1,4 @@
-import { useContext, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useWallet } from '../context/WalletManager';
 import { NoteCountByDenomination } from '../services/MintService';
 import { useSelector, useDispatch } from 'react-redux';
@@ -6,9 +6,8 @@ import type { RootState, AppDispatch } from '../redux/store';
 import { setNotesByDenomination } from '../redux/slices/Mint';
 import { setUTXOSet } from '../redux/slices/WalletSlice';
 import { getUTXOSet } from '../services/WalletService';
-import { setError } from '../redux/slices/Alerts';
-import LoadingContext from '../context/loader';
-import NProgress from 'nprogress';
+import { setErrorWithTimeout } from '../redux/slices/Alerts';
+import { startProgress,doneProgress } from '../utils/ProgressBar';
 import Alerts from '../Components/Alerts';
 import logger from '../utils/logger';
 import '../style/Ecash.css'
@@ -18,10 +17,9 @@ interface EcashNotesProps {
     onClose: () => void;
 }
 
-export default function EcashSetting({ isOpen, onClose }: EcashNotesProps) {
+export default function EcashNotes({ isOpen, onClose }: EcashNotesProps) {
     const { wallet } = useWallet();
     const dispatch = useDispatch<AppDispatch>();
-    const { setLoading } = useContext(LoadingContext);
     const { NotesByDenomonation } = useSelector((state: RootState) => state.mint);
     const { walletId } = useSelector((state: RootState) => state.activeFederation);
     // const { UTXOSet } = useSelector((state: RootState) => state.wallet);
@@ -45,22 +43,17 @@ export default function EcashSetting({ isOpen, onClose }: EcashNotesProps) {
                 const result = await getUTXOSet(wallet);
                 dispatch(setUTXOSet(result));
             } catch (err) {
-                dispatch(setError({ type: 'UTXO Error: ', message: err instanceof Error ? err.message : String(err) }));
-                setTimeout(() => {
-                    dispatch(setError(null))
-                }, 3000);
+                dispatch(setErrorWithTimeout({ type: 'UTXO Error: ', message: err instanceof Error ? err.message : String(err) }));
             }
         };
 
         if (wallet) {
-            NProgress.start();
-            setLoading(true);
+            startProgress();
             handleNoteCount();
             handleUTXOSet();
-            NProgress.done();
-            setLoading(false);
+            doneProgress();
         }
-    }, [wallet, dispatch, setLoading, walletId]);
+    }, [wallet, dispatch, walletId]);
 
     const renderNoteCount = () => {
         if (!NotesByDenomonation || Object.keys(NotesByDenomonation).length === 0) {
@@ -97,6 +90,7 @@ export default function EcashSetting({ isOpen, onClose }: EcashNotesProps) {
                     <div className="section-header">
                         <h2>Ecash Notes</h2>
                         <div className="divider"></div>
+                        <span className='title-span'>The Ecash Notes the wallet is holding of the balance</span>
                     </div>
                     <div className="note-grid">
                         {renderNoteCount()}

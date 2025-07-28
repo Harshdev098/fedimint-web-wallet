@@ -102,7 +102,7 @@ export const subscribeLnReceive = (
     dispatch: AppDispatch,
     metaData:FederationMetaData | null
 ) => {
-    const unsubscribe = wallet?.lightning.subscribeLnReceive(
+    const unsubscribe = wallet.lightning.subscribeLnReceive(
         operationId,
         async (state:LnReceiveState) => {
             const date = (new Date()).toDateString()

@@ -3,15 +3,14 @@ import React, { useState, useEffect } from 'react';
 // import { useWallet } from '../context/WalletManager';
 // import type { Transactions } from '@fedimint/core-web';
 // import type { InvoiceState } from '../hooks/wallet.type';
-// import NProgress from 'nprogress';
-// import LoadingContext from '../context/loader';
+// import { startProgress,doneProgress } from '../utils/ProgressBar';
 import Alerts from '../Components/Alerts';
 // import { Link } from 'react-router';
 // import logger from '../utils/logger';
 import '../style/Invoice.css'
 import { useSelector } from 'react-redux';
 import type { RootState } from '../redux/store';
-// import { setError } from '../redux/slices/Alerts';
+// import { setErrorWithTimeout } from '../redux/slices/Alerts';
 
 export default function Invoices() {
     const invoiceExpiryOptions = ['--Select--', '10 minutes', '20 min', '30 minutes', '40 min', '60 min', '180 min', '300 min', '480 min'];
@@ -19,11 +18,11 @@ export default function Invoices() {
     // const [invoiceStateList, setInvoiceStateList] = useState<InvoiceState[]>([]);
     // const [invoicePendingList, setInvoicePendingList] = useState<InvoiceState[]>([])
     const [stateFilter, setStateFilter] = useState<string>('all')
-    const {federationId,walletId}=useSelector((state:RootState)=>state.activeFederation)
+    const { federationId, walletId } = useSelector((state: RootState) => state.activeFederation)
     // const { wallet } = useWallet()
-    // const { setLoading } = useContext(LoadingContext)
     const { error } = useSelector((state: RootState) => state.Alert)
-    const [currentPage, setCurrentPage] = useState(1)
+    // const [currentPage, setCurrentPage] = useState(1)
+    const [expandedId, setExpandedId] = useState<string | null>(null);
     // const pageLimint = 5
 
 
@@ -72,8 +71,7 @@ export default function Invoices() {
     // }
 
     const handleInvoice = async () => {
-        // NProgress.start()
-        // setLoading(true)
+        // startProgress()
         // try {
         //     let currentState: string
         //     const tx = await wallet.federation.listTransactions();
@@ -131,13 +129,9 @@ export default function Invoices() {
         //     }
         // } catch (err) {
         //     logger.log("an error occured")
-        //     setError({ type: 'Invoice Error: ', message: String(err) })
-        //     setTimeout(() => {
-        //         setError(null)
-        //     }, 3000);
+        //     setErrorWithTimeout({ type: 'Invoice Error: ', message: String(err) })
         // } finally {
-        //     NProgress.done()
-        //     setLoading(false)
+        //     doneProgress()
         // }
     }
 
@@ -155,15 +149,25 @@ export default function Invoices() {
 
     useEffect(() => {
         handleInvoice()
-    }, [walletId,federationId])
+    }, [walletId, federationId])
+
+    const toggleExpanded = (id: string) => {
+        setExpandedId(prev => (prev === id ? null : id));
+    };
 
     return (
         <>
             {error && <Alerts Error={error} />}
+            <header className="sticky-header">
+                <button className="back-button" onClick={() => window.history.back()}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M19 12H5M12 19l-7-7 7-7" />
+                    </svg>
+                </button>
+                <h1 className="header-title">Invoices</h1>
+            </header>
             <section className="transaction-container">
                 <div className="transaction-header">
-                    <h2 className="transaction-title"><i className="fa-solid fa-file-invoice-dollar" style={{fontSize:'1.4rem'}}></i> Your Invoices</h2>
-                    <p className="transaction-subtitle">View and search your recent transactions</p>
                 </div>
                 <div className="search-container">
                     <div className="expiry-select">
@@ -186,83 +190,163 @@ export default function Invoices() {
                     </div>
                 </div>
 
-                <ul className="transaction-list">
+                <ul className='transaction-list'>
                     <li className="transaction-item">
-                        <div className="transaction-icon received">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M12 5v14M5 12l7 7 7-7" />
-                            </svg>
-                        </div>
-                        <div className="transaction-content">
-                            <div className="transaction-main">
-                                <h3 className="transaction-type">Payment Received</h3>
-                                <p className="transaction-amount positive">+20 msat</p>
+                        <div className='tx-list-detail' onClick={() => toggleExpanded('dsfsd')}>
+                            <div className='tx-detail'>
+                                <div className="tx-icon received">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                        <path d="M12 5v14M5 12l7 7 7-7" />
+                                    </svg>
+                                </div>
+                                <div className="tx-info">
+                                    <h4 className="tx-type">Received</h4>
+                                    <p className="tx-time">2 hours ago</p>
+                                </div>
                             </div>
-                            <div className="transaction-meta">
-                                <span className="transaction-timestamp">2 hours ago</span>
-                                <span className="transaction-status success">Completed</span>
+                            <div className='tx-meta'>
+                                <div className="tx-amount-container">
+                                    <p className="tx-amount positive">+2000</p>
+                                    <span className='tx-status claimed'>Claimed</span>
+                                </div>
+                                <div className="expand-btn">
+                                    <svg
+                                        className={`expand-icon ${expandedId === 'dsfsd' ? 'expanded' : ''}`}
+                                        width="20"
+                                        height="20"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                    >
+                                        <path d="M6 9l6 6 6-6" />
+                                    </svg>
+                                </div>
                             </div>
                         </div>
+                        {expandedId === 'dsfsd' && (
+                            <div className='transaction-advanced-details'>
+                                <div className="details-grid">
+                                    <div className="detail-item">
+                                        <span className="detail-label">Kind</span>
+                                        <span className="detail-value">Lightning</span>
+                                    </div>
+                                    <div className="detail-item">
+                                        <span className="detail-label">Operation ID</span>
+                                        <span className="detail-value">sdfsdfsd</span>
+                                    </div>
+                                    <div className="detail-item">
+                                        <span className="detail-label">Outcome</span>
+                                        <span className="detail-value">sdfsd</span>
+                                    </div>
+                                    <div className="detail-item">
+                                        <span className="detail-label">Fees</span>
+                                        <span className="detail-value">23</span>
+                                    </div>
+                                    <div className="detail-item full-width">
+                                        <span className="detail-label">Invoice</span>
+                                        <span className="detail-value">sdfsdfs</span>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </li>
                 </ul>
                 <div className="pagination-container">
-                    <button className="pagination-button prev"
-                        // disabled={currentPage === 1}
-                        // onClick={() => setCurrentPage(currentPage - 1)}
-                    >
+                    <button className="pagination-button prev">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <path d="M15 18l-6-6 6-6" />
                         </svg>
-                        Prev
+                        Previous
                     </button>
-                    <button className="pagination-button next"
-                        // disabled={(currentPage * pageLimint) >= invoiceStateList.length}
-                        onClick={() => setCurrentPage(currentPage + 1)}
-                    >
+                    <button className="pagination-button next">
                         Next
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M9 18l6-6-6-6" />
+                        </svg>
                     </button>
                 </div>
             </section>
 
             <section className="transaction-container">
                 <div className="transaction-header">
-                    <h2 className="transaction-title"><i className="fa-solid fa-file-invoice-dollar" style={{fontSize:'1.4rem'}}></i> Paid Invoices</h2>
+                    <h2 className="transaction-title"><i className="fa-solid fa-file-invoice-dollar" style={{ fontSize: '1.4rem' }}></i> Paid Invoices</h2>
                     <p className="transaction-subtitle">View and search your recent transactions</p>
                 </div>
-                <ul className="transaction-list">
+                <ul className='transaction-list'>
                     <li className="transaction-item">
-                        <div className="transaction-icon received">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M12 5v14M5 12l7 7 7-7" />
-                            </svg>
-                        </div>
-                        <div className="transaction-content">
-                            <div className="transaction-main">
-                                <h3 className="transaction-type">Payment Received</h3>
-                                <p className="transaction-amount positive">+20 msat</p>
+                        <div className='tx-list-detail' onClick={() => toggleExpanded('dsfsd')}>
+                            <div className='tx-detail'>
+                                <div className="tx-icon received">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                        <path d="M12 5v14M5 12l7 7 7-7" />
+                                    </svg>
+                                </div>
+                                <div className="tx-info">
+                                    <h4 className="tx-type">Received</h4>
+                                    <p className="tx-time">2 hours ago</p>
+                                </div>
                             </div>
-                            <div className="transaction-meta">
-                                <span className="transaction-timestamp">2 hours ago</span>
-                                <span className="transaction-status success">Completed</span>
+                            <div className='tx-meta'>
+                                <div className="tx-amount-container">
+                                    <p className="tx-amount positive">+2000</p>
+                                    <span className='tx-status claimed'>Claimed</span>
+                                </div>
+                                <div className="expand-btn">
+                                    <svg
+                                        className={`expand-icon ${expandedId === 'dsfsd' ? 'expanded' : ''}`}
+                                        width="20"
+                                        height="20"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                    >
+                                        <path d="M6 9l6 6 6-6" />
+                                    </svg>
+                                </div>
                             </div>
                         </div>
+                        {expandedId === 'dsfsd' && (
+                            <div className='transaction-advanced-details'>
+                                <div className="details-grid">
+                                    <div className="detail-item">
+                                        <span className="detail-label">Kind</span>
+                                        <span className="detail-value">Lightning</span>
+                                    </div>
+                                    <div className="detail-item">
+                                        <span className="detail-label">Operation ID</span>
+                                        <span className="detail-value">sdfsdfsd</span>
+                                    </div>
+                                    <div className="detail-item">
+                                        <span className="detail-label">Outcome</span>
+                                        <span className="detail-value">sdfsd</span>
+                                    </div>
+                                    <div className="detail-item">
+                                        <span className="detail-label">Fees</span>
+                                        <span className="detail-value">23</span>
+                                    </div>
+                                    <div className="detail-item full-width">
+                                        <span className="detail-label">Invoice</span>
+                                        <span className="detail-value">sdfsdfs</span>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </li>
                 </ul>
                 <div className="pagination-container">
-                    <button className="pagination-button prev"
-                        // disabled={currentPage === 1}
-                        // onClick={() => setCurrentPage(currentPage - 1)}
-                    >
+                    <button className="pagination-button prev">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <path d="M15 18l-6-6 6-6" />
                         </svg>
-                        Prev
+                        Previous
                     </button>
-                    <button className="pagination-button next"
-                        // disabled={(currentPage * pageLimint) >= invoiceStateList.length}
-                        // onClick={() => setCurrentPage(currentPage + 1)}
-                    >
+                    <button className="pagination-button next">
                         Next
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M9 18l6-6-6-6" />
+                        </svg>
                     </button>
                 </div>
             </section>

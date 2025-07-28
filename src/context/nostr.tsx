@@ -51,6 +51,7 @@ export const NostrProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const [discoveredFederations, setDiscoveredFederations] = useState<DiscoveredFederation[]>([]);
     const ndkRef = useRef<NDK | null>(null);
     const isNostrInitialized = useRef(false);
+    const isRelayConnected = useRef(false);
 
     const DEFAULT_RELAYS = [
         'wss://nostr.mutinywallet.com/',
@@ -71,11 +72,10 @@ export const NostrProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     // Initialize NDK lazily in the background
     const initializeNDK = useCallback(async () => {
         if (isNostrInitialized.current) return;
-        isNostrInitialized.current = true;
 
         try {
             const cacheAdapter = new NDKCacheAdapterDexie({ dbName: "nwc-wallet-events" });
-            await cacheAdapter.onReady(()=>{
+            await cacheAdapter.onReady(() => {
                 // cache is ready
             });
 
@@ -85,6 +85,7 @@ export const NostrProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 explicitRelayUrls: nwcRelays,
             });
             ndkRef.current = ndk;
+            isNostrInitialized.current = true;
 
             // Connect to relays in the background
             ndk.connect().catch(err => {
@@ -92,7 +93,7 @@ export const NostrProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             });
         } catch (err) {
             logger.error("NDK initialization failed", err);
-            isNostrInitialized.current = false; // Allow retry on next render
+            isNostrInitialized.current = false;
         }
     }, [nwcRelays]);
 
@@ -228,6 +229,7 @@ export const NostrProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                     ? prev.map(r => (r.relay === relay.url ? { ...r, status: 'connected' } : r))
                     : [...prev, { relay: relay.url, status: 'connected' }];
             });
+            isRelayConnected.current = true
         };
 
         const handleRelayDisconnect = (relay: any) => {
@@ -253,12 +255,13 @@ export const NostrProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             ndk.pool.off('relay:connect', handleRelayConnect);
             ndk.pool.off('relay:disconnect', handleRelayDisconnect);
         };
-    }, [initializeNDK, retryFailedEvents]);
+    }, [initializeNDK, retryFailedEvents, ndkRef]);
 
     // Handle Nostr payments and info events
     useEffect(() => {
         const runNostrNWC = async () => {
             const ndk = ndkRef.current;
+            logger.log("weuirwe", ndk, walletStatus)
             if (!ndk || !wallet || walletStatus !== 'open') return;
 
             const walletKeys = JSON.parse(localStorage.getItem('WalletNostrKeys') || '{}');
@@ -294,7 +297,8 @@ export const NostrProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         if (nwcEnabled && wallet && walletStatus === 'open') {
             runNostrNWC();
         }
-    }, [nwcEnabled, wallet, walletStatus, setNwcURI]);
+        logger.log('sdfsdflsdfklsdfl')
+    }, [nwcEnabled, wallet, walletStatus, ndkRef, isRelayConnected, isNostrInitialized]);
 
     return (
         <NostrContext.Provider value={{

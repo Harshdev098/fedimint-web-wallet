@@ -1,63 +1,72 @@
 // import QrScanner from "qr-scanner"
-import { useContext, useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { useWallet } from "../context/WalletManager"
 import { useDispatch, useSelector } from 'react-redux'
 import type { RootState, AppDispatch } from '../redux/store'
-import { setError } from "../redux/slices/Alerts"
+import { setErrorWithTimeout } from "../redux/slices/Alerts"
 import { updateBalanceFromMsat } from "../redux/slices/Balance"
 import Alerts from "./Alerts"
-import NProgress from 'nprogress'
-import LoadingContext from '../context/loader'
+import { startProgress,doneProgress } from "../utils/ProgressBar"
 import LighningPayment from "./LighningPayment"
-import EcashSetting from "../pages/EcashSetting"
+import EcashNotes from "../pages/EcashNotes"
 import logger from "../utils/logger"
-
 
 export default function Balance() {
     const { wallet } = useWallet()
     const dispatch = useDispatch<AppDispatch>()
     const { balance } = useSelector((state: RootState) => state.balance)
-    const { setLoading } = useContext(LoadingContext)
-    const { federationId,walletId } = useSelector((state: RootState) => state.activeFederation)
+    const { walletId } = useSelector((state: RootState) => state.activeFederation)
     const { currency } = useSelector((state: RootState) => state.balance)
     const { error } = useSelector((state: RootState) => state.Alert)
-    const [OpenEcashNotes,setOpenEcashNotes]=useState<boolean>(false)
+    const [OpenEcashNotes, setOpenEcashNotes] = useState<boolean>(false)
+    const [hidden, setHidden] = useState<boolean>(false)
+    const balanceSectionRef = useRef<HTMLElement>(null)
 
 
+    // Fetch balance
     useEffect(() => {
-        const run = async () => {
+        const fetchBalance = async () => {
             try {
                 logger.log('fetching balance')
-                NProgress.start()
-                setLoading(true)
-                const msats=await wallet.balance.getBalance()
+                startProgress()
+                const msats = await wallet.balance.getBalance()
                 await dispatch(updateBalanceFromMsat(msats))
             } catch (err) {
-                dispatch(setError({ type: 'Balance Error', message: err instanceof Error ? err.message : String(err) }))
-                setTimeout(() => dispatch(setError(null)), 3000)
+                dispatch(setErrorWithTimeout({ 
+                    type: 'Balance Error', 
+                    message: err instanceof Error ? err.message : String(err) 
+                }))
             } finally {
-                NProgress.done()
-                setLoading(false)
+                doneProgress()
             }
         }
-        run()
-    }, [federationId, currency,walletId])
-
+        fetchBalance()
+    }, [currency, walletId, wallet, dispatch])
 
     return (
         <>
             {error && <Alerts Error={error} />}
-            {OpenEcashNotes && <EcashSetting isOpen={OpenEcashNotes} onClose={() => setOpenEcashNotes(false)} />}
-            <section className='BalanceSection'>
+            {OpenEcashNotes && (
+                <EcashNotes 
+                    isOpen={OpenEcashNotes} 
+                    onClose={() => setOpenEcashNotes(false)} 
+                />
+            )}
+            <section ref={balanceSectionRef} className='BalanceSection'>
                 <div className='BalanceSectionValue'>
-                    <span>{balance} {currency.toUpperCase()}</span>
+                    <span 
+                        onClick={() => setHidden(!hidden)} 
+                        style={{ cursor: 'pointer' }}
+                    >
+                        {hidden ? '****' : (balance + " " + currency.toUpperCase())}
+                    </span>
                 </div>
                 <div className="wallet-notes">
-                    <span onClick={()=>setOpenEcashNotes(!OpenEcashNotes)}><i className="fa-solid fa-note-sticky"></i> Wallet Ecash Notes</span>
+                    <span onClick={() => setOpenEcashNotes(!OpenEcashNotes)}>
+                        <i className="fa-solid fa-note-sticky"></i> Wallet Ecash Notes
+                    </span>
                 </div>
-
                 <LighningPayment />
-
             </section>
         </>
     )

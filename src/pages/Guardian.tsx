@@ -1,10 +1,12 @@
 import { useSelector } from 'react-redux';
 import type { RootState } from '../redux/store';
+import { useState } from 'react';
 
 const guardianColors = ['#34d399', '#60a5fa', '#a78bfa', '#f472b6'];
 
 export default function Guardians() {
     const { Details, GuardianStatus } = useSelector((state: RootState) => state.federationdetails);
+    const [showTooltip, setShowTooltip] = useState(false);
 
     const guardians = Object.keys(Details?.api_endpoints ?? {}).map((key: any, idx) => ({
         id: key,
@@ -15,36 +17,64 @@ export default function Guardians() {
         status: GuardianStatus.status[Number(key)] || 'checking'
     }));
 
+    const onlineGuardians = guardians.filter(g => g.status === 'online').length;
+    const totalGuardians = guardians.length;
+
     return (
-        <section className="guardian-section">
-            <h2 style={{fontSize:'1.5rem'}}><i className="fa-solid fa-shield"></i> Federation Guardians</h2>
-            <p className="subtitle">Information about the active guardians</p>
+        <section className="guardian-section" id='guardians'>
+            <div className="guardian-header-info">
+                <div className='guardian-title'>
+                    <h2 className="title" style={{textAlign:'left'}}>
+                        <i className="fa-solid fa-shield"></i> Guardians (Members)
+                    </h2>
+                    <span className='title-span'>Trusted operators who secure your funds and keep the federation running.</span>
+                </div>
+                <span className="guardian-count">
+                    {onlineGuardians} out of {totalGuardians} Guardians are active
+                </span>
+            </div>
 
             <div className="guardian-list">
                 {guardians.map((g) => (
                     <div key={g.id} className="guardian-card">
-                        <div className="guardian-header">
-                            <div className="guardian-avatar" style={{ backgroundColor: g.color }}>
-                                {g.name[0].toUpperCase()}
+                        <div className="guardian-main-info">
+                            <div className="guardian-name-section">
+                                <div className="guardian-avatar" style={{ backgroundColor: g.color }}>
+                                    {g.name ? g.name[0].toUpperCase() : 'G'}
+                                </div>
+                                <div className="guardian-info">
+                                    <h3 className="guardian-name">{g.name}</h3>
+                                    <div className="guardian-url">{g.url}</div>
+                                </div>
                             </div>
-                            <div>
-                                <h3 className="guardian-name">{g.name}</h3>
-                                <span className="status-text">
-                                    <span className="status-dot" />{g.status}
+                        </div>
+
+                        <div className="guardian-status-badges">
+                            <span className={`status-badge ${g.status === 'online' ? 'online' : 'checking'}`}>
+                                {g.status === 'online' ? 'Online' : 'Checking'}
+                            </span>
+                            <span className="session-badge">Session 184361
+                                <span
+                                    className="tooltip-container"
+                                    onClick={() => setShowTooltip(!showTooltip)}
+                                >
+                                    <i className="fa-solid fa-info-circle"></i>
+                                    <span className={`tooltip-text ${showTooltip ? 'show' : ''}`}>
+                                        Only give a relay which client app is using to handle payments & connection
+                                    </span>
                                 </span>
-                            </div>
-                        </div>
-
-                        <div className="guardian-detail">
-                            <span>API Endpoint</span>
-                            <code>{g.url}</code>
-                        </div>
-
-                        <div className="guardian-detail">
-                            <span>Public Key</span>
-                            <code>
-                                {g.pubKey}
-                            </code>
+                            </span>
+                            <span className="block-badge">Block 906835
+                                <span
+                                    className="tooltip-container"
+                                    onClick={() => setShowTooltip(!showTooltip)}
+                                >
+                                    <i className="fa-solid fa-info-circle"></i>
+                                    <span className={`tooltip-text ${showTooltip ? 'show' : ''}`}>
+                                        Only give a relay which client app is using to handle payments & connection
+                                    </span>
+                                </span>
+                            </span>
                         </div>
                     </div>
                 ))}

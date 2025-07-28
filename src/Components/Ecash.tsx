@@ -1,6 +1,5 @@
 import QrScanner from "qr-scanner";
-import { useContext, useEffect, useRef, useState, useCallback } from 'react'
-import { Link } from 'react-router'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import QRCode from 'react-qr-code'
 import { useWallet } from '../context/WalletManager'
 import '../style/Ecash.css'
@@ -8,14 +7,14 @@ import { SpendEcash, RedeemEcash, ParseEcashNotes, subscribeSpend } from '../ser
 import { useSelector, useDispatch } from 'react-redux'
 import type { RootState, AppDispatch } from '../redux/store'
 import { setSpendResult, setParseEcashResult } from '../redux/slices/Mint'
-import LoadingContext from '../context/loader'
-import NProgress from 'nprogress'
+import { startProgress,doneProgress } from "../utils/ProgressBar";
 import Alerts from './Alerts'
 import { downloadQRCode } from '../services/DownloadQR';
 import { convertToMsats, subscribeBalance } from "../services/BalanceService";
 import logger from "../utils/logger";
-import { setError, setResult } from "../redux/slices/Alerts";
+import { setErrorWithTimeout, setResult } from "../redux/slices/Alerts";
 import { setCurrency } from '../redux/slices/Balance';
+import { Link } from "react-router";
 
 
 export default function Ecash() {
@@ -27,7 +26,6 @@ export default function Ecash() {
     const amount = useRef<HTMLInputElement | null>(null)
     const [notes, setNotes] = useState('')
     const { wallet } = useWallet()
-    const { setLoading } = useContext(LoadingContext)
     const { SpendEcashResult, ParseEcashResult } = useSelector((state: RootState) => state.mint)
     const dispatch = useDispatch<AppDispatch>()
     const { currency } = useSelector((state: RootState) => state.balance)
@@ -41,8 +39,7 @@ export default function Ecash() {
 
     const handleSpendEcash = async (e: React.FormEvent) => {
         e.preventDefault()
-        NProgress.start()
-        setLoading(true)
+        startProgress()
         try {
             setStatus(true)
 
@@ -57,13 +54,9 @@ export default function Ecash() {
                 unsubscribe?.()
             }, 30000);
         } catch (err) {
-            dispatch(setError({ type: 'Spend Error: ', message: err instanceof Error ? err.message : String(err) }))
-            setTimeout(() => {
-                dispatch(setError(null))
-            }, 3000);
+            dispatch(setErrorWithTimeout({ type: 'Spend Error: ', message: err instanceof Error ? err.message : String(err) }))
         } finally {
-            NProgress.done()
-            setLoading(false)
+            doneProgress()
             setStatus(false)
             if (amount.current) {
                 amount.current.value = '';
@@ -74,8 +67,7 @@ export default function Ecash() {
 
     const handleRedeemEcash = async (e: React.FormEvent) => {
         e.preventDefault()
-        NProgress.start()
-        setLoading(true)
+        startProgress()
         try {
             if (!notes) {
                 throw new Error("Notes value is required");
@@ -87,18 +79,13 @@ export default function Ecash() {
             subscribeBalance(wallet, dispatch)
 
             setTimeout(() => {
-                dispatch(setResult(null))
                 dispatch(setParseEcashResult(null))
             }, 3000);
         } catch (err) {
             logger.log(`An error occured ${err}`)
-            dispatch(setError({ type: 'Redeem Error: ', message: err instanceof Error ? err.message : String(err) }))
-            setTimeout(() => {
-                dispatch(setError(null))
-            }, 3000);
+            dispatch(setErrorWithTimeout({ type: 'Redeem Error: ', message: err instanceof Error ? err.message : String(err) }))
         } finally {
-            NProgress.done()
-            setLoading(false)
+            doneProgress()
             setStatus(false)
             setNotes('')
         }
@@ -114,12 +101,10 @@ export default function Ecash() {
     useEffect(() => {
         const trimmedNotes = notes.trim();
         if (trimmedNotes !== '') {
-            NProgress.start()
-            setLoading(true)
+            startProgress()
             setStatus(true)
             memoizedParseNotes(trimmedNotes);
-            NProgress.done()
-            setLoading(false)
+            doneProgress()
             setStatus(false)
         }
     }, [notes, memoizedParseNotes]);
@@ -136,10 +121,7 @@ export default function Ecash() {
                             setNotes(result.data)
                         } else {
                             logger.error("Parsed value is undefined");
-                            dispatch(setError({ type: 'Parse Error: ', message: 'Parsed value is undefined' }))
-                            setTimeout(() => {
-                                dispatch(setError(null))
-                            }, 3000);
+                            dispatch(setErrorWithTimeout({ type: 'Parse Error: ', message: 'Parsed value is undefined' }))
                             setOpenVideo(false)
                         }
                         setOpenVideo(false)
@@ -153,10 +135,7 @@ export default function Ecash() {
                 logger.log("scanning started")
             }).catch((err) => {
                 logger.log(`${err}`)
-                dispatch(setError({ type: 'QR Error: ', message: 'Scanning failed' }))
-                setTimeout(() => {
-                    dispatch(setError(null))
-                }, 3000);
+                dispatch(setErrorWithTimeout({ type: 'QR Error: ', message: 'Scanning failed' }))
             })
         }
     }, [openVideo])
@@ -189,6 +168,9 @@ export default function Ecash() {
             )}
 
             <section className="ecash-section">
+                <h2 className="title">Transact Ecashes</h2>
+                <p className="title-span">Spend & Receive the Ecashes notes offline instead of Lightning or bitcoin network</p>
+                <p className="title-span">You can manage your ecash transaction in <Link to={'/wallet/transactions'}>transaction</Link> tab</p>
                 <div className="ecash-container">
                     <div className="ecash-card spend-card">
                         <div className="card-header">
@@ -197,12 +179,6 @@ export default function Ecash() {
                             </div>
                             <div className="header-content">
                                 <h3 className="card-title">Generate Ecash & Spend</h3>
-                                <p className="card-subtitle">
-                                    You can change the currency from{' '}
-                                    <Link to={'/settings'} className="settings-link">
-                                        <i className="fa-solid fa-gear"></i> Settings
-                                    </Link>
-                                </p>
                             </div>
                         </div>
 
@@ -294,9 +270,6 @@ export default function Ecash() {
                             </div>
                             <div className="header-content">
                                 <h3 className="card-title">Redeem Ecash</h3>
-                                <p className="card-subtitle">
-                                    Enter the notes manually or scan QR code
-                                </p>
                             </div>
                         </div>
 
@@ -343,6 +316,7 @@ export default function Ecash() {
                         </form>
                     </div>
                 </div>
+                <p className='title-span'>Have doubt? Refer FAQs section in settings or raise a <Link to={'https://github.com/Harshdev098/fedimint-web-wallet'} target='_blank'>ticket</Link> for issue</p>
             </section>
         </>
     );

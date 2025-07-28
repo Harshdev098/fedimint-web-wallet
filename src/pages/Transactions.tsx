@@ -1,8 +1,9 @@
 // import { useEffect, useState, useCallback } from 'react';
+import { useState } from 'react';
 // import { useContext } from 'react';
 // import { useWallet } from '../context/WalletManager';
 import Alerts from '../Components/Alerts';
-// import NProgress from 'nprogress';
+// import { startProgress,doneProgress } from '../utils/ProgressBar';
 // import LoadingContext from '../context/loader';
 // import type { EcashTransaction, WalletTransaction, LightningTransaction, Transactions } from '@fedimint/core-web';
 // import type { EpochTime } from '../hooks/Federation.type';
@@ -10,13 +11,15 @@ import Alerts from '../Components/Alerts';
 // import type { Transaction } from '../hooks/wallet.type';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../redux/store';
-// import { setError } from '../redux/slices/Alerts';
+import { useNavigate } from 'react-router';
+// import { setErrorWithTimeout } from '../redux/slices/Alerts';
 // import { parseBolt11Invoice } from '@fedimint/core-web';
 
 
 export default function Transactions() {
     // const { wallet } = useWallet();
-    // const { setLoading } = useContext(LoadingContext);
+    const navigate=useNavigate()
+    // const { setLoader } = useContext(LoadingContext);
     // const [query, setQuery] = useState<string>('');
     // const [transactions, setTransactions] = useState<Transaction[]>([]);
     // const [totalSpending, setTotalSpending] = useState<number>(0)
@@ -32,12 +35,14 @@ export default function Transactions() {
     // const limit = 4;
     // const [hasMore, setHasMore] = useState(true);
     const { error } = useSelector((state: RootState) => state.Alert)
+    const [expandedId, setExpandedId] = useState<string | null>(null);
 
 
     // const fetchOperations = async (page: number, reset = false) => {
     // try {
-    //     NProgress.start();
-    //     setLoading(true);
+    //     startProgress();
+        //    setLoader(true)
+        // setLoaderMessage('fetching transactions')
     //     const lastSeenParam = reset ? undefined : lastSeen ?? undefined;
     //     logger.log('Calling listTransactions:', { limit, lastSeen: lastSeenParam, page });
 
@@ -94,11 +99,10 @@ export default function Transactions() {
     //     setCurrentPage(page);
     // } catch (err) {
     //     logger.error('Error fetching operations:', err);
-    //     setError({ type: 'Transaction Error: ', message: err instanceof Error ? err.message : String(err) })
-    //     setTimeout(() => setError(null), 3000);
+    //     setErrorWithTimeout({ type: 'Transaction Error: ', message: err instanceof Error ? err.message : String(err) })
     // } finally {
-    //     NProgress.done();
-    //     setLoading(false);
+    //     doneProgress();
+        //    setLoader(false)
     // }
     // };
 
@@ -153,8 +157,7 @@ export default function Transactions() {
     // const memoizeSearch = useCallback(
     //     async (query: string) => {
     //         try {
-    //             NProgress.start();
-    //             setLoading(true);
+    //             startProgress();
 
     //             const result = await wallet.federation.getOperation(query);
     //             if (!result) {
@@ -239,14 +242,12 @@ export default function Transactions() {
     //             setTransactions([mappedTx]);
     //         } catch (err) {
     //             logger.error('Search error:', err);
-    //             setError({ type: 'Transaction Error: ', message: err instanceof Error ? err.message : String(err) });
-    //             setTimeout(() => setError(null), 3000);
+    //             setErrorWithTimeout({ type: 'Transaction Error: ', message: err instanceof Error ? err.message : String(err) });
     //         } finally {
-    //             NProgress.done();
-    //             setLoading(false);
+    //             doneProgress();
     //         }
     //     },
-    //     [wallet, setLoading]
+    //     [wallet]
     // );
 
 
@@ -271,14 +272,24 @@ export default function Transactions() {
     //     }
     // };
 
+    const toggleExpanded = (id: string) => {
+        setExpandedId(prev => (prev === id ? null : id));
+    };
+
     return (
         <>
             {error && <Alerts key={Date.now()} Error={error} Result={''} />}
+
+            <header className="sticky-header">
+                <button className="back-button" onClick={() => navigate('/wallet')}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M19 12H5M12 19l-7-7 7-7" />
+                    </svg>
+                </button>
+                <h1 className="header-title">Transactions</h1>
+            </header>
+
             <section className="transaction-container">
-                <div className="transaction-header">
-                    <h2 className="transaction-title"><i className="fa-solid fa-clock-rotate-left" style={{ fontSize: '1.4rem' }}></i> Your Transactions</h2>
-                    <p className="transaction-subtitle">View and search your recent transactions</p>
-                </div>
                 <div className="search-container">
                     <div className="search-wrapper">
                         <svg className="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -288,78 +299,82 @@ export default function Transactions() {
                         <input
                             type="text"
                             placeholder="Search by Operation ID..."
-                            // value={query}
-                            // onChange={(e) => setQuery(e.target.value)}
                             className="search-input"
                         />
                     </div>
                 </div>
-                {/* {transactions.length > 0 ?
-                    <ul className="transaction-list">
-                        {transactions.map((tx, key) => (
-                            <li className="transaction-item" key={key}>
-                                <div className="transaction-icon received">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+
+                <ul className='transaction-list'>
+                    <li className="transaction-item">
+                        <div className='tx-list-detail' onClick={() => toggleExpanded('dsfsd')}>
+                            <div className='tx-detail'>
+                                <div className="tx-icon received">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                                         <path d="M12 5v14M5 12l7 7 7-7" />
                                     </svg>
                                 </div>
-                                <div className="transaction-content">
-                                    <div className="transaction-main">
-                                        <h3 className="transaction-type">{tx.type}</h3>
-                                        {['receive', 'reissue', 'deposit'].includes(tx.type) && (
-                                            <p className="transaction-amount positive">+{tx.amountMsats}</p>
-                                        )}
-                                        {['send', 'spend_oob', 'withdraw'].includes(tx.type) && (
-                                            <p className="transaction-amount negative">-{tx.amountMsats}</p>
-                                        )}
-
+                                <div className="tx-info">
+                                    <h4 className="tx-type">Received</h4>
+                                    <p className="tx-time">2 hours ago</p>
+                                </div>
+                            </div>
+                            <div className='tx-meta'>
+                                <div className="tx-amount-container">
+                                    <p className="tx-amount positive">+2000</p>
+                                    <span className='tx-status claimed'>Claimed</span>
+                                </div>
+                                <div className="expand-btn">
+                                    <svg
+                                        className={`expand-icon ${expandedId === 'dsfsd' ? 'expanded' : ''}`}
+                                        width="20"
+                                        height="20"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                    >
+                                        <path d="M6 9l6 6 6-6" />
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                        {expandedId === 'dsfsd' && (
+                            <div className='transaction-advanced-details'>
+                                <div className="details-grid">
+                                    <div className="detail-item">
+                                        <span className="detail-label">Kind</span>
+                                        <span className="detail-value">Lightning</span>
                                     </div>
-                                    <div className="transaction-meta">
-                                        <span className="transaction-timestamp">{tx.timestamp}</span>
-                                        <span className="transaction-status success">{tx.outcome}</span>
+                                    <div className="detail-item">
+                                        <span className="detail-label">Operation ID</span>
+                                        <span className="detail-value">sdfsdfsd</span>
+                                    </div>
+                                    <div className="detail-item">
+                                        <span className="detail-label">Outcome</span>
+                                        <span className="detail-value">sdfsd</span>
+                                    </div>
+                                    <div className="detail-item">
+                                        <span className="detail-label">Fees</span>
+                                        <span className="detail-value">23</span>
+                                    </div>
+                                    <div className="detail-item full-width">
+                                        <span className="detail-label">Invoice</span>
+                                        <span className="detail-value">sdfsdfs</span>
                                     </div>
                                 </div>
-                            </li>
-                        ))}
-                    </ul>
-                    : <p style={{ textAlign: 'center' }}>0 Transactions found</p>
-                } */}
-                <ul className='transaction-list'>
-                    <li className="transaction-item">
-                        <div className="transaction-icon received">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M12 5v14M5 12l7 7 7-7" />
-                            </svg>
-                        </div>
-
-                        <div className="transaction-content">
-                            <div className="transaction-main">
-                                <h3 className="transaction-type">Payment Received</h3>
-                                <p className="transaction-amount positive">+20 msat</p>
                             </div>
-                            <div className="transaction-meta">
-                                <span className="transaction-timestamp">2 hours ago</span>
-                                <span className="transaction-status success">Completed</span>
-                            </div>
-                        </div>
+                        )}
                     </li>
                 </ul>
+
                 <div className="pagination-container">
-                    <button
-                        // onClick={handlePrev}
-                        // disabled={currentPage === 1}
-                        className="pagination-button prev"
-                    >
+                    <button className="pagination-button prev">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <path d="M15 18l-6-6 6-6" />
                         </svg>
                         Previous
                     </button>
-                    <button
-                        // onClick={handleNext}
-                        // disabled={!hasMore}
-                        className="pagination-button next"
-                    >
+                    <button className="pagination-button next">
                         Next
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <path d="M9 18l6-6-6-6" />
@@ -395,41 +410,33 @@ export default function Transactions() {
                     <p>Extracting your payment summary</p>
                 )} */}
 
-{/* <table className="notifications-table">
-                        <thead>
-                            <tr>
-                                <th>SNo.</th>
-                                <th>Payment Type</th>
-                                <th>Type</th>
-                                <th>Timestamp</th>
-                                <th>Amount(sat)</th>
-                                <th>Operation ID</th>
-                                <th>Outcome</th>
-                                <th>Gateway</th>
-                                <th>Invoice</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {transactions.length > 0 ? (
-                                transactions.map((tx, index) => (
-                                    <tr key={index}>
-                                        <td>{(currentPage - 1) * limit + index + 1}</td>
-                                        <td>{tx.kind}</td>
-                                        <td>{tx.type}</td>
-                                        <td>{tx.timestamp}</td>
-                                        <td>{tx.amountMsats}</td>
-                                        <td>{tx.operationId}</td>
-                                        <td>{tx.outcome}</td>
-                                        <td>{tx.gateway}</td>
-                                        <td>{tx.invoice.slice(0,20)}...</td>
-                                    </tr>
-                                ))
-                            ) : (
-                                <tr>
-                                    <td colSpan={7} style={{ textAlign: 'center' }}>
-                                        No transaction record found!
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table> */}
+{/* {transactions.length > 0 ?
+                    <ul className="transaction-list">
+                        {transactions.map((tx, key) => (
+                            <li className="transaction-item" key={key}>
+                                <div className="transaction-icon received">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <path d="M12 5v14M5 12l7 7 7-7" />
+                                    </svg>
+                                </div>
+                                <div className="transaction-content">
+                                    <div className="transaction-main">
+                                        <h3 className="transaction-type">{tx.type}</h3>
+                                        {['receive', 'reissue', 'deposit'].includes(tx.type) && (
+                                            <p className="transaction-amount positive">+{tx.amountMsats}</p>
+                                        )}
+                                        {['send', 'spend_oob', 'withdraw'].includes(tx.type) && (
+                                            <p className="transaction-amount negative">-{tx.amountMsats}</p>
+                                        )}
+
+                                    </div>
+                                    <div className="transaction-meta">
+                                        <span className="transaction-timestamp">{tx.timestamp}</span>
+                                        <span className="transaction-status success">{tx.outcome}</span>
+                                    </div>
+                                </div>
+                            </li>
+                        ))}
+                    </ul>
+                    : <p style={{ textAlign: 'center' }}>0 Transactions found</p>
+                } */}

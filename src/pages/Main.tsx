@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useContext, useEffect } from 'react';
 import Sidebar from '../Components/Sidebar';
 import { Outlet } from 'react-router';
 import { useDispatch, useSelector } from 'react-redux';
@@ -7,7 +7,10 @@ import { setGuardianStatus } from '../redux/slices/FederationDetails';
 import { setNewJoin } from '../redux/slices/ActiveWallet';
 import Alerts from '../Components/Alerts';
 import Header from '../Components/Header';
-import { type FederationConfig } from '@fedimint/core-web';
+import type { FederationConfig } from '../hooks/Federation.type';
+import LoadingContext from '../context/Loading';
+import webloader from '../assets/loader.webp'
+import logger from '../utils/logger';
 
 export default function Main() {
     const dispatch = useDispatch<AppDispatch>();
@@ -16,54 +19,63 @@ export default function Main() {
     const { mode } = useSelector((state: RootState) => state.Mode)
     const { error } = useSelector((state: RootState) => state.Alert)
     const { walletStatus } = useSelector((state: RootState) => state.wallet)
+    const { loader, loaderMessage } = useContext(LoadingContext)
 
     const checkGuardianStatus = async (Details: FederationConfig) => {
-        if (Details.api_endpoints && typeof Details.api_endpoints === 'object') {
-            let endpoints = Object.entries(Details.api_endpoints);
-            const statusPromises = endpoints.map(async ([key, endpoint]) => {
-                if (
-                    typeof endpoint === 'object' &&
-                    endpoint !== null &&
-                    'url' in endpoint &&
-                    typeof (endpoint as any).url === 'string'
-                ) {
-                    try {
-                        const ws = new WebSocket((endpoint as { url: string }).url);
-                        const timeout = new Promise<string>((_, reject) =>
-                            setTimeout(() => reject(new Error('Timeout')), 6000)
-                        );
+        let endpoints = Object.entries(Details.api_endpoints);
+        const statusPromises = endpoints.map(async ([key, endpoint]) => {
+            try {
+                const ws = new WebSocket((endpoint as { url: string }).url);
+                const timeout = new Promise<string>((_, reject) =>
+                    setTimeout(() => reject(new Error('Timeout')), 6000)
+                );
 
-                        const status = await Promise.race([
-                            new Promise<string>((resolve) => {
-                                ws.onopen = () => {
-                                    resolve('online');
-                                    ws.close();
-                                };
-                                ws.onerror = () => {
-                                    resolve('offline');
-                                    ws.close();
-                                };
-                            }),
-                            timeout,
-                        ]);
+                const status = await Promise.race([
+                    new Promise<string>((resolve) => {
+                        ws.onopen = () => {
+                            logger.log('sending request to guardians')
+                            ws.send(JSON.stringify({
+                                jsonrpc: "2.0",
+                                id: 1,
+                                module_instance_id:2,
+                                method: "block_count_local",
+                                params: []
+                            }));
+                            resolve('online')
+                            ws.close()
+                        };
+                        ws.onerror = () => {
+                            resolve('offline');
+                            ws.close();
+                        };
+                        // ws.onmessage = (event) => {
+                        //     const data = JSON.parse(event.data);
+                        //     logger.log('data came from guardian ',ws.url, data)
+                        //     if (data.result) {
+                        //         logger.log('data from guardians is ', data.result)
+                        //         resolve('online');
+                        //     } else {
+                        //         resolve('offline');
+                        //     }
+                        //     ws.close();
+                        // };
+                    }),
+                    timeout,
+                ]);
 
-                        return { key, status };
-                    } catch (error) {
-                        return { key, status: 'offline' };
-                    }
-                } else {
-                    return { key, status: 'invalid' };
-                }
-            });
+                return { key, status };
+            } catch (error) {
+                return { key, status: 'offline' };
+            }
+        });
 
-            const results = await Promise.all(statusPromises);
-            const statusMap: Record<number, string> = {};
-            results.forEach(({ key, status }) => {
-                statusMap[Number(key)] = status;
-            });
+        const results = await Promise.all(statusPromises);
+        const statusMap: Record<number, string> = {};
+        results.forEach(({ key, status }) => {
+            statusMap[Number(key)] = status;
+        });
 
-            dispatch(setGuardianStatus({ status: statusMap }));
-        }
+        dispatch(setGuardianStatus({ status: statusMap }));
     };
 
     useEffect(() => {
@@ -95,6 +107,13 @@ export default function Main() {
                 </section>
 
                 <Sidebar />
+
+                {loader && <div className='modalOverlay'>
+                    <div className="web-loader">
+                        <img src={webloader} alt="loading" />
+                        <p style={{ fontSize: '17px', color: 'white', padding: '8px' }}>{loaderMessage}</p>
+                    </div>
+                </div>}
             </main>
         )
     );
