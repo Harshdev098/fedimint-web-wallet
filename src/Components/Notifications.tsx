@@ -2,6 +2,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import type { AppDispatch, RootState } from '../redux/store'
 import { useEffect } from 'react'
 import { setCounts } from '../redux/slices/NotificationSlice'
+import { Link } from 'react-router';
 
 interface NotificationsProps {
     isOpen: boolean;
@@ -22,10 +23,8 @@ export default function Notifications({ isOpen, onClose }: NotificationsProps) {
 
     return (
         <>
-            {/* Backdrop overlay */}
             <div className="notification-backdrop" onClick={onClose}></div>
 
-            {/* Sidebar */}
             <div className="notification-sidebar">
                 <div className="notification-header">
                     <h2 className="notifications-title">Notifications</h2>
@@ -46,7 +45,7 @@ export default function Notifications({ isOpen, onClose }: NotificationsProps) {
                                 <div className='notification-data'>
                                     <h4>{notification.data}</h4>
                                     <p><b>Type: </b>{notification.type}</p>
-                                    <p>More Details</p>
+                                    {notification.OperationId && <Link to={`/wallet/transactions&id=${notification.OperationId}`}>More Details</Link>}
                                 </div>
                                 <div className='notification-time'>
                                     <span>{notification.time}</span>
@@ -55,40 +54,6 @@ export default function Notifications({ isOpen, onClose }: NotificationsProps) {
                         ))}
                     </ul>
                     ) : (<p style={{textAlign:'center',color:'#4B5563 '}}>No notification found</p>)}
-                    {/* <table className="notifications-table">
-                        <thead>
-                            <tr>
-                                <th>SNo.</th>
-                                <th>Type</th>
-                                <th>Data</th>
-                                <th>Date</th>
-                                <th>Time</th>
-                                <th>Operation</th>
-                            </tr>
-                        </thead>
-                        {notifications.notifications && notifications.notifications.length !== 0 ? (
-                            <tbody>
-                                {[...notifications.notifications].reverse().map((notification, index) => (
-                                    <tr key={index}>
-                                        <td>{index + 1}</td>
-                                        <td>{notification.type}</td>
-                                        <td>{notification.data}</td>
-                                        <td>{notification.date}</td>
-                                        <td>{notification.time}</td>
-                                        <td>{notification.OperationId}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        ) : (
-                            <tbody>
-                                <tr>
-                                    <td style={{ textAlign: 'center', padding: '20px' }}>
-                                        0 Notifications found
-                                    </td>
-                                </tr>
-                            </tbody>
-                        )}
-                    </table> */}
                 </div>
             </div>
         </>

@@ -5,6 +5,7 @@ import type { AppDispatch } from "../redux/store";
 import logger from "../utils/logger";
 import { createNotification } from '../redux/slices/NotificationSlice'
 import { setErrorWithTimeout } from "../redux/slices/Alerts";
+import { subscribeBalance } from "./BalanceService";
 
 export const SpendEcash = async (wallet: Wallet, amount: number): Promise<MintSpendNotesResponse> => {
     try {
@@ -74,10 +75,12 @@ export const subscribeSpend = (wallet:Wallet,operationId:string,dispatch:AppDisp
                 dispatch(createNotification({ type: 'Ecash', data: 'Ecash Notes Cancelled processing', date: date, time: time, OperationId: operationId }))
             } else if (state === 'UserCanceledSuccess') {
                 dispatch(createNotification({ type: 'Ecash', data: 'Ecash Notes Cancelled success', date: date, time: time, OperationId: operationId }))
+                subscribeBalance(wallet,dispatch)
             } else if (state === 'UserCanceledFailure') {
                 dispatch(createNotification({ type: 'Ecash', data: 'Ecash Notes Cancelled failed', date: date, time: time, OperationId: operationId }))
             } else if (state === 'Success') {
                 dispatch(createNotification({ type: 'Ecash', data: 'Ecash Notes success', date: date, time: time, OperationId: operationId }))
+                subscribeBalance(wallet,dispatch)
             }
         },
         (error) => {

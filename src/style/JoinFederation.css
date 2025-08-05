@@ -54,10 +54,11 @@ nav {
 }
 
 @media (max-width:500px) {
-    .JoinFedDiv{
+    .JoinFedDiv {
         width: 60vw;
     }
 }
+
 .JoinFedDiv div {
     text-align: center;
 }
@@ -174,7 +175,6 @@ nav {
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
-/* Compact Form Styling */
 .JoinFedForm {
     display: flex;
     justify-content: center;
@@ -199,6 +199,39 @@ nav {
     color: #374151;
     text-transform: uppercase;
     letter-spacing: 0.05em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.fed-details input[type="checkbox"] {
+  width: auto;
+  height: auto;
+  padding: 0;
+}
+.recovery-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin: 20px auto;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.recovery-label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: #007bff;
+}
+
+.recovery-label i {
+  font-size: 14px;
+  color: #007bff;
+  cursor: pointer;
+  margin-left: 4px;
 }
 
 .JoinFedForm input {
@@ -225,7 +258,35 @@ nav {
     font-size: 14px;
 }
 
-/* Compact Button Design */
+.input-with-icon {
+    position: relative;
+    width: 100%;
+}
+
+.input-with-icon input {
+    width: 100%;
+    padding-right: 40px;
+    /* extra space for icon */
+}
+
+.camera-btn {
+    position: absolute;
+    top: 50%;
+    right: 12px;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #6b7280;
+    /* Gray-500 */
+    font-size: 18px;
+}
+
+.camera-btn:hover {
+    color: #3b82f6;
+    /* Blue-500 on hover */
+}
+
 .JoinFedForm button[type="submit"] {
     width: 100%;
     font-size: 16px;
@@ -273,6 +334,69 @@ nav {
     color: #2563eb;
     text-decoration: underline;
 }
+
+.RecoverWalletForm {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: stretch;
+    padding: 24px;
+    gap: 16px;
+    border-radius: 0 0 12px 12px;
+    background: #f7f9fa;
+}
+
+.RecoverWalletForm label {
+    text-align: left;
+    font-weight: 600;
+    font-size: 14px;
+    color: #374151;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.RecoverWalletForm textarea {
+    width: 100%;
+    min-height: 120px;
+    font-size: 15px;
+    padding: 12px 14px;
+    box-sizing: border-box;
+    border-radius: 6px;
+    border: 1.5px solid #e2e8f0;
+    resize: vertical;
+    background: #ffffff;
+    color: #1e293b;
+    font-weight: 400;
+    transition: all 0.15s ease;
+}
+
+.RecoverWalletForm textarea:focus {
+    border-color: #3b82f6;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.RecoverWalletForm textarea::placeholder {
+    color: #9ca3af;
+    font-size: 14px;
+}
+
+.RecoverWalletForm button {
+    background: #3b82f6;
+    color: #ffffff;
+    border: none;
+    padding: 12px 18px;
+    font-size: 15px;
+    font-weight: 600;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.RecoverWalletForm button:hover {
+    background: #2563eb;
+}
+
 
 /* Integrated Footer Design */
 footer {
@@ -390,7 +514,7 @@ footer i:hover {
     }
 
     .form-para {
-        font-size: 13px !important;
+        font-size: 15px !important;
     }
 
     footer {
@@ -439,10 +563,6 @@ footer i:hover {
         padding: 12px 18px;
     }
 
-    .form-para {
-        font-size: 13px !important;
-    }
-
     footer {
         padding: 28px 0;
     }
@@ -480,390 +600,218 @@ footer i:hover {
     }
 }
 
-.previewData {
+/* preview federation component styling  */
+.previewCard {
     position: fixed;
-    top: 0;
-    left: 0;
-    z-index: 999;
-    background-color: rgba(0, 0, 0, 0.6);
-    width: 100vw;
-    height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #fff;
+    padding: 1.5rem;
+    max-height: 80vh;
+    color: black;
+    overflow-y: auto;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    z-index: 1001;
+    max-width: 600px;
+    width: 60vw;
 }
 
-.previewCard {
-    background-color: #ffffff;
-    border-radius: 16px;
-    padding: 24px 28px;
-    width: 100%;
-    max-width: 480px;
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
-    position: relative;
-    max-height: 90vh;
-    overflow-y: auto;
+@media (max-width:750px) {
+    .previewCard {
+        width: 80vw;
+    }
+}
+
+@media (max-width:450px) {
+    .previewCard {
+        width: 95%;
+        padding: 0.6rem;
+    }
+
+    .previewDetails {
+        padding: 6px;
+    }
 }
 
 .previewCard h3 {
-    margin: 0 0 20px;
-    font-size: 24px;
-    font-weight: 600;
-    color: #222;
     text-align: center;
+    font-size: 1.8rem
 }
 
-.previewRow {
-    margin: 14px 0;
-    font-size: 16px;
-    line-height: 1.6;
-    color: #444;
-    word-break: break-word;
-}
-
-.previewCard ul {
-    list-style: none;
-    padding: 0;
-    margin: 20px 0;
-}
-
-.previewCard li {
-    background-color: #f8f9fa;
-    border: 1px solid #e9ecef;
-    border-radius: 8px;
-    padding: 16px 20px;
-    margin-bottom: 12px;
-    font-size: 16px;
-    color: #444;
-    position: relative;
-    transition: all 0.2s ease;
+.previewDetails {
     display: flex;
+    flex-direction: column;
+    width: 100%;
+    padding: 16px;
+    border-radius: 12px;
+    border: 1px solid rgba(0, 0, 0, .08);
+    box-shadow: 0 8px 25px #0000001f;
+    margin: auto;
+}
+
+.fed-image {
+    display: flex;
+    padding: 16px;
+    border-bottom: 2px solid rgba(0, 0, 0, .08);
+    justify-content: center;
     align-items: center;
-    justify-content: space-between;
-    word-break: break-all;
 }
 
-.previewCard li:hover {
-    background-color: #e9ecef;
-    border-color: #dee2e6;
-    transform: translateX(4px);
+.fed-image img,
+.fed-image i {
+    width: 80px;
+    margin: auto;
 }
 
-.previewCard li:last-child {
+.fed-details h4 {
+    text-align: center;
+    font-size: 1.4rem;
     margin-bottom: 0;
 }
 
-.previewCard li::after {
-    content: "\f061";
-    font-weight: 900;
-    font-size: 16px;
-    color: #6c757d;
-    transition: all 0.2s ease;
-    flex-shrink: 0;
-    margin-left: 12px;
-}
-
-.previewCard li:hover::after {
-    color: #495057;
-    transform: translateX(4px);
-}
-
-.previewRow strong {
-    display: block;
-    margin-bottom: 4px;
-    font-weight: 600;
-    color: #222;
-}
-
-.closeButton {
-    position: absolute;
-    right: 16px;
-    top: 12px;
-    font-size: 22px;
-    border: none;
-    background: transparent;
-    cursor: pointer;
-    color: #999;
-    transition: color 0.2s ease;
-}
-
-.closeButton:hover {
-    color: #222;
-}
-
-/* Modern styles for federation discovery component */
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-    }
-
-    to {
-        opacity: 1;
-    }
-}
-
-@keyframes slideUp {
-    from {
-        transform: translateY(40px);
-        opacity: 0;
-    }
-
-    to {
-        transform: translateY(0);
-        opacity: 1;
-    }
-}
-
-.federation-discovery .previewData {
-    background-color: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(8px);
-    animation: fadeIn 0.3s ease-out;
-}
-
-.federation-discovery .previewCard {
-    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-    border-radius: 20px;
-    padding: 32px;
-    max-width: 520px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15), 0 8px 20px rgba(0, 0, 0, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    animation: slideUp 0.4s ease-out;
-}
-
-.federation-discovery .previewCard h3 {
-    margin: 0 0 28px;
-    font-size: 28px;
-    font-weight: 700;
-    color: #111827;
-    letter-spacing: -0.5px;
-}
-
-.federation-discovery .previewCard ul {
-    margin: 0;
-    display: grid;
-    gap: 16px;
-}
-
-.federation-discovery .previewCard li {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    position: relative;
-    border-radius: 16px;
-    border: 1px solid rgba(0, 0, 0, 0.08);
-    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-    overflow: hidden;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.federation-discovery .previewCard li .arrow-container {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    cursor: pointer;
-    padding: 4px;
-    margin-right: 60px;
-    align-items: center;
-    justify-content: center;
-}
-
-.federation-discovery .previewCard li::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
-
-.federation-discovery .previewCard li::after {
-    display: none;
-}
-
-.federation-discovery .previewCard li:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
-    border-color: rgba(102, 126, 234, 0.3);
-    background-color: unset;
-}
-
-.federation-discovery .previewCard li:hover::before {
-    opacity: 1;
-}
-
-.federation-discovery .previewCard li img {
-    width: 48px;
-    height: 48px;
-    border-radius: 12px;
-    object-fit: cover;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    flex-shrink: 0;
-    z-index: 1;
-    position: relative;
-}
-
-.federation-discovery .previewCard li .fed-info {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-}
-
-.federation-discovery .previewCard li .join-button-right {
-    position: absolute;
-    right: 0;
-    top: 0;
-    bottom: 0;
-    width: 60px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    opacity: 0;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    z-index: 2;
-    color: white;
-    font-size: 16px;
-    border-top-right-radius: 16px;
-    border-bottom-right-radius: 16px;
-}
-
-.federation-discovery .previewCard li .join-button-right:hover {
-    background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
-    transform: translateX(2px);
-}
-
-.federation-discovery .previewCard li:hover .join-button-right {
-    opacity: 1;
-}
-
-/* Style the details section */
-.federation-discovery .previewCard li .federation-details {
-    margin-top: 12px;
-    padding: 16px;
-    background: rgba(102, 126, 234, 0.05);
-    border-radius: 12px;
-    border: 1px solid rgba(102, 126, 234, 0.1);
-}
-
-.federation-discovery .previewCard li .federation-details div {
-    display: grid;
-    gap: 8px;
-}
-
-.federation-discovery .previewCard li .federation-details span {
-    font-size: 13px;
-    color: #555;
-    display: block;
-}
-
-.federation-discovery .previewCard li h4 {
-    margin: 0;
-    font-size: 18px;
-    font-weight: 600;
-    color: #1a1a1a;
-    line-height: 1.3;
-}
-
-.federation-discovery .previewCard li p {
-    margin: 0;
-    font-size: 14px;
-    color: #666;
-    background: rgba(213, 203, 203, 0.05);
-    padding: 4px 8px;
-    border-radius: 6px;
-    display: inline-block;
-    max-width: 100%;
+.fed-details p {
+    text-align: center;
+    margin-top: 0;
+    padding: 2px;
     overflow: hidden;
     text-overflow: ellipsis;
-    white-space: nowrap;
+    color: #4B5563;
 }
 
-.federation-discovery .previewCard li .arrow-icon {
-    color: #999;
-    font-size: 18px;
-    transition: all 0.3s ease;
-    z-index: 1;
-    position: relative;
+.fed-details span {
+    font-size: 14px;
+    color: #4B5563;
+    display: block;
+    padding: 3px;
 }
 
-.federation-discovery .closeButton {
-    right: 20px;
-    top: 20px;
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    background: rgba(0, 0, 0, 0.05);
-    color: #666;
-    transition: all 0.3s ease;
+.fed-details button {
+    width: 100%;
+    background: black;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    margin: 8px 0px;
+    font-weight: 500;
+    color: white;
+    padding: 0.6rem 1.1rem;
+    border-radius: 0.5rem;
+}
+
+/* discovery of federation styling  */
+
+.discovered-fed {
+    list-style: none;
+    width: 100%;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    color: black !important;
+}
+
+.discovered-fed-elements {
+    display: flex;
+    align-items: stretch;
+    justify-content: space-between;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    overflow: hidden;
+    width: 100%;
+    max-width: 700px;
+    box-sizing: border-box;
+}
+
+.fed-left {
     display: flex;
     align-items: center;
+    flex: 1 1 auto;
+    /* allow shrinking */
+    min-width: 0;
+    /* allow text to ellipsis */
+    padding: 12px;
+    box-sizing: border-box;
+}
+
+.fed-left img {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 6px;
+    flex-shrink: 0;
+}
+
+.fed-elements-details {
+    flex: 1;
+    margin-left: 12px;
+    overflow: hidden;
+}
+
+.fed-elements-details h4 {
+    margin: 0;
+    font-size: 1rem;
+    color: black;
+    font-weight: bold;
+}
+
+.fed-elements-details p {
+    margin: 4px 0 0;
+    font-size: 0.85rem;
+    color: #444;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.arrow-container {
+    margin-left: 12px;
+    cursor: pointer;
+    display: flex;
     justify-content: center;
-    font-size: 16px;
+    align-items: center;
+    text-align: center;
+    font-size: 1.2rem;
+    color: #333;
 }
 
-.federation-discovery .closeButton:hover {
-    background: rgba(0, 0, 0, 0.1);
-    color: #1a1a1a;
-    transform: scale(1.1);
+.join-button-right {
+    display: flex;
+    align-items: center;
+    color: black;
+    justify-content: center;
+    align-self: stretch;
+    flex: 0 0 auto;
+    /* prevent shrinking */
+    width: 60px;
+    cursor: pointer;
+    font-size: 1.2rem;
+    transition: background 0.2s ease;
 }
 
-/* Responsive design */
-@media (max-width: 640px) {
-    .federation-discovery .previewCard {
-        margin: 20px;
-        padding: 24px;
-        max-width: calc(100vw - 40px);
-    }
-
-    .federation-discovery .previewCard h3 {
-        font-size: 24px;
-        margin-bottom: 24px;
-    }
-
-    .federation-discovery .previewCard li {
-        padding: 16px 20px;
-        gap: 12px;
-    }
-
-    .federation-discovery .previewCard li img {
-        width: 40px;
-        height: 40px;
-    }
-
-    .federation-discovery .previewCard li h4 {
-        font-size: 16px;
-    }
-
-    .federation-discovery .previewCard li p {
-        font-size: 13px;
-    }
+.join-button-right i {
+    margin: 0;
+    padding: 0;
+    display: block;
+    text-align: center;
 }
 
-@media (max-width: 600px) {
-    .previewCard {
-        padding: 20px;
-        margin: 10px;
-        max-width: 70vw;
-    }
-
-    .previewCard h3 {
-        font-size: 20px;
-    }
-
-    .previewRow {
-        font-size: 15px;
-    }
-
-    .closeButton {
-        font-size: 20px;
-    }
+.discovered-fed-elements:hover .join-button-right {
+    background: linear-gradient(135deg, #7cacdc 0%, #3a79b7 100%);
+    color: #fff;
 }
+
+.federation-details {
+    margin-top: 8px;
+    font-size: 0.85rem;
+    background: #f9f9f9;
+    border-radius: 6px;
+    padding: 8px;
+}
+
+/* join page footer styling  */
 
 footer {
     display: flex;
@@ -897,107 +845,114 @@ footer div i:hover {
     left: 50%;
     transform: translate(-50%, -50%);
     width: 90%;
-    max-width: 420px;
-    padding: 24px;
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    max-width: 520px;
+    padding: 32px;
+    background: #FFFFFF;
+    border-radius: 16px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
     z-index: 12;
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 24px;
 }
 
+.addFederation .closeBtn {
+    align-self: flex-end;
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: #4B5563;
+    /* Neutral grey for icon */
+    transition: color 0.2s ease;
+}
+
+.addFederation .closeBtn:hover {
+    color: #111827;
+    /* Heading color on hover */
+}
 
 .addFedBox {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 16px;
 }
 
 .addFedBox input {
     font-size: 16px;
-    padding: 10px;
-    border: 1.5px solid #ccc;
+    padding: 12px 14px;
+    border: 2px solid #E5E7EB;
+    /* Light neutral border */
     border-radius: 8px;
-    transition: border 0.3s ease;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    color: #111827;
+    /* Heading color for input text */
+    background: #F9FAFB;
 }
 
 .addFedBox input:focus {
     outline: none;
-    border-color: #007bff;
+    border-color: #2176FF;
+    /* Primary */
+    box-shadow: 0 0 0 3px rgba(33, 118, 255, 0.2);
 }
 
-.addFedBox button,
-.addVideoBox button {
+.input-with-icon {
+    position: relative;
+    display: flex;
+}
+
+.input-with-icon input {
+    flex: 1;
+}
+
+.input-with-icon .camera-btn {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #2176FF;
+    font-size: 18px;
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.input-with-icon .camera-btn:hover {
+    color: #1A61D2;
+}
+
+.addFedBox button {
     font-size: 16px;
-    padding: 10px 16px;
-    margin: 6px 4px;
+    padding: 12px 18px;
     border: none;
     border-radius: 8px;
-    background-color: #040414;
-    color: white;
+    background-color: #2176FF;
+    /* Primary */
+    color: #FFFFFF;
     cursor: pointer;
     transition: background-color 0.3s ease;
 }
 
-.addFedBox button:hover,
-.addVideoBox button:hover {
-    background-color: #1a1a40;
+.addFedBox button:hover {
+    background-color: #1A61D2;
+    /* Hover */
 }
 
-.option-divider {
-    text-align: center;
-    font-size: 17px;
-    position: relative;
-    margin: 10px 0;
-}
-
-.option-divider p {
-    display: inline-block;
-    padding: 0 10px;
-    background: white;
-    position: relative;
-    z-index: 2;
-}
-
-.option-divider::before {
-    content: '';
-    height: 1px;
-    width: 100%;
-    background: #ccc;
-    position: absolute;
-    top: 50%;
-    left: 0;
-    z-index: 1;
-}
-
-.addVideoBox {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 12px;
-}
-
-.addVideoBox video {
-    border: 1.5px solid #ccc;
-    border-radius: 8px;
-    width: 100%;
-    max-width: 300px;
+.addFedBox button:disabled {
+    background-color: #9CA3AF;
+    /* Placeholder color for disabled */
+    cursor: not-allowed;
 }
 
 @media screen and (max-width: 480px) {
     .addFederation {
-        max-width: 86%;
-        padding: 16px;
+        max-width: 92%;
+        padding: 20px;
     }
 
-    .addFedBox button,
-    .addVideoBox button {
+    .addFedBox button {
         width: 100%;
-    }
-
-    .addVideoBox video {
-        max-width: 100%;
     }
 }

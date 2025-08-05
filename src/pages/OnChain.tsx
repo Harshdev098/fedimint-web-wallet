@@ -13,6 +13,7 @@ import { setCurrency } from '../redux/slices/Balance';
 import { Link } from 'react-router';
 // import type { onchainTxDetail, PeginResponse } from '../hooks/wallet.type';
 import type { WalletModule } from '../hooks/Federation.type';
+import Tippy from '@tippyjs/react';
 
 
 export default function OnChain() {
@@ -30,7 +31,6 @@ export default function OnChain() {
     // const [convertedAmountInMSat, setConvertedAmountInMSat] = useState<number>(0)
     const [openDepositBox, setOpenDepositBox] = useState<boolean>(false)
     const [openWithdrawBox, setOpenWithdrawBox] = useState<boolean>(false)
-    const [showTooltip, setShowTooltip] = useState(false);
     // const [txDetail, setTxDetail] = useState<onchainTxDetail | null>(null)
 
 
@@ -73,7 +73,7 @@ export default function OnChain() {
         //     }
         // } catch (err) {
         //     logger.error("PegOut failed:", err);
-        //     setErrorWithTimeout({ type: 'Withdrawal Error:', message: `${err}` })
+        //     dispatch(setErrorWithTimeout({ type: 'Withdrawal Error:', message: `${err}` }))
         // } finally {
         //     doneProgress()
         // }
@@ -86,12 +86,12 @@ export default function OnChain() {
     // }
 
     // const fetchTxData = async (tx: string) => {
-    //     const response = fetch(`https://mempool.space/api/tx/${tx}`, {
+    //     const response = await fetch(`https://mempool.space/api/tx/${tx}`, {
     //         headers: {
     //             'Content-Type': 'application/json'
     //         }
     //     })
-    //     const result = (await response).json()
+    //     const result = await response.json()
     //     logger.log('onchain tx result is ', result)
     //     return result;
     // }
@@ -153,12 +153,9 @@ export default function OnChain() {
                             <div className="pegout-detail"><strong>Status:</strong> sdfkjsdfklsdfsdfsdfs</div>
                             <div className="pegout-detail"><strong>Block Height:</strong> sdfkjsdfklsdfsdfsdfs</div>
                         </div>
-                        <button className='mempool-btn' onClick={() => { confirm('This can lead to privacy concerns with your IP address') && window.open(`https://mempool.space/api/tx/`, '_blank') }}><span className="tooltip-container" onClick={() => setShowTooltip(!showTooltip)}>
-                            <i className="fa-solid fa-info-circle"></i>
-                            <span className={`tooltip-text ${showTooltip ? 'show' : ''}`}>
-                                This can led to privacy concerns
-                            </span>
-                        </span>View on Mempool</button>
+                        <Tippy content='This can led to privacy concerns'>
+                            <button className='mempool-btn' onClick={() => { confirm('This can lead to privacy concerns with your IP address') && window.open(`https://mempool.space/api/tx/`, '_blank') }}>View on Mempool</button>
+                        </Tippy>
                     </div>
                     {/* )} */}
                 </div>
@@ -173,7 +170,7 @@ export default function OnChain() {
                                 <i className="fa-solid fa-clock-rotate-left"></i>
                             </div>
                             <h1 className="activities-title">Federation Onchain Service</h1>
-                            <p className="activities-subtitle">Deposit & Withdraw funds to an external onchain address from and to federation</p>
+                            <p className="subtitle">Deposit & Withdraw funds to an external onchain address from and to federation</p>
                         </div>
                     </div>
                     <section className='onchain-container'>
@@ -191,25 +188,17 @@ export default function OnChain() {
                                                     <p>{module.network || 'N/A'}</p>
                                                 </div>
                                                 <div className="onchain-field">
-                                                    <h3>Confimation Required<span
-                                                        className="tooltip-container"
-                                                        onClick={() => setShowTooltip(!showTooltip)}
-                                                    >
-                                                        <i className="fa-solid fa-info-circle toottip-btn"></i>
-                                                        <span className={`tooltip-text ${showTooltip ? 'show' : ''}`}>
-                                                            Ecash will be added to the balance after the transaction has been confirmed by certain number of blocks
-                                                        </span>
-                                                    </span></h3>
-
+                                                    <h3>Confimation Required
+                                                        <Tippy content='Ecash will be added to the balance after the transaction has been confirmed by certain number of blocks'>
+                                                            <i className="fa-solid fa-info-circle"></i>
+                                                        </Tippy></h3>
                                                     <p>{module.finality_delay || 'N/A'}</p>
                                                 </div>
                                                 <div className="onchain-field">
-                                                    <h3>Deposit desriptor<span className="tooltip-container" onClick={()=>setShowTooltip(true)}>
-                                                        <i className="fa-solid fa-info-circle"></i>
-                                                        <span className="tooltip-text" id="tooltip">
-                                                            A special Bitcoin address format used to deposit BTC into the federation
-                                                        </span>
-                                                    </span></h3>
+                                                    <h3>Deposit desriptor
+                                                        <Tippy content='A special Bitcoin address format used to deposit BTC into the federation'>
+                                                            <i className="fa-solid fa-info-circle"></i>
+                                                        </Tippy></h3>
                                                     <p>{module.peg_in_descriptor || 'N/A'}</p>
                                                 </div>
                                             </>

@@ -1,4 +1,3 @@
-import QrScanner from "qr-scanner";
 import { useEffect, useRef, useState, useCallback } from 'react'
 import QRCode from 'react-qr-code'
 import { useWallet } from '../context/WalletManager'
@@ -7,22 +6,22 @@ import { SpendEcash, RedeemEcash, ParseEcashNotes, subscribeSpend } from '../ser
 import { useSelector, useDispatch } from 'react-redux'
 import type { RootState, AppDispatch } from '../redux/store'
 import { setSpendResult, setParseEcashResult } from '../redux/slices/Mint'
-import { startProgress,doneProgress } from "../utils/ProgressBar";
+import { startProgress, doneProgress } from "../utils/ProgressBar";
 import Alerts from './Alerts'
 import { downloadQRCode } from '../services/DownloadQR';
 import { convertToMsats, subscribeBalance } from "../services/BalanceService";
 import logger from "../utils/logger";
-import { setErrorWithTimeout, setResult } from "../redux/slices/Alerts";
+import { setErrorWithTimeout, setResultWithTimeout } from "../redux/slices/Alerts";
 import { setCurrency } from '../redux/slices/Balance';
 import { Link } from "react-router";
+import QRScanner from "./QrScanner";
 
 
 export default function Ecash() {
-    const [status, setStatus] = useState<boolean>(false)
+    const [spendingEcash, setSpendingEcash] = useState<boolean>(false)
+    const [redeemingEcash, setRedeemingEcash] = useState<boolean>(false)
     const [openVideo, setOpenVideo] = useState<boolean>(false)
-    const videoRef = useRef<HTMLVideoElement | null>(null)
     const [convertedAmountInMSat, setConvertedAmountInMSat] = useState<number>(0)
-    const scannerRef = useRef<QrScanner | null>(null)
     const amount = useRef<HTMLInputElement | null>(null)
     const [notes, setNotes] = useState('')
     const { wallet } = useWallet()
@@ -41,7 +40,7 @@ export default function Ecash() {
         e.preventDefault()
         startProgress()
         try {
-            setStatus(true)
+            setSpendingEcash(true)
 
             if (convertedAmountInMSat && Number(convertedAmountInMSat) <= 0) {
                 throw new Error("Spend amount should be greater than 0")
@@ -52,12 +51,12 @@ export default function Ecash() {
             const unsubscribe = subscribeSpend(wallet, result.operationId, dispatch)
             setTimeout(() => {
                 unsubscribe?.()
-            }, 30000);
+            }, 300000);
         } catch (err) {
             dispatch(setErrorWithTimeout({ type: 'Spend Error: ', message: err instanceof Error ? err.message : String(err) }))
         } finally {
             doneProgress()
-            setStatus(false)
+            setSpendingEcash(false)
             if (amount.current) {
                 amount.current.value = '';
                 setConvertedAmountInMSat(0)
@@ -72,22 +71,19 @@ export default function Ecash() {
             if (!notes) {
                 throw new Error("Notes value is required");
             }
-            setStatus(true)
+            setRedeemingEcash(true)
 
             const result = await RedeemEcash(wallet, notes);
-            dispatch(setResult(result))
+            dispatch(setResultWithTimeout(result))
             subscribeBalance(wallet, dispatch)
-
-            setTimeout(() => {
-                dispatch(setParseEcashResult(null))
-            }, 3000);
         } catch (err) {
             logger.log(`An error occured ${err}`)
             dispatch(setErrorWithTimeout({ type: 'Redeem Error: ', message: err instanceof Error ? err.message : String(err) }))
         } finally {
             doneProgress()
-            setStatus(false)
+            setRedeemingEcash(false)
             setNotes('')
+            dispatch(setParseEcashResult(null))
         }
     }
 
@@ -102,43 +98,23 @@ export default function Ecash() {
         const trimmedNotes = notes.trim();
         if (trimmedNotes !== '') {
             startProgress()
-            setStatus(true)
             memoizedParseNotes(trimmedNotes);
             doneProgress()
-            setStatus(false)
         }
     }, [notes, memoizedParseNotes]);
 
-    useEffect(() => {
-        if (openVideo && videoRef.current) {
-            scannerRef.current = new QrScanner(
-                videoRef.current,
-                async (result) => {
-                    if (result.data) {
-                        const parseValue = await ParseEcashNotes(wallet, result.data)
-                        if (parseValue !== undefined) {
-                            dispatch(setParseEcashResult(`Parsed Notes: ${parseValue / 1000}sat (${parseValue}msat)`));
-                            setNotes(result.data)
-                        } else {
-                            logger.error("Parsed value is undefined");
-                            dispatch(setErrorWithTimeout({ type: 'Parse Error: ', message: 'Parsed value is undefined' }))
-                            setOpenVideo(false)
-                        }
-                        setOpenVideo(false)
-                        scannerRef.current?.destroy()
-                        scannerRef.current = null;
-                    }
-                },
-                { returnDetailedScanResult: true }
-            )
-            scannerRef.current.start().then(() => {
-                logger.log("scanning started")
-            }).catch((err) => {
-                logger.log(`${err}`)
-                dispatch(setErrorWithTimeout({ type: 'QR Error: ', message: 'Scanning failed' }))
-            })
+    const handleRedeemEcashWithQR = async(data:string) => {
+        const parseValue = await ParseEcashNotes(wallet, data)
+        if (parseValue !== undefined) {
+            dispatch(setParseEcashResult(`Parsed Notes: ${parseValue / 1000}sat (${parseValue}msat)`));
+            setNotes(data)
+        } else {
+            logger.error("Parsed value is undefined");
+            dispatch(setErrorWithTimeout({ type: 'Parse Error: ', message: 'Parsed value is undefined' }))
+            setOpenVideo(false)
         }
-    }, [openVideo])
+        setOpenVideo(false)
+    }
 
     const handleConversion = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const amount = await convertToMsats(Number((e.target.value).trim()), currency)
@@ -148,24 +124,7 @@ export default function Ecash() {
     return (
         <>
             {(error || result) && <Alerts key={Date.now()} Error={error} Result={result} />}
-            {openVideo && (
-                <div className="video-overlay">
-                    <div className="video-container">
-                        <div className="video-header">
-                            <h3>Scan QR Code</h3>
-                            <button
-                                className="close-btn"
-                                onClick={() => { scannerRef.current?.stop(); setOpenVideo(false) }}
-                            >
-                                <i className="fa-solid fa-xmark"></i>
-                            </button>
-                        </div>
-                        <div className="video-wrapper">
-                            <video width={'100%'} ref={videoRef}></video>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <QRScanner open={openVideo} onClose={() => setOpenVideo(false)} onError={(err) => dispatch(setErrorWithTimeout(err))} onResult={(data) => handleRedeemEcashWithQR(data)} />
 
             <section className="ecash-section">
                 <h2 className="title">Transact Ecashes</h2>
@@ -207,7 +166,7 @@ export default function Ecash() {
                                 </div>
                             </div>
 
-                            <button type="submit" disabled={status} className="ecash-primary-btn spend-btn">
+                            <button type="submit" disabled={spendingEcash} className="primary-btn">
                                 <i className="fa-solid fa-money-bill-transfer"></i>
                                 <span>Generate & Spend</span>
                             </button>
@@ -228,6 +187,7 @@ export default function Ecash() {
 
                                 <div className='copy-section'>
                                     <div className="copy-wrapper">
+                                        <p><i className="fa-solid fa-circle-info"></i> These notes are only valid for 1 day</p>
                                         <p id="spendNotesResult" className="notes-text">
                                             {SpendEcashResult.notes}
                                         </p>
@@ -245,7 +205,7 @@ export default function Ecash() {
                                 <div className='qr-section'>
                                     <div className="qr-container">
                                         <QRCode
-                                            value={JSON.stringify(SpendEcashResult)}
+                                            value={SpendEcashResult.notes}
                                             size={150}
                                             bgColor='white'
                                             fgColor='black'
@@ -299,13 +259,13 @@ export default function Ecash() {
                             )}
 
                             <div className="button-group">
-                                <button type="submit" disabled={status} className="ecash-primary-btn redeem-btn">
+                                <button type="submit" disabled={redeemingEcash} className="primary-btn">
                                     <i className="fa-solid fa-hand-holding-dollar"></i>
                                     <span>Confirm Redeem</span>
                                 </button>
                                 <button
                                     type="button"
-                                    disabled={status}
+                                    disabled={redeemingEcash}
                                     onClick={() => { setOpenVideo(true) }}
                                     className="secondary-btn scan-btn"
                                 >

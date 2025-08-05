@@ -8,24 +8,24 @@ import Navbar from '../Components/Navbar'
 import { setJoining, setFederationId, setNewJoin, setWalletId } from '../redux/slices/ActiveWallet'
 import { setErrorWithTimeout } from '../redux/slices/Alerts'
 import { JoinFederation as JoinFederationService, previewFedWithInviteCode } from '../services/FederationService'
-import QrScanner from 'qr-scanner'
-import { startProgress,doneProgress } from '../utils/ProgressBar'
+import { startProgress, doneProgress } from '../utils/ProgressBar'
 import type { PreviewFederationResponse } from '../hooks/Federation.type'
 import logger from '../utils/logger'
 import DiscoverFederation from '../Components/DiscoverFederation'
 import { setWalletStatus } from '../redux/slices/WalletSlice'
 import '../style/JoinFederation.css'
+import QRScanner from '../Components/QrScanner'
+import Tippy from '@tippyjs/react'
 
 
 export default function JoinFederation() {
     const [inviteCode, setInviteCode] = useState<string>('')
     const walletName = useRef<HTMLInputElement | null>(null)
-    const videoRef = useRef<HTMLVideoElement | null>(null)
-    const scannerRef = useRef<QrScanner | null>(null)
-    const [method, setMethod] = useState<string>('code')
+    const [openVideo, setOpenVideo] = useState<boolean>(false)
     const [openPreviewFederation, setOpenPreviewFederation] = useState<boolean>(false)
     const [showFederations, setShowFederation] = useState<boolean>(false)
     const [previewFederationData, setPreviewFederationData] = useState<PreviewFederationResponse | null>(null)
+    const [recover,setRecover]=useState<boolean>(false)
     const navigate = useNavigate()
     const dispatch = useDispatch<AppDispatch>()
     const { joining } = useSelector((state: RootState) => state.activeFederation)
@@ -35,11 +35,11 @@ export default function JoinFederation() {
         dispatch(setJoining(true))
         try {
             startProgress()
-            const result = await JoinFederationService(code || inviteCode, walletName.current?.value || 'fm-default')
+            logger.log('recovery? ', recover)
+            const result = await JoinFederationService(code || inviteCode, walletName.current?.value || 'fm-default', recover)
             dispatch(setWalletStatus('open'))
             dispatch(setFederationId(result.federationId))
             dispatch(setWalletId(result.id))
-            localStorage.setItem('activeFederation', result.federationId);
             localStorage.setItem('lastUsedWallet', result.id);
             localStorage.setItem('activeWallet', result.id)
             dispatch(setNewJoin(true))
@@ -52,14 +52,16 @@ export default function JoinFederation() {
         }
     }
 
-    const handlepreviewFederation = async (e: React.FormEvent) => {
-        e.preventDefault()
+    const handlepreviewFederation = async (e: React.FormEvent | null, code?: string) => {
+        e?.preventDefault()
         try {
-            if (!(inviteCode)) {
+            const finalInviteCode = inviteCode || code
+            if (!(finalInviteCode)) {
                 throw new Error('please enter inviteCode')
             }
             startProgress()
-            const result = await previewFedWithInviteCode(inviteCode)
+            setJoining(true)
+            const result = await previewFedWithInviteCode(finalInviteCode)
             logger.log("result is ", result)
             setPreviewFederationData(result)
             setOpenPreviewFederation(true)
@@ -67,36 +69,16 @@ export default function JoinFederation() {
             dispatch(setErrorWithTimeout({ type: 'Preview Error:', message: `${err}` }))
         } finally {
             doneProgress()
+            setJoining(false)
         }
     }
 
-    const handleJoinWithQR = (e: React.FormEvent) => {
-        e.preventDefault()
-        if (videoRef.current) {
-            try {
-                scannerRef.current = new QrScanner(
-                    videoRef.current,
-                    async (result) => {
-                        if (result?.data) {
-                            logger.log("the result from qr is ", result.data)
-                            setInviteCode(result.data)
-                            await handlepreviewFederation({ preventDefault: () => { } } as React.FormEvent)
-                            scannerRef.current?.destroy()
-                            scannerRef.current = null;
-                        }
-                    },
-                    { returnDetailedScanResult: true }
-                )
-                scannerRef.current.start().then(() => {
-                    logger.log("Camera started successfully");
-                }).catch((err) => {
-                    logger.error("Camera access denied:", err);
-                    dispatch(setErrorWithTimeout({ type: 'QR Error: ', message: `${err}` }))
-                });
-            } catch (err) {
-                logger.log("an error occured while scanning")
-                dispatch(setErrorWithTimeout({ type: 'QR Error: ', message: `Error occured while scanning` }))
-            }
+    const handleJoinWithQR = async (data: string) => {
+        if (data) {
+            setInviteCode(data)
+            console.log('handlejoinwith qr ', data)
+            setOpenVideo(false)
+            await handlepreviewFederation({ preventDefault: () => { } } as React.FormEvent, data)
         }
     }
 
@@ -104,41 +86,39 @@ export default function JoinFederation() {
         <>
             <main className='JoinFedContainer'>
                 <Navbar />
-                {
-                    (error) && <Alerts Error={error} />
-                }
-                {showFederations && <DiscoverFederation setShowFederation={setShowFederation} setInviteCode={setInviteCode} joinFederation={handleJoinFederation} showFederations={showFederations} />}
+                {(error) && <Alerts Error={error} />}
+                <QRScanner open={openVideo} onClose={() => setOpenVideo(false)} onError={(err) => setErrorWithTimeout(err)} onResult={(data) => handleJoinWithQR(data)} />
+                {showFederations && <DiscoverFederation setShowFederation={setShowFederation} setInviteCode={setInviteCode} joinFederation={handleJoinFederation} recover={recover} showFederations={showFederations} setRecover={setRecover} />}
                 {openPreviewFederation && previewFederationData && (
-                    <section className='federation-discovery'>
-                        <div className="previewData">
-                            <div className="previewCard">
-                                <button className="closeButton" onClick={() => { setOpenPreviewFederation(false); setPreviewFederationData(null) }}><i className="fa-solid fa-xmark"></i></button>
-                                <h3>Federation Preview</h3>
-                                <ul>
-                                    <li>
-                                        <img src={previewFederationData.iconUrl} alt="icon" />
-                                        <div className='fed-info'>
-                                            <h4>{previewFederationData.fedName}</h4>
-                                            <p>{previewFederationData.federationID}</p>
-                                            <div className="federation-details">
-                                                <div>
-                                                    <span><b>Guardians:</b> {previewFederationData.totalGuardians}</span>
-                                                    <span><b>Max stable Balance:</b> {previewFederationData.maxBalance}</span>
-                                                    <span><b>Message:</b> {previewFederationData.welcomeMessage}</span>
-                                                    <span><b>Onchain deposit:</b> {previewFederationData.onChainDeposit === 'true' ? 'Disabled' : 'Enabled'}</span>
-                                                    <span><b>Services(modules):</b> {previewFederationData.modules && Object.values(previewFederationData.modules).length > 0
-                                                        ? Object.values(previewFederationData.modules).map((m) => m.kind).join(', ')
-                                                        : 'N/A'}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </li>
-                                </ul>
-                                <button style={{ width: '100%', padding: '8px', backgroundColor: 'black', color: 'white', borderRadius: '10px', cursor: 'pointer', fontSize: '16px' }} onClick={() => { handleJoinFederation() }} disabled={joining}>{joining ? 'Joining...' : 'Join'}</button>
+                    <div className="modalOverlay">
+                        <div className="previewCard">
+                            <button type='button' className='closeBtn' onClick={() => { setOpenPreviewFederation(false); setPreviewFederationData(null) }}>
+                                <i className="fa-solid fa-xmark"></i>
+                            </button>
+                            <h3>Federation Preview</h3>
+                            <div className='previewDetails'>
+                                <div className='fed-image'>
+                                    {previewFederationData.iconUrl ? <img src={previewFederationData.iconUrl} alt="icon" /> : <i className="fa-solid fa-landmark"></i>}
+                                </div>
+                                <div className='fed-details'>
+                                    <h4>{previewFederationData.fedName}</h4>
+                                    <p>{previewFederationData.federationID}</p>
+                                    <div>
+                                        <span><b>Guardians:</b> {previewFederationData.totalGuardians}</span>
+                                        <span><b>Max stable Balance:</b> {previewFederationData.maxBalance}</span>
+                                        <span><b>Message:</b> {previewFederationData.welcomeMessage}</span>
+                                        <span><b>Onchain deposit:</b> {previewFederationData.onChainDeposit === 'true' ? 'Disabled' : 'Enabled'}</span>
+                                        <span><b>Services(modules):</b> {previewFederationData.modules && Object.values(previewFederationData.modules).length > 0
+                                            ? Object.values(previewFederationData.modules).map((m) => m.kind).join(', ')
+                                            : 'N/A'}
+                                        </span>
+                                    </div>
+                                    <label className='recovery-label'><input type="checkbox" checked={recover} onChange={(e) => setRecover(e.target.checked)} />Recover Wallet <Tippy content='It will recover your wallet instead creating new one'><i className="fa-solid fa-info-circle"></i></Tippy></label>
+                                    <button onClick={() => { handleJoinFederation() }} disabled={joining}>{joining ? 'Joining...' : 'Join'}</button>
+                                </div>
                             </div>
                         </div>
-                    </section>
+                    </div>
                 )}
 
                 <section className='JoinFedSection'>
@@ -148,27 +128,19 @@ export default function JoinFederation() {
                             <p style={{ fontSize: '1.2rem' }}>Create your first Fedimint Wallet by joining a federation today!</p>
                         </div>
                         <div className='JoinFedBox'>
-                            <div className='JoinMethod'>
-                                <button onClick={() => { setMethod('code') }} style={{ backgroundColor: method === 'code' ? 'white' : 'rgb(222, 221, 241)' }}>Invite Code</button>
-                                <button onClick={() => { setMethod('qr') }} style={{ backgroundColor: method === 'qr' ? 'white' : 'rgb(222, 221, 241)' }}>QR Code</button>
-                            </div>
-
-                            {method === 'code' ? (<form onSubmit={handlepreviewFederation} className="JoinFedForm">
+                            <form onSubmit={handlepreviewFederation} className="JoinFedForm">
                                 <label>Invite Code</label>
-                                <input type="text" placeholder='Federation Invite Code' onChange={(e) => { setInviteCode(e.target.value) }} required />
+                                <div className="input-with-icon">
+                                    <input type="text" placeholder="Federation Invite Code" onChange={(e) => setInviteCode(e.target.value)} required />
+                                    <button type="button" className="camera-btn" onClick={() => setOpenVideo(true)} >
+                                        <i className="fa-solid fa-camera"></i>
+                                    </button>
+                                </div>
                                 <label>Wallet name</label>
                                 <input type="text" placeholder='Wallet name' ref={walletName} />
                                 <button type='submit' disabled={joining}>{joining ? 'Joining...' : 'Continue'}</button>
                                 <p className='form-para' onClick={() => setShowFederation(true)}>Want to explore Federation?</p>
-                            </form>) : (
-                                <form onSubmit={handleJoinWithQR}>
-                                    <video ref={videoRef} width={'100%'}></video>
-                                    <div>
-                                        <button style={{ fontSize: '17px', padding: '10px', backgroundColor: 'black', borderRadius: '8px', color: 'white', margin: '6px' }}>Scan QR and Join</button>
-                                        <button type='button' onClick={() => { scannerRef.current?.stop() }} style={{ fontSize: '17px', padding: '10px', backgroundColor: 'black', borderRadius: '8px', color: 'white', margin: '6px' }}>Cancel</button>
-                                    </div>
-                                </form>
-                            )}
+                            </form>
                         </div>
                         <div>
                             <p style={{ padding: '30px 10px' }}>Custody Bitcoin with ease and privacy — you control your funds, your community, your future.</p>

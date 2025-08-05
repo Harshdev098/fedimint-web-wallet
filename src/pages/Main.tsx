@@ -1,4 +1,4 @@
-import { useContext, useEffect } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import Sidebar from '../Components/Sidebar';
 import { Outlet } from 'react-router';
 import { useDispatch, useSelector } from 'react-redux';
@@ -10,7 +10,7 @@ import Header from '../Components/Header';
 import type { FederationConfig } from '../hooks/Federation.type';
 import LoadingContext from '../context/Loading';
 import webloader from '../assets/loader.webp'
-import logger from '../utils/logger';
+
 
 export default function Main() {
     const dispatch = useDispatch<AppDispatch>();
@@ -19,54 +19,41 @@ export default function Main() {
     const { mode } = useSelector((state: RootState) => state.Mode)
     const { error } = useSelector((state: RootState) => state.Alert)
     const { walletStatus } = useSelector((state: RootState) => state.wallet)
+    const { walletId, recoveryState } = useSelector((state: RootState) => state.activeFederation)
     const { loader, loaderMessage } = useContext(LoadingContext)
+    const [isRecoveryExpanded, setIsRecoveryExpanded] = useState(true);
+
 
     const checkGuardianStatus = async (Details: FederationConfig) => {
         let endpoints = Object.entries(Details.api_endpoints);
+
         const statusPromises = endpoints.map(async ([key, endpoint]) => {
-            try {
-                const ws = new WebSocket((endpoint as { url: string }).url);
-                const timeout = new Promise<string>((_, reject) =>
-                    setTimeout(() => reject(new Error('Timeout')), 6000)
-                );
+            let ws: WebSocket | null = null;
 
-                const status = await Promise.race([
-                    new Promise<string>((resolve) => {
-                        ws.onopen = () => {
-                            logger.log('sending request to guardians')
-                            ws.send(JSON.stringify({
-                                jsonrpc: "2.0",
-                                id: 1,
-                                module_instance_id:2,
-                                method: "block_count_local",
-                                params: []
-                            }));
-                            resolve('online')
-                            ws.close()
-                        };
-                        ws.onerror = () => {
-                            resolve('offline');
-                            ws.close();
-                        };
-                        // ws.onmessage = (event) => {
-                        //     const data = JSON.parse(event.data);
-                        //     logger.log('data came from guardian ',ws.url, data)
-                        //     if (data.result) {
-                        //         logger.log('data from guardians is ', data.result)
-                        //         resolve('online');
-                        //     } else {
-                        //         resolve('offline');
-                        //     }
-                        //     ws.close();
-                        // };
-                    }),
-                    timeout,
-                ]);
+            const wsPromise = new Promise<string>((resolve) => {
+                ws = new WebSocket((endpoint as { url: string }).url);
 
-                return { key, status };
-            } catch (error) {
-                return { key, status: 'offline' };
-            }
+                ws.onopen = () => {
+                    resolve('online');
+                    ws?.close();
+                };
+                ws.onerror = () => {
+                    resolve('offline');
+                    ws?.close();
+                };
+            });
+
+            const timeoutPromise = new Promise<string>((resolve) =>
+                setTimeout(() => {
+                    if (ws && ws.readyState !== ws.CLOSED) {
+                        ws.close();
+                    }
+                    resolve('offline');
+                }, 4000)
+            );
+
+            const status = await Promise.race([wsPromise, timeoutPromise]);
+            return { key, status };
         });
 
         const results = await Promise.all(statusPromises);
@@ -88,7 +75,12 @@ export default function Main() {
         }
 
         return () => clearInterval(interval);
-    }, [Details, walletStatus])
+    }, [Details, walletStatus, walletId])
+
+
+    const toggleRecoveryExpansion = () => {
+        setIsRecoveryExpanded(!isRecoveryExpanded);
+    };
 
     return (
         walletStatus === 'open' && metaData && Details && (
@@ -102,8 +94,29 @@ export default function Main() {
                 )}
 
                 <section className={`WalletContentSection ${mode === true ? 'DarkMode' : 'WhiteMode'}`}>
+
                     <Header />
+
+                    {recoveryState.status && (
+                        <div className={`recovery-progress ${isRecoveryExpanded ? 'expanded' : 'collapsed'}`}>
+                            {isRecoveryExpanded && (
+                                <div className="recovery-content">
+                                    <h4>Recovery progress: {`${recoveryState.progress?.complete}/${recoveryState.progress?.total}`}</h4>
+                                    <p>Module id: {recoveryState.moduleId}</p>
+                                </div>
+                            )}
+                            <button
+                                className="recovery-toggle-btn"
+                                onClick={toggleRecoveryExpansion}
+                                aria-label={isRecoveryExpanded ? "Collapse recovery progress" : "Expand recovery progress"}
+                            >
+                                {isRecoveryExpanded ? <i className="fa-solid fa-angle-right"></i> : <i className="fa-solid fa-angle-left"></i>}
+                            </button>
+                        </div>
+                    )}
+
                     {<Outlet />}
+
                 </section>
 
                 <Sidebar />

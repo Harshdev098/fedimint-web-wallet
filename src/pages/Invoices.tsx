@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 // import type { Transactions } from '@fedimint/core-web';
 // import type { InvoiceState } from '../hooks/wallet.type';
 // import { startProgress,doneProgress } from '../utils/ProgressBar';
+import { setInvoiceExpiry } from '../redux/slices/LightningPayment';
 import Alerts from '../Components/Alerts';
 // import { Link } from 'react-router';
 // import logger from '../utils/logger';
@@ -13,12 +14,19 @@ import type { RootState } from '../redux/store';
 // import { setErrorWithTimeout } from '../redux/slices/Alerts';
 
 export default function Invoices() {
-    const invoiceExpiryOptions = ['--Select--', '10 minutes', '20 min', '30 minutes', '40 min', '60 min', '180 min', '300 min', '480 min'];
-    const [expiryTime, setExpiryTime] = useState('--Select--');
+    const invoiceExpiryOptions = [
+        {value:5,option:'5 min'},
+        {value:10,option:'10 min'},
+        {value:20,option:'20 min'},
+        {value:30,option:'30 min'},
+        {value:40,option:'40 min'},
+        {value:60,option:'60 min'}
+    ]
     // const [invoiceStateList, setInvoiceStateList] = useState<InvoiceState[]>([]);
     // const [invoicePendingList, setInvoicePendingList] = useState<InvoiceState[]>([])
     const [stateFilter, setStateFilter] = useState<string>('all')
     const { federationId, walletId } = useSelector((state: RootState) => state.activeFederation)
+    const {invoiceExpiry}=useSelector((state:RootState)=>state.Lightning)
     // const { wallet } = useWallet()
     const { error } = useSelector((state: RootState) => state.Alert)
     // const [currentPage, setCurrentPage] = useState(1)
@@ -28,9 +36,9 @@ export default function Invoices() {
 
     const handleInvoiceExpiry = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const value = e.target.value;
-        setExpiryTime(value);
         const match = value.match(/\d+/);
         const numericValue = match ? match[0] : '';
+        setInvoiceExpiry(Number(numericValue));
         localStorage.setItem('InvoiceExpiryTime', numericValue);
     };
 
@@ -129,7 +137,7 @@ export default function Invoices() {
         //     }
         // } catch (err) {
         //     logger.log("an error occured")
-        //     setErrorWithTimeout({ type: 'Invoice Error: ', message: String(err) })
+        //     dispatch(setErrorWithTimeout({ type: 'Invoice Error: ', message: String(err) }))
         // } finally {
         //     doneProgress()
         // }
@@ -138,14 +146,6 @@ export default function Invoices() {
     const handleFilter = (e: React.ChangeEvent<HTMLSelectElement>) => {
         setStateFilter(e.target.value)
     }
-
-
-    useEffect(() => {
-        const savedExpiry = localStorage.getItem('InvoiceExpiryTime');
-        if (savedExpiry) {
-            setExpiryTime(savedExpiry);
-        }
-    }, []);
 
     useEffect(() => {
         handleInvoice()
@@ -172,9 +172,9 @@ export default function Invoices() {
                 <div className="search-container">
                     <div className="expiry-select">
                         <label htmlFor="expiry">Invoice Expiry:</label>
-                        <select id="expiry" value={expiryTime} onChange={handleInvoiceExpiry}>
+                        <select id="expiry" value={invoiceExpiry} onChange={handleInvoiceExpiry}>
                             {invoiceExpiryOptions.map((option, index) => (
-                                <option key={index} value={option}>{option}</option>
+                                <option key={index} value={option.value}>{option.option}</option>
                             ))}
                         </select>
                     </div>
@@ -271,7 +271,7 @@ export default function Invoices() {
             <section className="transaction-container">
                 <div className="transaction-header">
                     <h2 className="transaction-title"><i className="fa-solid fa-file-invoice-dollar" style={{ fontSize: '1.4rem' }}></i> Paid Invoices</h2>
-                    <p className="transaction-subtitle">View and search your recent transactions</p>
+                    <p className="subtitle">View and search your recent transactions</p>
                 </div>
                 <ul className='transaction-list'>
                     <li className="transaction-item">

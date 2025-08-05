@@ -1,5 +1,4 @@
-import { useRef, useState, useEffect } from 'react'
-import QrScanner from "qr-scanner";
+import { useRef, useState } from 'react'
 import QRCode from 'react-qr-code'
 import { setInvoice, setInvoiceOperationId, setPayInvoiceResult } from '../redux/slices/LightningPayment'
 import { useSelector, useDispatch } from 'react-redux'
@@ -13,22 +12,22 @@ import { convertToMsats } from '../services/BalanceService';
 import logger from '../utils/logger';
 import { setErrorWithTimeout } from '../redux/slices/Alerts';
 import { setCurrency } from '../redux/slices/Balance';
+import QRScanner from './QrScanner';
 
 
 export default function LighningPayment() {
-    const [status, setStatus] = useState<boolean>(false)
+    const [generatingInvoice, setGeneratingInvoice] = useState<boolean>(false)
+    const [payingInvoice, setPayingInvoice] = useState<boolean>(false)
     const [convertedAmountInMSat, setConvertedAmountInMSat] = useState<number | null>(null)
     const amount = useRef<HTMLInputElement>(null)
-    const description = useRef<HTMLInputElement>(null)
+    const [description,setDescription] = useState<string>(localStorage.getItem('description') || '')
     const invoice = useRef<HTMLInputElement>(null)
-    const videoRef = useRef<HTMLVideoElement | null>(null)
-    const scannerRef = useRef<QrScanner | null>(null)
     const [openRecieveBox, setOpenRecieveBox] = useState(false)
     const [openSendBox, setOpenSendBox] = useState<boolean>(false)
     const [openVideo, setOpenVideo] = useState<boolean>(false)
     const { wallet } = useWallet()
     const dispatch = useDispatch<AppDispatch>()
-    const { Invoice, payInvoiceResult, payStatus } = useSelector((state: RootState) => state.Lightning)
+    const { Invoice, payInvoiceResult, payStatus, invoiceExpiry } = useSelector((state: RootState) => state.Lightning)
     const { error } = useSelector((state: RootState) => state.Alert)
     const { currency } = useSelector((state: RootState) => state.balance)
     const { metaData } = useSelector((state: RootState) => state.federationdetails)
@@ -44,7 +43,7 @@ export default function LighningPayment() {
     const handleCreateInvoice = async (e: React.FormEvent) => {
         e.preventDefault();
         startProgress();
-        setStatus(true);
+        setGeneratingInvoice(true);
         try {
             if (!convertedAmountInMSat || convertedAmountInMSat <= 0) {
                 throw new Error('Amount must be greater than 0');
@@ -52,22 +51,21 @@ export default function LighningPayment() {
             let unsubscribe: (() => void);
             // const amountValue = await convertToSats(convertedAmount,currency)
             logger.log("amount value and wallet is", convertedAmountInMSat, walletId, wallet)
-            const result = await CreateInvoice(wallet, convertedAmountInMSat, (description.current?.value ?? '').trim());
+            const result = await CreateInvoice(wallet, convertedAmountInMSat, description?.trim(), invoiceExpiry);
             logger.log('Create invoice result:', result);
             dispatch(setInvoice(result.invoice));
             dispatch(setInvoiceOperationId(result.operationId))
 
             unsubscribe = subscribeLnReceive(wallet, result.operationId, dispatch, metaData)
-
             setTimeout(() => {
                 unsubscribe?.();
-            }, 300000);
+            }, invoiceExpiry * 60 * 1000);
         } catch (err) {
             logger.error('Create Invoice Error:', err);
             dispatch(setErrorWithTimeout({ type: 'Invoice Error: ', message: err instanceof Error ? err.message : String(err) }));
         } finally {
             doneProgress();
-            setStatus(false);
+            setGeneratingInvoice(false);
             if (amount.current) {
                 amount.current.value = '';
             }
@@ -77,7 +75,7 @@ export default function LighningPayment() {
     const handlePayInvoice = async (e: React.FormEvent, QRData?: string) => {
         e.preventDefault();
         startProgress();
-        setStatus(true);
+        setPayingInvoice(true);
         const invoiceValue = (invoice.current?.value)?.trim() || QRData
         try {
             if (!invoiceValue) {
@@ -126,40 +124,19 @@ export default function LighningPayment() {
             dispatch(setErrorWithTimeout({ type: 'Payment Error: ', message: err instanceof Error ? err.message : String(err) }));
         } finally {
             doneProgress();
-            setStatus(false);
+            setPayingInvoice(false);
         }
     };
 
 
-    useEffect(() => {
-        if (openVideo && videoRef.current) {
-            scannerRef.current = new QrScanner(
-                videoRef.current,
-                async (result) => {
-                    if (result.data) {
-                        logger.log("qr data ", result.data)
-                        await handlePayInvoice({ preventDefault: () => { } } as React.FormEvent, result.data)
-                        scannerRef.current?.stop()
-                        setOpenVideo(false)
-                        scannerRef.current?.destroy()
-                        scannerRef.current = null;
-                    }
-                },
-                { returnDetailedScanResult: true }
-            )
-
-            scannerRef.current.start().then(() => {
-                logger.log("QR scanning started.")
-            }).catch((err) => {
-                logger.error("QR scanning failed:", err)
-                dispatch(setErrorWithTimeout({ type: 'QR Error: ', message: 'camera access denied' }))
-            })
+    const handlePayWithQR = async (data: string) => {
+        console.log("qr sdsdfs", data)
+        setOpenVideo(false)
+        if (invoice.current) {
+            invoice.current.value = data;
         }
-
-        return () => {
-            scannerRef.current?.stop()
-        }
-    }, [openVideo])
+        await handlePayInvoice({ preventDefault: () => { } } as React.FormEvent, data)
+    }
 
     const handleConversion = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const amount = await convertToMsats(Number((e.target.value).trim()), currency)
@@ -169,14 +146,7 @@ export default function LighningPayment() {
     return (
         <>
             {(error) && <Alerts Error={error} />}
-            {openVideo && (
-                <div className="videoOverlay">
-                    <div className='videoRef'>
-                        <video width={'100%'} ref={videoRef}></video>
-                        <button onClick={() => { scannerRef.current?.stop(); setOpenVideo(false) }}>Close</button>
-                    </div>
-                </div>
-            )}
+            <QRScanner open={openVideo} onClose={() => setOpenVideo(false)} onError={(err) => dispatch(setErrorWithTimeout(err))} onResult={(data) => handlePayWithQR(data)} />
             {openRecieveBox && (
                 <div className="modalOverlay">
                     <div className='createInvoice'>
@@ -206,13 +176,13 @@ export default function LighningPayment() {
                                 </select>
                             </div>
                             <label htmlFor='description'>Enter description:</label>
-                            <input type="text" id='description' className='amount-input' placeholder='Enter the description' ref={description} />
-                            <button type='submit' disabled={status}>Create</button>
+                            <input type="text" id='description' value={description} className='amount-input' placeholder='Enter the description' onChange={(e)=>setDescription(e.target.value)} required />
+                            <button type='submit' disabled={generatingInvoice}>Create</button>
                         </form>
                         {Invoice && (
                             <div className='createInvoiceResult'>
                                 <div className='qrCode'>
-                                    <QRCode value={JSON.stringify(Invoice)} onClick={() => { logger.log("invoice in qr is ", JSON.stringify(Invoice)) }} size={150} bgColor='white' fgColor='black' />
+                                    <QRCode value={Invoice} size={150} bgColor='white' fgColor='black' />
                                     <div className='copyWrapper'>
                                         <p><b>Invoice:</b> {Invoice}</p>
                                         <button
@@ -240,8 +210,13 @@ export default function LighningPayment() {
                         <p className='title-span'>Send ecash via Lightning network</p>
                         <form onSubmit={handlePayInvoice}>
                             <label htmlFor='invoice'>Enter the invoice:</label>
-                            <input type="text" className='amount-input' id='invoice' placeholder='Enter the Invoice' ref={invoice} required />
-                            <button type='submit' disabled={status}>Pay Invoice</button>
+                            <div className="input-with-icon">
+                                <input type="text" className='amount-input' id='invoice' placeholder='Enter the Invoice' ref={invoice} required />
+                                <button type="button" className="camera-btn" onClick={() => setOpenVideo(true)} >
+                                    <i className="fa-solid fa-camera"></i>
+                                </button>
+                            </div>
+                            <button type='submit' disabled={payingInvoice}>Pay Invoice</button>
                         </form>
                         {payInvoiceResult && (
                             <div className="invoiceDetailGroupModern">
@@ -263,12 +238,6 @@ export default function LighningPayment() {
                     </button>
                     <button onClick={() => setOpenSendBox(true)}>
                         <i className="fa-solid fa-angles-up"></i> Send
-                    </button>
-                </div>
-
-                <div className="TransactionsWithQR">
-                    <button onClick={() => setOpenVideo(true)}>
-                        <i className="fa-solid fa-qrcode"></i> Scan QR
                     </button>
                 </div>
             </div>

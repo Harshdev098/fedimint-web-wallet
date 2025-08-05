@@ -1,21 +1,24 @@
 import { useSelector } from 'react-redux';
 import type { RootState } from '../redux/store';
-import { useState } from 'react';
+import Tippy from '@tippyjs/react';
 
 const guardianColors = ['#34d399', '#60a5fa', '#a78bfa', '#f472b6'];
 
 export default function Guardians() {
     const { Details, GuardianStatus } = useSelector((state: RootState) => state.federationdetails);
-    const [showTooltip, setShowTooltip] = useState(false);
 
-    const guardians = Object.keys(Details?.api_endpoints ?? {}).map((key: any, idx) => ({
-        id: key,
-        name: Details?.api_endpoints[key].name,
-        url: Details?.api_endpoints[key].url,
-        pubKey: Details?.broadcast_public_keys[key],
-        color: guardianColors[idx % guardianColors.length],
-        status: GuardianStatus.status[Number(key)] || 'checking'
-    }));
+    const guardians = Object.keys(Details?.api_endpoints ?? {}).map((key: any, idx) => {
+        const status = GuardianStatus.status[Number(key)];
+
+        return {
+            id: key,
+            name: Details?.api_endpoints[key].name,
+            url: Details?.api_endpoints[key].url,
+            pubKey: Details?.broadcast_public_keys[key],
+            color: guardianColors[idx % guardianColors.length],
+            status: status || 'checking'
+        };
+    });
 
     const onlineGuardians = guardians.filter(g => g.status === 'online').length;
     const totalGuardians = guardians.length;
@@ -24,7 +27,7 @@ export default function Guardians() {
         <section className="guardian-section" id='guardians'>
             <div className="guardian-header-info">
                 <div className='guardian-title'>
-                    <h2 className="title" style={{textAlign:'left'}}>
+                    <h2 className="title" style={{ textAlign: 'left' }}>
                         <i className="fa-solid fa-shield"></i> Guardians (Members)
                     </h2>
                     <span className='title-span'>Trusted operators who secure your funds and keep the federation running.</span>
@@ -50,30 +53,18 @@ export default function Guardians() {
                         </div>
 
                         <div className="guardian-status-badges">
-                            <span className={`status-badge ${g.status === 'online' ? 'online' : 'checking'}`}>
-                                {g.status === 'online' ? 'Online' : 'Checking'}
+                            <span className={`status-badge ${g.status === 'online' ? 'online' : g.status === 'offline' ? 'offline' : 'checking'}`}>
+                                {g.status === 'online' ? 'Online' : g.status === 'offline' ? 'Offline' : 'Checking'}
                             </span>
                             <span className="session-badge">Session 184361
-                                <span
-                                    className="tooltip-container"
-                                    onClick={() => setShowTooltip(!showTooltip)}
-                                >
+                                <Tippy content='The block position number in the blockchain.'>
                                     <i className="fa-solid fa-info-circle"></i>
-                                    <span className={`tooltip-text ${showTooltip ? 'show' : ''}`}>
-                                        The block position number in the blockchain.
-                                    </span>
-                                </span>
+                                </Tippy>
                             </span>
                             <span className="block-badge">Block 906835
-                                <span
-                                    className="tooltip-container"
-                                    onClick={() => setShowTooltip(!showTooltip)}
-                                >
+                                <Tippy content='The block position number in the blockchain.'>
                                     <i className="fa-solid fa-info-circle"></i>
-                                    <span className={`tooltip-text ${showTooltip ? 'show' : ''}`}>
-                                        The block position number in the blockchain.
-                                    </span>
-                                </span>
+                                </Tippy>
                             </span>
                         </div>
                     </div>

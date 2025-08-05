@@ -2,9 +2,9 @@ import type { FederationConfig, FederationDetailResponse, FederationMeta, Federa
 import { generateMnemonic, getMnemonic, joinFederation, previewFederation, Wallet } from '@fedimint/core-web'
 import logger from "../utils/logger";
 
-export const JoinFederation = async (inviteCode: string, walletName: string): Promise<Wallet> => {
+export const JoinFederation = async (inviteCode: string, walletName: string, recover: boolean): Promise<Wallet> => {
     try {
-        logger.log("Joining federation with invite code:", inviteCode,walletName);
+        logger.log("Joining federation with invite code:", inviteCode, walletName);
         let mnemonics = await getMnemonic();
         logger.log('mnemonic is ', mnemonics)
 
@@ -13,7 +13,8 @@ export const JoinFederation = async (inviteCode: string, walletName: string): Pr
         }
 
         logger.log('mnemonic is ', mnemonics)
-        const result = await joinFederation(inviteCode);
+        // const result = await joinFederation(inviteCode);
+        const result = await joinFederation(inviteCode, recover);
         logger.log('join federation result ', result)
 
         if (result) {
@@ -91,7 +92,6 @@ export const previewFedWithInviteCode = async (inviteCode: string): Promise<Prev
                 }
             }
 
-            // returning a structured format result 
             const structuredResult = {
                 fedName: meta?.federation_name,
                 iconUrl: (meta as FederationMetaData)?.federation_icon_url,

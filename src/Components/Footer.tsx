@@ -20,18 +20,6 @@ export default function Footer() {
 
                 <div className="setting-item">
                     <div className="setting-info">
-                        <h3>Terms of Service</h3>
-                        <p>Read our terms and conditions</p>
-                    </div>
-                    <div className="setting-control">
-                        <a href="#" className="action-btn view-btn">
-                            <i className="fa-solid fa-arrow-up-right-from-square"></i>
-                        </a>
-                    </div>
-                </div>
-
-                <div className="setting-item">
-                    <div className="setting-info">
                         <h3>Report Bug</h3>
                         <p>Help us improve by reporting issues</p>
                     </div>
@@ -42,8 +30,6 @@ export default function Footer() {
                     </div>
                 </div>
             </div>
-
-            <div className="subsection-title">Community</div>
             <div className="community-links">
                 <a href="https://discord.gg/8xn55stq" target="_blank" rel="noopener noreferrer" className="community-link">
                     <i className="fa-brands fa-discord"></i>

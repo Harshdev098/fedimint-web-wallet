@@ -12,7 +12,7 @@ import { fetchFederationDetails } from "../services/FederationService";
 import { setWalletId } from "../redux/slices/ActiveWallet";
 import { setFederationId } from "../redux/slices/ActiveWallet";
 import { setFederationDetails, setFederationMetaData } from "../redux/slices/FederationDetails";
-import { startProgress,doneProgress } from "../utils/ProgressBar";
+import { startProgress, doneProgress } from "../utils/ProgressBar";
 import LoadingContext from './Loading'
 import { updateBalanceFromMsat } from "../redux/slices/Balance";
 
@@ -32,6 +32,7 @@ interface WalletManagerContextType {
     refreshActiveWallet: () => Promise<void>;
     toggleDebug: () => void;
     loadWalletData: (walletId: string, walletInstance?: Wallet) => Promise<WalletCache | undefined>;
+    getAvailableFederations:()=>void
 }
 
 const WalletManagerContext = createContext<WalletManagerContextType | undefined>(undefined);
@@ -140,7 +141,7 @@ export const WalletManagerProvider: React.FC<{ children: React.ReactNode }> = ({
                     };
                 })
             );
-            logger.log("available federations are: ", activeFederationList)
+            logger.log("available joined federations are: ", activeFederationList)
             setAvailableWalletList(activeFederationList);
             setIsLoadingAvailableFederations(false);
         }
@@ -154,7 +155,7 @@ export const WalletManagerProvider: React.FC<{ children: React.ReactNode }> = ({
 
     const switchWallet = useCallback(async (walletId: string) => {
         try {
-                startProgress()
+            startProgress()
             logger.log(`Switching to wallet ${walletId}`);
             setLoaderMessage(`Switching to wallet ${walletId}`)
 
@@ -192,7 +193,6 @@ export const WalletManagerProvider: React.FC<{ children: React.ReactNode }> = ({
                 });
 
                 localStorage.setItem('lastUsedWallet', walletData.id);
-                localStorage.setItem('activeFederation', walletData.federationId);
                 localStorage.setItem('activeWallet', walletData.id);
 
                 logger.log(`Successfully switched to wallet ${walletId}`);
@@ -204,7 +204,7 @@ export const WalletManagerProvider: React.FC<{ children: React.ReactNode }> = ({
             logger.error(`Failed to switch wallet:`, err);
             throw err; // handle it in component side
         } finally {
-                doneProgress()
+            doneProgress()
         }
     }, [dispatch, loadWalletData]);
 
@@ -213,12 +213,6 @@ export const WalletManagerProvider: React.FC<{ children: React.ReactNode }> = ({
 
         try {
             logger.log("Refreshing active wallet");
-            const unsubscribeBalance = wallet.balance.subscribeBalance((mSats) => {
-                dispatch(updateBalanceFromMsat(mSats));
-                setTimeout(() => {
-                    unsubscribeBalance?.();
-                }, 10000);
-            });
 
             // Clear cache for this wallet to force fresh data
             walletCache.current.delete(wallet.id);
@@ -296,7 +290,8 @@ export const WalletManagerProvider: React.FC<{ children: React.ReactNode }> = ({
                 switchWallet,
                 refreshActiveWallet,
                 toggleDebug,
-                loadWalletData
+                loadWalletData,
+                getAvailableFederations
             }}>
                 {children}
             </WalletManagerContext.Provider>

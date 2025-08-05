@@ -48,7 +48,7 @@ h2 {
 
 .DarkMode .note-card{
     background: none;
-    background-color: #222;
+    background-color: rgb(55, 65, 81);
     color: #d0cdcd;
     border: none;
 }
@@ -103,6 +103,17 @@ h2 {
 .ecash-section {
     padding: 4rem 2rem;
     background-color: #e4eef3;
+}
+
+.DarkMode .ecash-section{
+    background-color: rgb(17, 24, 39);
+}
+.DarkMode .ecash-card{
+    background-color: rgb(31, 41, 55);
+    box-shadow: none;
+}
+.DarkMode .form-textarea{
+    background-color: rgb(55, 65, 81);
 }
 
 .ecash-container {
@@ -170,6 +181,9 @@ h2 {
     color: #1a3c6d;
     margin: 0 0 8px 0;
     letter-spacing: -0.02em;
+}
+.DarkMode .card-title{
+    color: white;
 }
 
 .card-subtitle {
@@ -436,21 +450,15 @@ h2 {
     right: 12px;
     width: 36px;
     height: 36px;
-    background: #F3F4F6;
-    color: #6B7280;
-    border: 1px solid #E5E7EB;
+    font-size: 17px;
+    background: rgb(163 191 228 / 20%);
+    color: black;
     border-radius: 8px;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     transition: all 0.2s ease;
-}
-
-.copy-btn:hover {
-    background: #2176FF;
-    color: #FFFFFF;
-    border-color: #2176FF;
 }
 
 .qr-section {

@@ -9,12 +9,11 @@ import type { LnPayState, LnReceiveState } from "@fedimint/core-web";
 import type { FederationMetaData } from "../hooks/Federation.type";
 import validate from "bitcoin-address-validation";
 
-export const CreateInvoice = async (wallet: Wallet, amount: number, description: string): Promise<CreateInvoiceResponse> => {
+
+export const CreateInvoice = async (wallet: Wallet, amount: number, description: string,expiryTime:number): Promise<CreateInvoiceResponse> => {
     try {
-        const expiryTime = Number(localStorage.getItem('InvoiceExpiryTime')) * 60;
-        logger.log("expiry time is ", expiryTime)
-        logger.log("time from localstorage is ", localStorage.getItem('InvoiceExpiryTime'))
-        const result = await wallet?.lightning.createInvoice(amount, description, expiryTime)
+        logger.log("expiry time is ",expiryTime*60)
+        const result = await wallet?.lightning.createInvoice(amount, description, expiryTime*60)
         logger.log("result", result)
         if (result) {
             return {

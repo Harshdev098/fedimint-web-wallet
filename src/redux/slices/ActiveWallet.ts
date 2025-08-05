@@ -6,13 +6,15 @@ interface activeWallet {
     joining: boolean,
     federationId: string,
     walletId: string,
-    newJoin: boolean
+    newJoin: boolean,
+    recoveryState:{status:boolean,progress?:{complete: number, total?: number},moduleId:number}
 }
 const initialState: activeWallet = {
     joining: false,
     federationId: '',
     walletId: '',
-    newJoin: false
+    newJoin: false,
+    recoveryState:{status:false,progress:{complete:0,total:0},moduleId:0}
 }
 
 
@@ -31,10 +33,17 @@ export const ActiveWalletSlice = createSlice({
         },
         setWalletId: (state, action: PayloadAction<string>) => {
             state.walletId = action.payload
+        },
+        setRecoverySate:(state,action:PayloadAction<{status:boolean,progress?:{complete: number, total: number},moduleId?:number}>)=>{
+            state.recoveryState = {
+                status: action.payload.status,
+                progress: action.payload.progress,
+                moduleId: action.payload.moduleId !== undefined ? action.payload.moduleId : 0
+            }
         }
     }
 })
 
-export const { setJoining, setFederationId, setNewJoin, setWalletId } = ActiveWalletSlice.actions
+export const { setJoining, setFederationId, setNewJoin, setWalletId, setRecoverySate } = ActiveWalletSlice.actions
 
 export default ActiveWalletSlice.reducer;

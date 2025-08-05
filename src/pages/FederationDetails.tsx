@@ -10,6 +10,7 @@ export default function FederationDetails() {
     const [showGuardians, setShowGuardians] = useState<boolean>(false);
     const [expandedModules, setExpandedModules] = useState<string | null>(null);
     const [healthStatus, setHealthStatus] = useState<'Healthy' | 'Reachable' | 'Degraded' | 'Unreachable'>('Healthy')
+    const { mode } = useSelector((state: RootState) => state.Mode)
     const navigate = useNavigate();
 
     const toggleDetails = (id: string) => {
@@ -31,7 +32,7 @@ export default function FederationDetails() {
 
         const onlinePercentage = (onlineGuardians / totalGuardians) * 100;
 
-        if (onlinePercentage >= 60) {
+        if (onlinePercentage >= 66) {
             setHealthStatus('Healthy')
         } else if (onlinePercentage >= 33) {
             setHealthStatus('Reachable')
@@ -90,7 +91,7 @@ export default function FederationDetails() {
 
 
     return (
-        <section className="page-background">
+        <section className="federation">
             <div className="federation-glass-card">
                 <div className="Fedheader">
                     <img
@@ -100,7 +101,7 @@ export default function FederationDetails() {
                     />
                     <div>
                         <h2 className="federation-title">{metaData?.federation_name}</h2>
-                        <p className="subtitle">
+                        <p className="subtitle" style={{color:'#4B5563'}}>
                             {metaData?.federation_name} works on the consensus version v
                             {Details?.consensus_version.major}.{Details?.consensus_version.minor}
                         </p>
@@ -111,10 +112,10 @@ export default function FederationDetails() {
                     <div className="federation-field">
                         <h3><i className="fa-solid fa-heart-pulse"></i> Health</h3>
                         {healthStatus==='Healthy' && <span>Federation is Healthy</span>}
-                        {healthStatus==='Degraded' && <span>Federation is Healthy</span>}
-                        {healthStatus==='Reachable' && <span>Federation is Healthy</span>}
-                        {healthStatus==='Unreachable' && <span>Federation is Healthy</span>}
-                        <p><strong style={{fontSize:'1.4rem',color:(healthStatus === 'Healthy' || healthStatus === 'Reachable') ? 'green' : healthStatus === 'Degraded' ? 'yellow' : 'red'}}>{healthStatus}</strong></p>
+                        {healthStatus==='Degraded' && <span>Many guardians are offline, transactions may be slower</span>}
+                        {healthStatus==='Reachable' && <span>Some guardians are offline, but the federation is still functional.</span>}
+                        {healthStatus==='Unreachable' && <span>Not found guardians online</span>}
+                        <p><strong style={{fontSize:'1.4rem',color:(healthStatus === 'Healthy' || healthStatus === 'Reachable') ? 'green' : healthStatus === 'Degraded' ? '#909048' : 'red'}}>{healthStatus}</strong></p>
                     </div>
                     <div className="federation-field">
                         <h3>💰 On-chain Deposit</h3>
@@ -181,7 +182,7 @@ export default function FederationDetails() {
 
                                     <p
                                         onClick={() => toggleDetails(module.kind)}
-                                        style={{ cursor: 'pointer', color: 'blue' }}
+                                        style={{ cursor: 'pointer', color: mode ? 'white' : 'blue' }}
                                     >
                                         {expandedModules === module.kind ? 'Hide' : 'Show'} advanced details
                                         <i className="fa-solid fa-angle-down"></i>
@@ -202,20 +203,14 @@ export default function FederationDetails() {
                 </div>
 
                 <div className="federation-footer">
-                    <button
-                        onClick={() =>
-                            navigator.clipboard.writeText(metaData?.invite_code || '')
-                        }
-                    >
-                        🔗 Copy Invite Code
-                    </button>
+                    {metaData?.invite_code && <button onClick={() => navigator.clipboard.writeText(metaData?.invite_code || '')} >🔗 Copy Invite Code</button>}
                     <button
                         onClick={() => {
                             setShowGuardians(!showGuardians);
                             navigate('/wallet/federation#guardians');
                         }}
                     >
-                        <i className="fa-solid fa-shield"></i> View Guardians
+                        <i className="fa-solid fa-shield"></i> {showGuardians ? 'Hide' : 'View'} Guardians
                     </button>
                 </div>
 

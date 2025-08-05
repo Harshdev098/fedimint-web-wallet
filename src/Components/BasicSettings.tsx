@@ -1,32 +1,37 @@
 import { useState, useCallback, useEffect } from "react";
-import { useDispatch, useSelector } from 'react-redux'
-import type { RootState } from '../redux/store'
+import { useSelector, useDispatch } from 'react-redux'
+import type { AppDispatch, RootState } from '../redux/store'
 import { setMode } from '../redux/slices/Mode';
 import logger from "../utils/logger";
 import { useWallet } from "../context/WalletManager";
 import { setCurrency } from '../redux/slices/Balance';
-import { cleanup } from "@fedimint/core-web";
+import { removeWallet } from '@fedimint/core-web'
 import { useNavigate } from "react-router";
-import { startProgress,doneProgress } from "../utils/ProgressBar";
+import { startProgress, doneProgress } from "../utils/ProgressBar";
 // import { DownloadTransactionsCSV } from "../services/DownloadQR";
 import Alerts from "./Alerts";
-import { setErrorWithTimeout, setResult } from "../redux/slices/Alerts";
+import { setErrorWithTimeout, setResultWithTimeout } from "../redux/slices/Alerts";
 import validate from 'bitcoin-address-validation';
+import { getActiveWallets } from "@fedimint/core-web";
+import Tippy from "@tippyjs/react";
 
 
 export default function BasicSettings() {
-    const dispatch = useDispatch()
+    const dispatch = useDispatch<AppDispatch>()
     const { metaData } = useSelector((state: RootState) => state.federationdetails)
     const [enabledLocation, setEnabledLocation] = useState(localStorage.getItem('locationAccess') === 'true' ? true : false)
     const { mode } = useSelector((state: RootState) => state.Mode)
     const { isDebug, toggleDebug } = useWallet()
     const { currency } = useSelector((state: RootState) => state.balance)
-    const { federationId } = useSelector((state: RootState) => state.activeFederation)
     const { error, result } = useSelector((state: RootState) => state.Alert)
-    const [autoWithdrawAddress, setAutoWithdrawAddress] = useState<string | null>(localStorage.getItem('autoWithdraw'))
+    const [autoWithdrawAddress, setAutoWithdrawAddress] = useState<string>(localStorage.getItem('autoWithdraw') || '')
     const [isValidAddress, setIsValidAddress] = useState(false)
     const [withdrawalBox, setWithdrawalBox] = useState<boolean>(false)
-    const [thresholdAmount,setThresholdAmount]=useState<number | undefined>(metaData?.max_stable_balance_msats)
+    const [thresholdAmount, setThresholdAmount] = useState<number>(metaData?.max_stable_balance_msats || 0)
+    const { walletId,recovery } = useSelector((state: RootState) => state.activeFederation)
+    const { wallet, switchWallet, getAvailableFederations } = useWallet()
+    const [backupRanomData,setBackupRandomData]=useState<string>('')
+    const [backupBox, setBackupBox] = useState<boolean>(false)
     const navigate = useNavigate()
 
 
@@ -56,7 +61,7 @@ export default function BasicSettings() {
         if (autoWithdrawAddress) {
             localStorage.setItem('autoWithdrawalValue', autoWithdrawAddress)
             logger.log('saved!')
-            dispatch(setResult('Saved!'))
+            setResultWithTimeout('Saved!')
         }
     }
 
@@ -94,19 +99,20 @@ export default function BasicSettings() {
     const handleLeaveFederations = async () => {
         try {
             startProgress()
-            await cleanup();
             logger.log('wallet cleanup called')
-            indexedDB.deleteDatabase(`${localStorage.getItem('walletName')}`);
-            localStorage.removeItem('walletName')
-            localStorage.removeItem('activeFederation')
-            localStorage.removeItem('WalletNostrKeys')
-            localStorage.removeItem('ClientRelayKeys')
-            localStorage.removeItem('nwcRelays')
-            localStorage.removeItem('nwcEnabled')
-            navigate('/')
+            await removeWallet(walletId)
+            const walletInstance = await getActiveWallets()
+            if (walletInstance.length > 0) {
+                logger.log('switching wallet')
+                await switchWallet(walletInstance[0].id)
+                getAvailableFederations()
+            } else {
+                navigate('/')
+            }
+            dispatch(setResultWithTimeout('Removed Wallet successfully'))
         } catch (err) {
             logger.log("an error occured")
-            setErrorWithTimeout({ type: 'Federation Error: ', message: err instanceof Error ? err.message : String(err) })
+            dispatch(setErrorWithTimeout({ type: 'Federation Error: ', message: err instanceof Error ? err.message : String(err) }))
         } finally {
             doneProgress()
         }
@@ -120,16 +126,30 @@ export default function BasicSettings() {
         //     DownloadTransactionsCSV(transactions)
         // } catch (err) {
         //     logger.log('an error occured')
-        //     setErrorWithTimeout({type:'Transaction Error',message:err instanceof Error ? err.message : String(err)})
+        //     dispatch(setErrorWithTimeout({type:'Transaction Error',message:err instanceof Error ? err.message : String(err)}))
         // } finally {
         //     doneProgress()
         // }
     }
 
+    const handleBackup = async (e:React.FormEvent) => {
+        e.preventDefault()
+        try {
+            startProgress()
+            const result = await wallet.recovery.backupToFederation({backupRanomData})
+            logger.log('backup result is ', result)
+            dispatch(setResultWithTimeout('Wallet backup successfully'))
+            setBackupBox(false)
+        } catch (err) {
+            dispatch(setErrorWithTimeout({ type: 'Backup Error: ', message: `${err}` }))
+        } finally {
+            doneProgress()
+        }
+    }
+
     return (
         <>
-            {error && <Alerts Error={error} />}
-            {result && <Alerts Result={result} />}
+            {(error || result) && <Alerts Error={error} Result={result} />}
 
             {withdrawalBox && <div className="modalOverlay">
                 <div className='createInvoice'>
@@ -142,13 +162,35 @@ export default function BasicSettings() {
                         <input
                             type="text"
                             id='amountvalue'
-                            value={autoWithdrawAddress ?? ''}
+                            className="amount-input"
+                            value={autoWithdrawAddress}
                             onChange={(e) => setAutoWithdrawAddress(e.target.value)}
                             required
                         />
-                        <label>Enter the threshold amount in msat (optional)</label>
-                        <input type="numeric" value={thresholdAmount} onChange={(e)=>setThresholdAmount(Number(e.target.value))} />
+                        <label>Enter the threshold amount in sat (optional)</label>
+                        <input type="numeric" className="amount-input" value={thresholdAmount / 1000} onChange={(e) => setThresholdAmount(Number(e.target.value))} />
                         <button type='submit' disabled={!isValidAddress}>Set</button>
+                    </form>
+                </div>
+            </div>}
+
+            {backupBox && <div className="modalOverlay">
+                <div className='createInvoice'>
+                    <button type='button' className='closeBtn' onClick={() => setBackupBox(false)}>
+                        <i className="fa-solid fa-xmark"></i>
+                    </button>
+                    <h2><i className="fa-solid fa-bolt"></i> Backup Wallet</h2>
+                    <form onSubmit={handleBackup}>
+                        <label htmlFor='amountvalue'>Enter any random data:</label>
+                        <input
+                            type="text"
+                            id='amountvalue'
+                            className="amount-input"
+                            value={backupRanomData}
+                            onChange={(e) => setBackupRandomData(e.target.value)}
+                            required
+                        />
+                        <button type='submit'>Backup</button>
                     </form>
                 </div>
             </div>}
@@ -219,7 +261,7 @@ export default function BasicSettings() {
                         <div className="setting-item">
                             <div className="setting-info">
                                 <h3>Theme</h3>
-                                <p>Enable {mode === true ? 'Dark' : 'Light'} mode</p>
+                                <p>Enable {mode === true ? 'Light' : 'Dark'} mode</p>
                             </div>
                             <div className="setting-control">
                                 <label className="toggle-switch">
@@ -292,17 +334,32 @@ export default function BasicSettings() {
                                     <h3>{metaData.federation_name}</h3>
                                 </div>
                                 <div className="federation-actions">
-                                    <a href={`/fedimint-web-wallet/federation/${federationId || localStorage.getItem('activeFederation')}`} className="fed-action-btn view-btn">
-                                        {/* <i className="fa-solid fa-arrow-up-right-from-square"></i> */}
-                                        View
-                                    </a>
-                                    <button className="action-btn leave-btn" onClick={handleLeaveFederations} title="Leave Federation">
-                                        {/* <i className="fa-solid fa-arrow-right-from-bracket"></i> */}
+                                    <button className="leave-btn" onClick={handleLeaveFederations} title="Leave Federation">
+                                        <i className="fa-solid fa-arrow-right-from-bracket"></i>
                                         Leave
                                     </button>
                                 </div>
                             </div>
                         )}
+                    </div>
+                </div>
+                <div className="settings-section">
+                    <h2 className="section-title">Backup & Recovery</h2>
+                    <div className="settings-grid">
+                        <div className="setting-item">
+                            <div className="setting-info">
+                                <Tippy content='None of the wallet operation can be performed while recovery'>
+                                    <h3>Recovery <i className="fa-solid fa-info-circle"></i></h3>
+                                </Tippy>
+                                {recovery ? <p>Recovery is in progress</p> : <p>No recovery is in progress</p>}
+                            </div>
+                        </div>
+                        <div className="setting-item" style={{cursor:'pointer'}} onClick={()=>setBackupBox(true)}>
+                            <div className="setting-info">
+                                <h3>Backup</h3>
+                                <p>Want to backup your Wallet? Don't worry its all secure and private on federation guardians</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

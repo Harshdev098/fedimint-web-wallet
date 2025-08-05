@@ -1,6 +1,7 @@
 import { useState, useContext } from 'react';
 import NostrContext from '../context/nostr';
 import '../style/Settings.css'
+import Tippy from '@tippyjs/react';
 
 export default function NostrSettings() {
     const [autoPay, setAutoPay] = useState(localStorage.getItem('autoPayNostr') === 'true' ? true : false)
@@ -8,8 +9,6 @@ export default function NostrSettings() {
     const { nwcEnabled, nwcURL, generateNWCConnection, connectionStatus, NostrAppName, NostrRelay, updateRelay, setNostrAppName, setNostrRelay } = useContext(NostrContext)
     const [OpenInvoiceDescription, setOpenInvoiceDescription] = useState<boolean>(false)
     const [description, setDescription] = useState<string>('')
-    const [showTooltip, setShowTooltip] = useState(false);
-    
 
     const isValidRelayUrl = (url: string): boolean => {
         const regex = /^wss?:\/\/[^\s/$.?#].[^\s]*$/i;
@@ -45,6 +44,7 @@ export default function NostrSettings() {
         localStorage.setItem('description', description)
         setOpenInvoiceDescription(false)
     }
+
 
     return (
         <>
@@ -82,22 +82,20 @@ export default function NostrSettings() {
                                 {nwcURL.map((uri, idx) => (
                                     <div key={idx} className="connection-card">
                                         <div className="connection-header">
-                                            <h4 className="app-name">{uri.appName}</h4>
+                                            <h4 className="app-name" style={{ margin: '4px' }}>{uri.appName}</h4>
                                         </div>
                                         <div className="connection-uri">
                                             <p
                                                 className="uri-text"
-                                                title="Click to copy URI"
-                                                onClick={() => navigator.clipboard.writeText(uri.nwcUri)}
                                             >
-                                                {uri.nwcUri}
+                                                {uri.nwcUri || uri.relay}
                                             </p>
-                                            <button
+                                            {uri.nwcUri && <button
                                                 className="copy-btn"
-                                                onClick={() => navigator.clipboard.writeText(uri.nwcUri)}
+                                                onClick={() => navigator.clipboard.writeText(uri.nwcUri || '')}
                                             >
                                                 <i className="fa-solid fa-copy"></i>
-                                            </button>
+                                            </button>}
                                         </div>
                                     </div>
                                 ))}
@@ -137,15 +135,9 @@ export default function NostrSettings() {
                             <div className="form-group">
                                 <label className="form-label">
                                     Preferred Relay (Optional)
-                                    <span
-                                        className="tooltip-container"
-                                        onClick={() => setShowTooltip(!showTooltip)}
-                                    >
+                                    <Tippy content='Only give a relay which client app is using to handle payments & connection'>
                                         <i className="fa-solid fa-info-circle"></i>
-                                        <span className={`tooltip-text ${showTooltip ? 'show' : ''}`}>
-                                            Only give a relay which client app is using to handle payments & connection
-                                        </span>
-                                    </span>
+                                    </Tippy>
                                 </label>
 
                                 <input
@@ -156,7 +148,7 @@ export default function NostrSettings() {
                                     onChange={(e) => setNostrRelay(e.target.value)}
                                 />
 
-                                <p className="form-help">
+                                <p className="title-span">
                                     You can give a preferred relay for the specific app, Fedimint will use a getalby relay as default to generate the URI
                                 </p>
                             </div>
@@ -186,8 +178,8 @@ export default function NostrSettings() {
                                             <i className="fa-solid fa-server"></i>
                                             <span>{relay.relay}</span>
                                         </div>
-                                        <div className="relay-status">
-                                            <span className="status-dot active"></span>
+                                        <div className={`relay-status ${relay.status === 'connected' ? 'active' : 'inactive'}`}>
+                                            <span className={`status-dot ${relay.status === 'connected' ? 'active' : 'inactive'}`}></span>
                                             {relay.status}
                                         </div>
                                     </div>

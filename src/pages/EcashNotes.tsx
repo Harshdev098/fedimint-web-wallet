@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useWallet } from '../context/WalletManager';
 import { NoteCountByDenomination } from '../services/MintService';
 import { useSelector, useDispatch } from 'react-redux';
@@ -7,7 +7,7 @@ import { setNotesByDenomination } from '../redux/slices/Mint';
 import { setUTXOSet } from '../redux/slices/WalletSlice';
 import { getUTXOSet } from '../services/WalletService';
 import { setErrorWithTimeout } from '../redux/slices/Alerts';
-import { startProgress,doneProgress } from '../utils/ProgressBar';
+import { startProgress, doneProgress } from '../utils/ProgressBar';
 import Alerts from '../Components/Alerts';
 import logger from '../utils/logger';
 import '../style/Ecash.css'
@@ -21,16 +21,16 @@ export default function EcashNotes({ isOpen, onClose }: EcashNotesProps) {
     const { wallet } = useWallet();
     const dispatch = useDispatch<AppDispatch>();
     const { NotesByDenomonation } = useSelector((state: RootState) => state.mint);
-    const { walletId } = useSelector((state: RootState) => state.activeFederation);
+    const { walletId,recoveryState } = useSelector((state: RootState) => state.activeFederation);
     // const { UTXOSet } = useSelector((state: RootState) => state.wallet);
     const { error } = useSelector((state: RootState) => state.Alert)
+    const [resultStatus, setResultStatus] = useState<boolean>(false)
 
     if (!isOpen) return null;
 
     useEffect(() => {
         const handleNoteCount = async () => {
             try {
-                logger.log('fetching note count')
                 const result = await NoteCountByDenomination(wallet);
                 dispatch(setNotesByDenomination(result));
             } catch (err) {
@@ -46,17 +46,19 @@ export default function EcashNotes({ isOpen, onClose }: EcashNotesProps) {
                 dispatch(setErrorWithTimeout({ type: 'UTXO Error: ', message: err instanceof Error ? err.message : String(err) }));
             }
         };
-
-        if (wallet) {
-            startProgress();
-            handleNoteCount();
-            handleUTXOSet();
-            doneProgress();
-        }
-    }, [wallet, dispatch, walletId]);
+        setResultStatus(true)
+        startProgress();
+        !recoveryState.status && handleNoteCount();
+        !recoveryState.status && handleUTXOSet();
+        doneProgress();
+        setResultStatus(false)
+    }, [wallet, dispatch, walletId,recoveryState.status]);
 
     const renderNoteCount = () => {
-        if (!NotesByDenomonation || Object.keys(NotesByDenomonation).length === 0) {
+        if(resultStatus){
+            <p>Fetching Notes Denomination</p>
+        }
+        else if (Object.keys(NotesByDenomonation).length === 0) {
             return (
                 <div className="note-card">
                     <div className="note-value">No Notes</div>

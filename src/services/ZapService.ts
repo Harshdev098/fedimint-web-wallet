@@ -1,4 +1,4 @@
-import type { NDKEvent as NDKEventTYpe, NDKPrivateKeySigner } from "@nostr-dev-kit/ndk";
+import type { NDKEvent as NDKEventTYpe, NDKSigner } from "@nostr-dev-kit/ndk";
 import NDK,{NDKEvent} from "@nostr-dev-kit/ndk";
 import { Wallet } from "@fedimint/core-web";
 import logger from "../utils/logger";
@@ -7,7 +7,7 @@ export async function handleZapRequest(
   event: NDKEventTYpe,
   wallet: Wallet,
   ndk: NDK,
-  signer: NDKPrivateKeySigner,
+  signer: NDKSigner,
   walletNostrPubKey: string,
 ): Promise<{ result?: any; error?: any }> {
   try {

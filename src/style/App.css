@@ -1,3 +1,8 @@
+html{
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.3);
+}
+
 body {
     margin: 0;
     padding: 0;
@@ -5,8 +10,22 @@ body {
     box-sizing: border-box;
 }
 
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.3);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
 #nprogress .bar {
-    height: 4px !important;
+    height: 5px !important;
 }
 
 .web-loader {
@@ -38,7 +57,7 @@ body {
     top: 80px;
     font-size: 17px;
     color: #155724;
-    z-index: 10;
+    z-index: 1400;
     font-weight: bold;
     border: 1.4px solid #c3e6cb;
     background-color: #d4edda;
@@ -59,7 +78,7 @@ body {
     font-weight: bold;
     font-size: 17px;
     color: #721c24;
-    z-index: 10;
+    z-index: 1400;
     padding: 8px 14px;
     border: 1.4px solid #f5c6cb;
     width: fit-content;
@@ -121,36 +140,9 @@ body {
 i {
     padding: 0 4px;
 }
-.tooltip-container {
-  position: relative;
-  display: inline-block;
-  cursor: pointer;
+.fed-elements-details{
+    color: white;
 }
-
-.tooltip-text {
-  position: absolute;
-  bottom: 125%;
-  left: 50%;
-  transform: translateX(-50%);
-  background: #333;
-  color: #fff;
-  padding: 8px 12px;
-  border-radius: 4px;
-  font-size: 12px;
-  text-align: center;
-}
-
-
-.tooltip-text.show {
-  visibility: visible;
-  opacity: 1;
-}
-
-.tooltip-btn:hover .tooltip-text {
-    visibility: visible;
-    opacity: 1;
-}
-
 /* Wallet styling  */
 
 /* navigator styling  */
@@ -167,6 +159,18 @@ i {
     margin-top: auto;
     position: relative;
     flex-shrink: 0;
+    
+    /* Default light mode colors */
+    --wave-color-start: #f4f8fa;
+    --wave-color-end: #f1f5f7;
+}
+
+.DarkMode.navigation-bar {
+    background-color: rgb(17, 24, 39);
+    
+    /* Dark mode colors */
+    --wave-color-start: rgb(31, 41, 55);
+    --wave-color-end: rgb(31, 41, 55);
 }
 
 .wave-bg {
@@ -236,9 +240,12 @@ i {
     color: black;
 }
 
+.DarkMode .navigator-label{
+    color:  white;
+}
 .DarkMode {
-    background-color: #0a0a0a;
-    color: white;
+    background-color: rgb(17, 24, 39) !important;
+    color: white !important;
 }
 
 @media (max-width: 750px) {
@@ -252,7 +259,7 @@ i {
 
     .navigation-bar {
         height: 60px;
-        padding-bottom: 10px;
+        padding-bottom: 6px;
         background: #ffffff;
         border-top: 1px solid #ddd;
     }
@@ -288,11 +295,92 @@ i {
     }
 }
 
-
 /* Main wallet styling */
+
+.recovery-progress {
+  position: fixed;
+  bottom: 140px;
+  right: 10px;
+  background-color: #fff3cd;
+  color: #000;
+  border: 1px solid #ffeeba;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.recovery-progress.expanded {
+  padding: 12px 16px;
+  padding-left: 12px;
+}
+
+.recovery-progress.collapsed {
+  padding: 12px 8px;
+  right: -10px;
+  border-radius: 8px 0 0 8px;
+}
+
+.recovery-content {
+  flex: 1;
+  margin-right: 8px;
+}
+
+.recovery-progress h4 {
+  margin: 0 0 4px 0;
+  font-size: 14px;
+}
+
+.recovery-progress p {
+  margin: 0;
+  font-size: 12px;
+}
+
+.recovery-toggle-btn {
+  background: none;
+  border: none;
+  color: #856404;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 3px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+}
+
+.recovery-toggle-btn:hover {
+  background-color: rgba(133, 100, 4, 0.1);
+}
+
+.recovery-progress.collapsed .recovery-toggle-btn {
+  margin-left: 0;
+}
+
+.recovery-progress.expanded .recovery-toggle-btn {
+  order: -1;
+  margin-right: 8px;
+}
+
+@media (max-width: 750px) {
+  .recovery-progress {
+    bottom: 80px;
+  }
+  
+  .recovery-progress.collapsed {
+    right: -15px;
+  }
+}
 
 .MainWalletContainer {
     display: flex;
+    scroll-behavior: smooth;
     flex-direction: column;
     background-color: #e4eef3;
     overflow: hidden;
@@ -530,27 +618,29 @@ i {
 
 /* Dark mode styles */
 .DarkMode .dropdown-trigger {
-    background-color: #1a1a1a;
+    background-color: rgb(17, 24, 39);
     color: white;
-    border: 1px solid #4f4f53;
+    border: 1px solid rgb(54 61 76);
 }
 
 .DarkMode .dropdown-trigger:hover {
-    background-color: #1a1a1a;
+    background-color: rgb(17, 24, 39);
     border-color: #0a7cee;
 }
 
 .DarkMode .dropdown-menu {
-    background-color: #1a1a1a;
+    background-color: rgb(17, 24, 39);
     border: 1px solid #4f4f53;
 }
 
-.DarkMode .dropdown-option {
-    color: white;
+.DarkMode .dropdown-option,
+.DarkMode .dropdown-option li {
+    color: white !important;
 }
 
-.DarkMode .dropdown-option:hover {
-    background-color: #2a2a2a;
+.DarkMode .dropdown-option:hover,
+.DarkMode .dropdown-option li:hover {
+    background-color: rgb(20 30 50) !important;
 }
 
 .DarkMode .dropdown-option.current-option {
@@ -585,9 +675,20 @@ i {
     margin-right: 24px;
 }
 
+.DarkMode .walletHeader{
+    background-color: rgb(17, 24, 39);
+}
+
+.DarkMode .refreshSection a{
+    color: white;
+}
+.DarkMode .notification-div i{
+    color: white !important;
+}
+
 .title {
     text-align: center;
-    font-size: 1.8rem;
+    font-size: 1.6rem;
     margin-top: 0;
 }
 
@@ -599,7 +700,7 @@ i {
     align-items: center;
     flex-direction: column;
     padding: 25px 0px 50px 0px;
-    min-height: 64vh;
+    min-height: 78vh;
 }
 
 .BalanceSectionActionsWrapper {
@@ -626,12 +727,28 @@ i {
     text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.1);
 }
 
+.primary-btn{
+    background: #2176FF;
+    color: white;
+    padding: 0.5rem 1.1rem;
+    border-radius: 0.5rem;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 500;
+    text-decoration: none;
+    box-shadow: 0 0 8px rgba(62, 99, 221, 0.3);
+}
+
 .title-span {
     padding: 8px;
     margin: 0;
     color: #4B5563;
     font-size: 0.9rem;
     text-align: center;
+}
+.DarkMode .title-span{
+    color: #bec7d9;
 }
 
 .wallet-notes span {
@@ -640,6 +757,10 @@ i {
     margin: 2px;
     font-size: 14px;
     margin-bottom: 20px;
+}
+
+.DarkMode .wallet-notes span{
+    color: #9da5af;
 }
 
 .wallet-notes span:hover {
@@ -655,8 +776,7 @@ i {
     padding: 8px;
 }
 
-.BalanceSectionActions button,
-.TransactionsWithQR button {
+.BalanceSectionActions button {
     font-size: 1.2rem;
     padding: 9px 16px;
     cursor: pointer;
@@ -668,22 +788,20 @@ i {
     transition: background 0.5s ease-in-out;
 }
 
+.DarkMode .BalanceSectionValue{
+    color: white;
+}
+
 .DarkMode .BalanceSectionActions button {
     background-color: #ece3e3;
     color: black;
 }
+.DarkMode .BalanceSectionActions button:hover{
+    background-color: rgb(213, 222, 242);
+}
 
 .BalanceSectionActions button:hover {
     background-color: rgb(15, 117, 219);
-}
-
-.DarkMode .TransactionsWithQR button {
-    background-color: white;
-    color: black;
-}
-
-.TransactionsWithQR button:hover {
-    background-color: rgb(10, 132, 213);
 }
 
 /* tab switcher styling  */
@@ -694,6 +812,9 @@ i {
     justify-content: center;
     width: 100%;
     align-items: center;
+    /* Prevent overflow */
+    overflow-x: hidden;
+    box-sizing: border-box;
 }
 
 .tab-switcher button {
@@ -706,6 +827,9 @@ i {
     border: none;
     color: #2e81da;
     font-size: 17px;
+    /* Ensure buttons shrink if needed */
+    flex-shrink: 1;
+    box-sizing: border-box;
 }
 
 .tab-switcher button:hover {
@@ -715,6 +839,15 @@ i {
 .tab-switcher button.active-tab {
     border-bottom: 2px solid #007bff;
     font-weight: bold;
+}
+
+.DarkMode .tab-switcher button{
+    color: white;
+    border-color: white;
+}
+.DarkMode .tab-switcher button:hover{
+    color: rgb(115, 123, 140);
+    background: none;
 }
 
 @media (max-width: 768px) {
@@ -727,28 +860,32 @@ i {
 
 @media (max-width: 480px) {
     .tab-switcher {
-        flex-wrap: wrap;
-        gap: 5px;
+        /* Remove all margins and gaps */
+        margin: 20px 0 40px 0;
+        gap: 0;
+        padding: 0;
+        width: 100%;
     }
-
+    
     .tab-switcher button {
-        padding: 8px 6px;
-        font-size: 14px;
-        margin: 0;
         flex: 1;
-        min-width: calc(33.333% - 10px);
-        max-width: calc(33.333% - 10px);
+        min-width: 0;
+        margin: 0;
+        padding: 8px 2px;
         text-align: center;
         display: flex;
         flex-direction: column;
         align-items: center;
         gap: 3px;
+        white-space: nowrap;
+        width: 33.333%;
+        border-radius: 0;
     }
-
+    
     .tab-switcher button i {
         font-size: 18px;
     }
-
+    
     .tab-switcher button .btn-text {
         display: none;
     }
@@ -757,23 +894,39 @@ i {
 /* Very small screens */
 @media (max-width: 380px) {
     .tab-switcher {
-        gap: 2px;
+        gap: 0;
+        margin: 20px 0 40px 0;
+        padding: 0;
     }
-
+    
     .tab-switcher button {
-        padding: 6px 4px;
-        min-width: calc(33.333% - 4px);
-        max-width: calc(33.333% - 4px);
+        padding: 6px 1px;
+        margin: 0;
+        min-width: 0;
+        flex: 1;
+        width: 33.333%;
+        border-radius: 0;
     }
-
+    
     .tab-switcher button i {
         font-size: 16px;
     }
 }
 
 @media (max-width: 320px) {
+    .tab-switcher {
+        margin: 20px 0 40px 0;
+    }
+    
+    .tab-switcher button {
+        padding: 5px 1px;
+        margin: 0;
+        width: 33.333%;
+        border-radius: 0;
+    }
+    
     .tab-switcher button i {
-        font-size: 15px;
+        font-size: 14px;
     }
 }
 
@@ -815,6 +968,12 @@ i {
     border-bottom: 1px solid #e5e7eb;
     z-index: 1000;
     box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+.DarkMode .sticky-header,
+.DarkMode .back-button,
+.DarkMode .header-title {
+    background-color: rgb(31, 41, 55);
+    color: white;
 }
 
 .back-button {
@@ -859,7 +1018,6 @@ i {
 
 .activities-wrapper {
     padding: 2rem 0;
-    margin: 1rem;
 }
 
 .activities-container {
@@ -892,7 +1050,6 @@ i {
     left: 0;
     right: 0;
     bottom: 0;
-    background: url('data:image/svg+xml,<svg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"><g fill="none" fill-rule="evenodd"><g fill="%23ffffff" fill-opacity="0.05"><circle cx="36" cy="12" r="3"/><circle cx="48" cy="24" r="3"/><circle cx="12" cy="36" r="3"/><circle cx="24" cy="48" r="3"/></g></g></svg>');
     opacity: 0.3;
 }
 
@@ -922,12 +1079,12 @@ i {
     letter-spacing: -0.02em;
 }
 
-.activities-subtitle {
+/* .subtitle {
     font-size: 1.1rem;
     opacity: 0.9;
     margin: 0;
     font-weight: 400;
-}
+} */
 
 /* Search Section */
 .search-section {
@@ -981,22 +1138,19 @@ i {
 
 .transaction-item {
     background: white;
-    border: 1px solid #d1e1fa;
     border-radius: 12px;
+    list-style: none;
+    padding: 0;
+    margin: 0;
     overflow: hidden;
     transition: all 0.3s ease;
     margin-bottom: 1rem;
 }
 
-.transaction-item:hover {
-    border-color: #667eea;
-    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.15);
-    transform: translateY(-2px);
-}
-
 .transaction-main {
     display: flex;
     align-items: center;
+    border: 1px solid #d1e1fa;
     justify-content: space-between;
     padding: 0.4rem;
     cursor: pointer;
@@ -1217,17 +1371,47 @@ i {
     cursor: pointer;
 }
 
-.manage-invoices-btn {
-    padding: 10px;
-    background: #2176FF;
-    color: white;
-    border: none;
-    border-radius: 12px;
-    font-size: 1rem;
-    cursor: pointer;
+.DarkMode .activities-header{
+    background: linear-gradient(135deg, #395266 0%, #0c1e30 100%);
 }
-
-@media (max-width: 5600px) {
+.DarkMode .transaction-section{
+    background-color: rgb(31, 41, 55);
+}
+.DarkMode .activities-container{
+    background-color: rgb(31, 41, 55);
+}
+.DarkMode .activities-footer{
+    background-color: rgb(31, 41, 55);
+}
+.DarkMode .transaction-main{
+    background-color: rgb(55, 65, 81);
+    border: 1px solid #677389;
+    box-shadow: none;
+}
+.DarkMode .transaction-type{
+    color: #edf1f9;
+}
+.DarkMode .transaction-icon.received{
+    background: linear-gradient(135deg, #209d73 0%, #155b42 100%);
+}
+.DarkMode .transaction-amount.positive{
+    color: #0ade9c;
+}
+.DarkMode .expand-button{
+    background-color: rgb(38 48 69);
+}
+.DarkMode .transaction-details{
+    background: #2a3445;
+    color: white;
+}
+.DarkMode .transaction-details .detail-value{
+    color: white;
+}
+.DarkMode .activities-footer{
+    background-color: rgb(31, 41, 55);
+    border-color: #575e6c;
+}
+@media (max-width: 560px) {
     .activities-title {
         font-size: 1.8rem;
     }
@@ -1258,13 +1442,12 @@ i {
 
 /* federation details styling  */
 
-.page-background {
-    background-color: #e4eef3;
-    padding: 3rem 1.5rem;
+.federation {
+    padding: 0.8rem;
+    margin: 2rem 0;
     display: flex;
     justify-content: center;
     align-items: flex-start;
-    min-height: 100vh;
     box-sizing: border-box;
 }
 
@@ -1288,7 +1471,7 @@ i {
 }
 
 .DarkMode .federation-glass-card {
-    background-color: #222;
+    background-color: rgb(31, 41, 55);
     color: white;
     border: none;
 }
@@ -1300,27 +1483,29 @@ i {
 }
 
 .DarkMode .module-card {
-    background-color: #323232;
+    background-color: rgb(55, 65, 81);
     color: white;
+    border: 1px solid #677389;
 }
 
-.DarkMode .module-card p code {
-    background-color: #3f3f3f;
-    color: white;
+.DarkMode .module-card p {
+    color: #bec7d9;
 }
 
-.DarkMode .federation-field {
-    background-color: #2e2d2d;
-    color: white;
-}
-
-.DarkMode .federation-field:hover {
-    background-color: #363535;
+.DarkMode .federation-field:hover,
+.DarkMode .onchain-field:hover {
+    background-color: rgb(44 54 69);
 }
 
 .DarkMode .federation-field p,
 .DarkMode .federation-field strong {
     color: white;
+}
+.DarkMode .federation-field span{
+    color: #bec7d9;
+}
+.DarkMode .subtitle{
+    color: #bec7d9 !important;
 }
 
 .Fedheader {
@@ -1350,9 +1535,13 @@ i {
     hyphens: auto;
 }
 
+.center-para{
+    text-align: center;
+}
+
 .subtitle {
-    font-size: 0.9rem;
-    color: #6b7280;
+    font-size: 1rem;
+    color: #ffffff;
     word-break: break-word;
     hyphens: auto;
 }
@@ -1686,7 +1875,21 @@ i {
     padding: 24px;
     margin-top: 24px;
 }
-
+.DarkMode .guardian-section{
+    background-color: rgb(55, 65, 81);
+    border: none;
+}
+.DarkMode .guardian-card{
+    background-color: rgb(57 69 89);
+    border: 1px solid #4f5766;
+}
+.DarkMode .guardian-name{
+    color: #abd1e3;
+}
+.DarkMode .guardian-count,
+.DarkMode .guardian-url{
+    color: #bec7d9;
+}
 .guardian-header-info {
     display: flex;
     justify-content: space-between;
@@ -1816,6 +2019,19 @@ i {
     border-radius: 50%;
 }
 
+.status-badge.offline {
+    background: #fec7c7;
+    color: #92170e;
+}
+
+.status-badge.offline::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    background: #f52a0b;
+    border-radius: 50%;
+}
+
 .session-badge,
 .block-badge {
     padding: 6px 12px;
@@ -1916,7 +2132,7 @@ i {
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 110;
+    z-index: 1100;
 }
 
 .videoRef {
@@ -2003,6 +2219,40 @@ i {
     width: 60vw;
 }
 
+.createInvoice::-webkit-scrollbar,
+.payInvoice::-webkit-scrollbar,
+.ecashNotes::-webkit-scrollbar {
+  width: 6px;
+}
+
+.createInvoice::-webkit-scrollbar-thumb,
+.payInvoice::-webkit-scrollbar-thumb,
+.ecashNotes::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+}
+
+.createInvoice::-webkit-scrollbar-thumb:hover,
+.payInvoice::-webkit-scrollbar-thumb:hover,
+.ecashNotes::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.createInvoice::-webkit-scrollbar-track,
+.payInvoice::-webkit-scrollbar-track,
+.ecashNotes::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Firefox version */
+.createInvoice,
+.payInvoice,
+.ecashNotes {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.3) transparent;
+}
+
+
 @media (max-width:500px) {
 
     .createInvoice,
@@ -2013,16 +2263,26 @@ i {
 }
 
 .DarkMode .createInvoice,
-.DarkMode .payInvoice {
-    background-color: #222;
+.DarkMode .payInvoice,
+.DarkMode .ecashNotes {
+    background-color: rgb(31, 41, 55);
     color: #b3b3b3;
 }
-
+.DarkMode .amount-input{
+    background-color: rgb(55, 65, 81);
+    color: white;
+}
+.DarkMode .videoRef{
+    background-color: rgb(31, 41, 55);
+}
+.video{
+    background-color: rgb(55, 65, 81);
+}
 @media (max-width:480px) {
 
     .createInvoice,
     .payInvoice {
-        width: 70vw;
+        width: 90vw;
     }
 }
 
@@ -2049,9 +2309,21 @@ i {
 /* Input Group for Amount and Currency */
 .input-group {
     display: flex;
-    gap: 8px;
     flex-wrap: nowrap;
     align-items: stretch;
+}
+.input-group input{
+    margin: 0 2px;
+}
+.DarkMode .input-group input{
+    background-color: rgb(55, 65, 81);
+    border: 1px solid #677389;
+}
+.DarkMode .currency-select{
+    background-color: rgb(55, 65, 81) !important;
+}
+.DarkMode .camera-btn{
+    color: white !important;
 }
 
 .amount-input {
@@ -2059,7 +2331,7 @@ i {
     padding: 8px;
     font-size: 16px;
     border: 2px solid #ccc;
-    border-radius: 6px 0 0 6px;
+    border-radius: 12px 0 0 12px;
     border-right: none;
 }
 
@@ -2081,7 +2353,6 @@ i {
     cursor: pointer;
     outline: none;
     appearance: none;
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
     background-position: right 8px center;
     background-repeat: no-repeat;
     background-size: 16px;
@@ -2100,18 +2371,10 @@ i {
     background-color: #fff;
 }
 
-/* Dark mode support for input group */
-.DarkMode .input-group .amount-input {
-    background-color: #333;
-    border-color: #555;
-    color: #b3b3b3;
-}
-
 .DarkMode .input-group .currency-select {
     background-color: #333;
     border-color: #555;
     color: #b3b3b3;
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23b3b3b3' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
 }
 
 .DarkMode .input-group .currency-select:hover {
@@ -2404,6 +2667,24 @@ i {
     color: white;
 }
 
+.DarkMode .onchain-container{
+    background-color: rgb(31, 41, 55);
+}
+
+.DarkMode .onchain-field,
+.DarkMode .federation-field {
+    background-color: rgb(55, 65, 81);
+    border: 1px solid #677389;
+}
+.DarkMode .onchain-field h3,
+.DarkMode .federation-field h3{
+    color: #abd1e3;
+}
+.DarkMode .onchain-field p,
+.DarkMode .federation-field p{
+    color: #bec7d9;
+}
+
 /* invoices and transaction history styling  */
 
 .TxSummary {
@@ -2519,6 +2800,12 @@ i {
     animation: slideInRight 0.3s ease-in-out;
     display: flex;
     flex-direction: column;
+}
+.DarkMode .notification-sidebar,
+.DarkMode .notification-header,
+.DarkMode .notifications-info {
+    background-color: rgb(31, 41, 55);
+    color: white;
 }
 
 @keyframes slideInRight {

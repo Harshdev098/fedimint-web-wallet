@@ -1,32 +1,35 @@
-import { useRef, useContext } from 'react'
+import { useRef, useContext, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
+import Tippy from '@tippyjs/react'
 import type { RootState, AppDispatch } from '../redux/store'
 import { setJoining, setWalletId } from '../redux/slices/ActiveWallet'
 import LoadingContext from '../context/Loading'
 import Alerts from './Alerts'
 import { JoinFederation as JoinFederationService } from '../services/FederationService'
 import { setErrorWithTimeout } from '../redux/slices/Alerts'
-import QrScanner from 'qr-scanner'
-import { startProgress,doneProgress } from '../utils/ProgressBar'
+import { startProgress, doneProgress } from '../utils/ProgressBar'
 import logger from '../utils/logger'
 import { useWallet } from '../context/WalletManager'
+import QRScanner from './QrScanner'
+import DiscoverFederation from './DiscoverFederation'
 
 
 export default function AddFederation({ setJoinForm }: { setJoinForm: React.Dispatch<React.SetStateAction<boolean>> }) {
-    const inviteCode = useRef<HTMLInputElement | null>(null)
+    const [inviteCode, setInviteCode] = useState<string>('')
     const walletName = useRef<HTMLInputElement | null>(null)
-    const videoRef = useRef<HTMLVideoElement | null>(null)
-    const scannerRef = useRef<QrScanner | null>(null)
+    const [openVideo, setOpenVideo] = useState<boolean>(false)
+    const [showFederations, setShowFederation] = useState<boolean>(false)
     const { setLoader, setLoaderMessage } = useContext(LoadingContext)
     const { setWallet, switchWallet } = useWallet()
+    const [recover,setRecover]=useState<boolean>(false)
     const dispatch = useDispatch<AppDispatch>()
     const { joining } = useSelector((state: RootState) => state.activeFederation)
     const { error } = useSelector((state: RootState) => state.Alert)
 
-    const handleJoinFederation = async (e: React.FormEvent, qrData?: string): Promise<void> => {
-        e.preventDefault()
+    const handleJoinFederation = async (e?: React.FormEvent, qrData?: string): Promise<void> => {
+        e?.preventDefault()
 
-        const code = inviteCode.current?.value?.trim() || qrData
+        const code = inviteCode || qrData
         if (!code) return; // invitecode should not be empty
         dispatch(setJoining(true))
 
@@ -34,7 +37,7 @@ export default function AddFederation({ setJoinForm }: { setJoinForm: React.Disp
             startProgress()
             setLoader(true)
             setLoaderMessage('Joining the Federation...')
-            const result = await JoinFederationService(code, walletName.current?.value || '')
+            const result = await JoinFederationService(code, walletName.current?.value || '', recover)
             if (result) {
                 logger.log('setting new wallet ', result)
                 setWallet(result)
@@ -47,39 +50,15 @@ export default function AddFederation({ setJoinForm }: { setJoinForm: React.Disp
             dispatch(setErrorWithTimeout({ type: 'Join Federation: ', message: err instanceof Error ? err.message : String(err) }))
         } finally {
             dispatch(setJoining(false))
-                doneProgress()
+            doneProgress()
             setJoinForm(false)
             setLoader(false)
         }
     }
 
-    const handleJoinWithQR = (e: React.FormEvent) => {
-        e.preventDefault()
-        if (videoRef.current) {
-            try {
-                scannerRef.current = new QrScanner(
-                    videoRef.current,
-                    async (result) => {
-                        if (result?.data) {
-                            logger.log("the result from qr is ", result.data)
-                            await handleJoinFederation({ preventDefault: () => { } } as React.FormEvent, result.data)
-                            scannerRef.current?.destroy()
-                            scannerRef.current = null;
-                        }
-                    },
-                    { returnDetailedScanResult: true }
-                )
-                scannerRef.current.start().then(() => {
-                    logger.log("Camera started successfully");
-                }).catch((err) => {
-                    logger.log("Camera access denied:", err);
-                    dispatch(setErrorWithTimeout({ type: 'QR Error: ', message: 'Camera access denied!' }))
-                });
-            } catch (err) {
-                logger.log("an error occured while scanning")
-                dispatch(setErrorWithTimeout({ type: 'QR Error: ', message: "Error occured while scanning" }))
-            }
-        }
+    const handleJoinWithQR = async (data: string) => {
+        setOpenVideo(false)
+        await handleJoinFederation({ preventDefault: () => { } } as React.FormEvent, data)
     }
 
     return (
@@ -87,24 +66,38 @@ export default function AddFederation({ setJoinForm }: { setJoinForm: React.Disp
             {
                 (error) && <Alerts Error={error} />
             }
-            <div className="addFederation">
-                <div className="addFedBox">
-                    <input ref={inviteCode} type="text" placeholder="Enter federation invite code" required />
-                    <input ref={walletName} type="text" placeholder="Wallet client name" />
-                    <button onClick={handleJoinFederation} disabled={joining}>{joining ? 'Joining...' : 'Add Federation'}</button>
+            {showFederations && <DiscoverFederation setShowFederation={setShowFederation} showFederations={showFederations} joinFederation={(code: string) => handleJoinFederation(undefined, code)} recover={recover} setRecover={setRecover} setInviteCode={setInviteCode} />}
+            <QRScanner open={openVideo} onClose={() => setOpenVideo(false)} onError={(err) => dispatch(setErrorWithTimeout(err))} onResult={(data) => handleJoinWithQR(data)} />
+            {!showFederations && <div className="modalOverlay">
+                <div className="createInvoice">
+                    <button type='button' className='closeBtn' onClick={() => setJoinForm(false)}>
+                        <i className="fa-solid fa-xmark"></i>
+                    </button>
+                    <h2 style={{ marginBottom: '4px' }}>Add Federation</h2>
+                    <p className='title-span'>Create the multiple wallets while joining federations</p>
+                    <form onSubmit={handleJoinFederation}>
+                        <label htmlFor='amountvalue'>Enter the invite code:</label>
+                        <div className="input-with-icon">
+                            <input
+                                type="decimal"
+                                id='amountvalue'
+                                onChange={(e) => setInviteCode(e.target.value)}
+                                className="amount-input"
+                                placeholder='Enter the invite code'
+                                required
+                            />
+                            <button type="button" className="camera-btn" onClick={() => setOpenVideo(true)} >
+                                <i className="fa-solid fa-camera"></i>
+                            </button>
+                        </div>
+                        <label htmlFor='description'>Wallet Name:</label>
+                        <input type="text" id='description' className='amount-input' placeholder='Enter the wallet name' ref={walletName} />
+                        <label><input type="checkbox" checked={recover} onChange={(e) => setRecover(e.target.checked)} />Recover Wallet <Tippy content='It will recover your wallet instead creating new one'><i className="fa-solid fa-info-circle"></i></Tippy></label>
+                        <button type='submit' disabled={joining}>Add Federation</button>
+                    </form>
+                    <p onClick={() => setShowFederation(true)} style={{ textAlign: 'center', padding: '4px', margin: '6px', fontSize: '1rem', cursor: 'pointer' }}>Want to explore Federation?</p>
                 </div>
-
-                <div className="option-divider"><p>Or</p></div>
-
-                <div className="addVideoBox">
-                    <video ref={videoRef} width="250" />
-                    <div>
-                        <button onClick={handleJoinWithQR}>Start Scanning</button>
-                        <button onClick={() => { scannerRef.current?.stop(); setJoinForm(false) }}>Close</button>
-                    </div>
-                </div>
-            </div>
-
+            </div>}
         </>
     )
 }

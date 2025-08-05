@@ -16,7 +16,7 @@ export default function Activities() {
     return (
         <div className="activities-wrapper">
             {error && <Alerts key={Date.now()} Error={error} Result={''} />}
-            
+
             <div className="activities-container">
                 {/* Header Section */}
                 <div className="activities-header">
@@ -25,14 +25,13 @@ export default function Activities() {
                             <i className="fa-solid fa-clock-rotate-left"></i>
                         </div>
                         <h1 className="activities-title">Recent Activities</h1>
-                        <p className="activities-subtitle">Track and manage your latest transactions</p>
+                        <p className="subtitle">Track and manage your latest transactions</p>
                     </div>
                 </div>
 
-                {/* Transaction List */}
                 <div className="transaction-section">
-                    <div className="transaction-item">
-                        <div className="transaction-main" onClick={() => toggleExpanded('dsfsd')}>
+                    <ul className="transaction-item">
+                        <li className="transaction-main" onClick={() => toggleExpanded('dsfsd')}>
                             <div className="transaction-left">
                                 <div className="transaction-icon received">
                                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -45,11 +44,11 @@ export default function Activities() {
                                     <span className="transaction-method">Lightning Network</span>
                                 </div>
                             </div>
-                            
+
                             <div className="transaction-right">
                                 <div className="transaction-amount-section">
                                     <p className="transaction-amount positive">+2,000 sat</p>
-                                <span className="transaction-status success">Claimed</span>
+                                    <span className="transaction-status success">Claimed</span>
                                 </div>
                                 <button className="expand-button">
                                     <svg
@@ -65,7 +64,7 @@ export default function Activities() {
                                     </svg>
                                 </button>
                             </div>
-                        </div>
+                        </li>
 
                         {/* Expanded Details */}
                         {expandedId === 'dsfsd' && (
@@ -81,7 +80,7 @@ export default function Activities() {
                                             <span className="detail-value">sdfsdfsd</span>
                                         </div>
                                     </div>
-                                    
+
                                     <div className="details-row">
                                         <div className="detail-group">
                                             <span className="detail-label">Status</span>
@@ -92,28 +91,32 @@ export default function Activities() {
                                             <span className="detail-value">23 SAT</span>
                                         </div>
                                     </div>
-                                    
+
                                     <div className="detail-group full-width">
                                         <span className="detail-label">Invoice Hash</span>
                                         <span className="detail-value hash">sdfsdfs...truncated</span>
                                     </div>
                                 </div>
+                                <div style={{ padding: '10px' }}>
+                                    <p><i className="fa-solid fa-circle-info"></i> Do not want to spend? Reclaim notes</p>
+                                    <button className='primary-btn'><i className="fa-solid fa-recycle"></i> Reclaim Notes</button>
+                                </div>
                             </div>
                         )}
-                    </div>
+                    </ul>
                 </div>
 
                 {/* Footer Actions */}
                 <div className="activities-footer">
-                    <button 
-                        className="tx-link" 
+                    <button
+                        className="tx-link"
                         onClick={() => navigate('/wallet/transactions')}
                     >
                         View All Transactions
                     </button>
-                    
-                    <button 
-                        className="manage-invoices-btn" 
+
+                    <button
+                        className="primary-btn"
                         onClick={() => navigate('/wallet/invoices')}
                     >
                         <i className="fa-solid fa-file-lines"></i>

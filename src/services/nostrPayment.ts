@@ -1,6 +1,6 @@
-import NDK, { NDKEvent, NDKPrivateKeySigner, NDKUser, type NDKFilter } from "@nostr-dev-kit/ndk";
+import NDK, { NDKEvent, NDKPrivateKeySigner, NDKUser, type NDKFilter, type NDKSigner } from "@nostr-dev-kit/ndk";
 import { PayInvoice } from "../services/LightningPaymentService";
-import { Wallet } from "@fedimint/core-web";
+import { getMnemonic, Wallet } from "@fedimint/core-web";
 import { hexToBytes, bytesToHex } from "@noble/hashes/utils";
 import { generateSecretKey, getPublicKey } from "nostr-tools";
 // import type { CreateBolt11Response, LightningTransaction, LnReceiveState, Transactions } from "@fedimint/core-web";
@@ -9,53 +9,52 @@ import { handleZapRequest } from "./ZapService";
 import logger from "../utils/logger";
 import type { DiscoveredFederation } from "../hooks/Federation.type";
 import { previewFedWithInviteCode } from "./FederationService";
+import * as bip39 from '@scure/bip39';
+import * as bip32 from '@scure/bip32';
 
 const invoiceStore = new Map<string, string>();
 
-export const handleNWCConnection = (ndk: NDK, relay: string | null, appName: string) => {
+export function deriveNostrSecretKey(mnemonic: string): string {
+    const seed = bip39.mnemonicToSeedSync(mnemonic); // returns Uint8Array, not Buffer
+    const root = bip32.HDKey.fromMasterSeed(seed);
+    const child = root.derive("m/44'/1237'/0'/0/0");
+
+    if (!child.privateKey) {
+        throw new Error('Failed to derive private key');
+    }
+
+    return bytesToHex(child.privateKey);
+}
+
+export const handleNWCConnection = async (ndk: NDK, relay: string | null, appName: string) => {
     if (!appName) {
         logger.error("App name is required");
         return null;
     }
-
-    let storedKeys = localStorage.getItem('WalletNostrKeys');
-    let walletNostrKeys: { walletNostrSecretKey?: string; walletNostrPubKey?: string } | null = null;
-    if (storedKeys) {
-        logger.log("Stored wallet keys found:", storedKeys);
-        walletNostrKeys = JSON.parse(storedKeys);
+    const mnemonic = await getMnemonic()
+    if (!mnemonic || mnemonic.length === 0) {
+        throw new Error('Mnemonic is empty');
     }
 
-    const walletNostrSecretKey = walletNostrKeys?.walletNostrSecretKey || bytesToHex(generateSecretKey());
-    const walletNostrPubKey = walletNostrKeys?.walletNostrPubKey || getPublicKey(hexToBytes(walletNostrSecretKey));
+    const mnemonicStr = mnemonic.join(' ');
+    const walletNostrSecretKey = deriveNostrSecretKey(mnemonicStr);
+    const walletNostrPubKey = getPublicKey(hexToBytes(walletNostrSecretKey));
 
-    let clientRelayKeys: Record<string, { clientSecretKey: string; relay: string | null; nwcUrl: string }> = {};
-    const rawClientRelayKeys = localStorage.getItem('ClientRelayKeys');
-    if (rawClientRelayKeys) {
-        logger.log("Client relay keys found:", rawClientRelayKeys);
-        clientRelayKeys = JSON.parse(rawClientRelayKeys);
-    }
+    let clientRelayKeys: Record<string, { clientPubKey: string; relay: string | null }> = {};
 
     let clientSecretKey: string;
     let clientPubKey: string;
     const effectiveRelay = relay || 'wss://relay.getalby.com/v1';
 
-    if (clientRelayKeys[appName]) {
-        logger.log(`Using existing client keys for app: ${appName}`);
-        clientSecretKey = clientRelayKeys[appName].clientSecretKey;
-        clientPubKey = getPublicKey(hexToBytes(clientSecretKey));
-    } else {
-        logger.log(`Generating new client keys for app: ${appName}`);
-        clientSecretKey = bytesToHex(generateSecretKey());
-        clientPubKey = getPublicKey(hexToBytes(clientSecretKey));
-    }
+    logger.log(`Generating new client keys for app: ${appName}`);
+    clientSecretKey = bytesToHex(generateSecretKey());
+    clientPubKey = getPublicKey(hexToBytes(clientSecretKey));
 
-    const nwcUrl = `nostr+walletconnect://${walletNostrPubKey}?relay=${effectiveRelay}&secret=${clientSecretKey}&appName=${encodeURIComponent(appName)}`;
-    clientRelayKeys[appName] = { clientSecretKey, relay, nwcUrl };
+    const nwcUrl = `nostr+walletconnect://${walletNostrPubKey}?relay=${effectiveRelay}&secret=${clientSecretKey}`;
+    clientRelayKeys[appName] = { clientPubKey, relay };
     localStorage.setItem('ClientRelayKeys', JSON.stringify(clientRelayKeys));
-    localStorage.setItem('WalletNostrKeys', JSON.stringify({ walletNostrSecretKey, walletNostrPubKey }));
 
     logger.log(`Generated NWC URL for ${appName}:`, nwcUrl);
-    logger.log(`Client keys for ${appName}:`, { clientSecretKey, clientPubKey });
 
     // Publish wallet service info event
     ndk.signer = new NDKPrivateKeySigner(walletNostrSecretKey);
@@ -67,7 +66,7 @@ export const handleNWCConnection = (ndk: NDK, relay: string | null, appName: str
     infoEvent.content = JSON.stringify({
         methods: ["get_info", "pay_invoice", "make_invoice", "get_balance", "list_transactions", "lookup_invoice", "notifications", "payment_sent", "payment_received"],
     });
-    infoEvent.tags = [["p", walletNostrPubKey],["d","Fedimint Wallet"]];
+    infoEvent.tags = [["p", walletNostrPubKey], ["d", "Fedimint Wallet"]];
 
     infoEvent.sign().then(() => {
         infoEvent.publish().then(() => {
@@ -205,9 +204,12 @@ const processFederationEvent = async (
 }
 
 
-export const handleNostrPayment = async (wallet: Wallet, walletNostrSecretKey: string, walletNostrPubKey: string, ndk: NDK) => {
-    const signer = new NDKPrivateKeySigner(walletNostrSecretKey);
-    ndk.signer = signer;
+export const handleNostrPayment = async (wallet: Wallet, walletNostrPubKey: string, ndk: NDK) => {
+    const signer = ndk.signer;
+    if (!signer) {
+        logger.error("NDK signer not set");
+        return null;
+    }
 
     const subscription = ndk.subscribe({
         kinds: [23194],
@@ -215,16 +217,30 @@ export const handleNostrPayment = async (wallet: Wallet, walletNostrSecretKey: s
     });
 
     subscription.on('event', async (event: NDKEvent) => {
-        logger.log('got an event ', event);
+        logger.log('=== RECEIVED EVENT ===');
+        logger.log('Event ID:', event.id);
+        logger.log('Event kind:', event.kind);
 
-        // Skiping if this event is from wallet
+        // Skip if this event is from wallet
         if (event.pubkey === walletNostrPubKey) {
             logger.log('Skipping event from own wallet');
             return;
         }
 
+        const clientKeys: Record<string, { clientPubKey: string; relay: string | null }> = JSON.parse(localStorage.getItem('ClientRelayKeys') || '{}');
+
+        const isKnownClient = Object.values(clientKeys).some(
+            (client) => client.clientPubKey === event.pubkey
+        );
+
+        if (!isKnownClient) {
+            logger.log(`Event pubkey ${event.pubkey} is NOT a known client. Ignoring.`);
+            return;
+        }
+
         try {
             const sender = new NDKUser({ pubkey: event.pubkey });
+
             await event.decrypt(sender, signer, 'nip04');
 
             let content;
@@ -246,7 +262,6 @@ export const handleNostrPayment = async (wallet: Wallet, walletNostrSecretKey: s
                 return;
             }
 
-            // ignoring the expired event
             const expirationTag = event.tagValue('expiration');
             if (expirationTag) {
                 const expirationSeconds = parseInt(expirationTag, 10);
@@ -258,20 +273,17 @@ export const handleNostrPayment = async (wallet: Wallet, walletNostrSecretKey: s
                 }
             }
 
-
             const method = content.method;
             const params = content.params || {};
-            // Using event id if request id is not provided
             const id = content.id || event.id;
 
-            logger.log('Processing payment request:', { method, params, id });
             let result: { result?: any; error?: any };
 
             switch (method) {
                 case 'get_info':
                     result = {
                         result: {
-                            methods: ["get_info", "pay_invoice", "make_invoice", "get_balance", "create_connection", 'list_transactions', 'lookup_invoice',"notifications", "payment_sent", "payment_received"],
+                            methods: ["get_info", "pay_invoice", "make_invoice", "get_balance", "create_connection", 'list_transactions', 'lookup_invoice', "notifications", "payment_sent", "payment_received"],
                             alias: "Fedimint Wallet",
                             color: "#1570cbff",
                             pubkey: `${walletNostrPubKey}`,
@@ -312,7 +324,7 @@ export const handleNostrPayment = async (wallet: Wallet, walletNostrSecretKey: s
             // Send response back to the client
             const response = new NDKEvent(ndk);
             response.kind = 23195;
-            response.tags = [["p", event.pubkey], ["e", event.id]];
+            response.tags = [["p", event.pubkey], ["e", id]];
 
             const jsonRpcResponse = {
                 id: content.id || event.id,
@@ -330,7 +342,8 @@ export const handleNostrPayment = async (wallet: Wallet, walletNostrSecretKey: s
             await response.encrypt(senderEvent, signer, 'nip04');
             await response.sign(signer);
             await response.publish();
-            logger.log('Response sent successfully for method:', method, 'with ID:', content.id || event.id);
+            logger.log('Response sent successfully for method:', method, 'with ID:', id);
+
         } catch (error) {
             logger.error('Error processing event:', error);
             try {
@@ -339,6 +352,7 @@ export const handleNostrPayment = async (wallet: Wallet, walletNostrSecretKey: s
                 errorResponse.kind = 23195;
                 errorResponse.tags = [["p", event.pubkey], ["e", event.id]];
                 errorResponse.content = JSON.stringify({
+                    id: event.id,
                     error: {
                         code: "PROCESSING_ERROR",
                         message: "Failed to process request"
@@ -348,6 +362,7 @@ export const handleNostrPayment = async (wallet: Wallet, walletNostrSecretKey: s
                 await errorResponse.encrypt(sender, signer, 'nip04');
                 await errorResponse.sign(signer);
                 await errorResponse.publish();
+                logger.log('Error response sent');
             } catch (responseError) {
                 logger.error('Failed to send error response:', responseError);
             }
@@ -355,18 +370,21 @@ export const handleNostrPayment = async (wallet: Wallet, walletNostrSecretKey: s
     });
 
     subscription.on('eose', () => {
-        logger.log('End of stored events');
+        logger.log('=== End of stored events ===');
     });
 
     subscription.on('close', () => {
-        logger.log('Subscription closed');
+        logger.log('=== Subscription closed ===');
     });
+
+    // Add subscription start logging
+    logger.log('=== Subscription started ===');
 
 
     const CheckBalance = async () => {
         try {
             const msats = await new Promise<number>((resolve, reject) => {
-                const unsubscribe = wallet.balance.subscribeBalance((msats:number) => {
+                const unsubscribe = wallet.balance.subscribeBalance((msats: number) => {
                     resolve(msats);
                     unsubscribe?.();
                 });
@@ -394,7 +412,7 @@ export const handleNostrPayment = async (wallet: Wallet, walletNostrSecretKey: s
     const CreateInvoice = async (
         request: { amount: number, description: string, description_hash: string, expiry: number },
         ndk: NDK,
-        signer: NDKPrivateKeySigner,
+        signer: NDKSigner,
         walletNostrPubKey: string
     ) => {
         try {
@@ -468,7 +486,7 @@ export const handleNostrPayment = async (wallet: Wallet, walletNostrSecretKey: s
             return new Promise((resolve, reject) => {
                 const unsubscribe = wallet?.lightning.subscribeLnPay(
                     invoiceResult.id,
-                    async (state:LnPayState) => {
+                    async (state: LnPayState) => {
                         if (typeof state === 'object' && 'success' in state) {
                             resolve({
                                 result_type: 'pay_invoice',
@@ -485,7 +503,7 @@ export const handleNostrPayment = async (wallet: Wallet, walletNostrSecretKey: s
                             });
                         }
                     },
-                    (error:any) => {
+                    (error: any) => {
                         logger.error("Error in subscription:", error);
                         resolve({
                             result: undefined,
@@ -555,8 +573,8 @@ export const handleNostrPayment = async (wallet: Wallet, walletNostrSecretKey: s
         //         }
         //     };
         return {
-            result_type:"list_transactions",
-            result:{}
+            result_type: "list_transactions",
+            result: {}
         }
         // } catch (error: any) {
         //     return {
@@ -591,7 +609,7 @@ export const handleNostrPayment = async (wallet: Wallet, walletNostrSecretKey: s
         return new Promise((resolve, reject) => {
             const unsubscribe = wallet?.lightning.subscribeLnReceive(
                 operationId,
-                async (state:LnReceiveState) => {
+                async (state: LnReceiveState) => {
                     if (state === 'claimed') {
                         resolve({
                             result: {
@@ -617,7 +635,7 @@ export const handleNostrPayment = async (wallet: Wallet, walletNostrSecretKey: s
                         });
                     }
                 },
-                (error:any) => {
+                (error: any) => {
                     logger.error("Error in subscription:", error);
                     resolve({
                         result: null,
@@ -635,7 +653,7 @@ export const handleNostrPayment = async (wallet: Wallet, walletNostrSecretKey: s
     const monitorInvoicePayment = (
         invoiceData: CreateBolt11Response,
         ndk: NDK,
-        signer: NDKPrivateKeySigner,
+        signer: NDKSigner,
         walletNostrPubKey: string,
         request: { amount: number, description: string, description_hash: string, expiry: number }
     ) => {

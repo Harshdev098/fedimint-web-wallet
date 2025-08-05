@@ -6,11 +6,11 @@ import JoinFederation from './pages/JoinFederation'
 import Wallet from './Wallet'
 import { LoadingProvider } from './context/Loading.tsx'
 import 'nprogress/nprogress.css'
-import Federations from './pages/Federations'
 import { WalletManagerProvider } from './context/WalletManager.tsx'
 import { NostrProvider } from './context/nostr.tsx'
 import webloader from './assets/loader.webp'
 import logger from "./utils/logger"
+import 'tippy.js/dist/tippy.css';
 
 function AppInitializer({ children }: { children: React.ReactNode }) {
     const navigate = useNavigate()
@@ -30,6 +30,7 @@ function AppInitializer({ children }: { children: React.ReactNode }) {
                 }
 
                 const walletList = await listClients()
+                logger.log("walletlist is ",walletList)
                 let targetWalletId = localStorage.getItem('lastUsedWallet') || localStorage.getItem('activeWallet')
 
                 // If we have a target wallet ID and it exists, navigate to wallet
@@ -39,6 +40,7 @@ function AppInitializer({ children }: { children: React.ReactNode }) {
                         navigate('/wallet');
                     }
                 } else if (walletList.length > 0) {
+                    logger.log('loggere',walletList[0].id)
                     // If we have wallets but no specific target, use the first one
                     localStorage.setItem('activeWallet', walletList[0].id)
                     localStorage.setItem('lastUsedWallet', walletList[0].id)
@@ -74,7 +76,6 @@ function AppInitializer({ children }: { children: React.ReactNode }) {
 }
 
 function App() {
-    // Wallet routes with both WalletManager and Nostr contexts
     const WalletRoutes = () => {
         return (
             <WalletManagerProvider>
@@ -86,17 +87,12 @@ function App() {
             </WalletManagerProvider>
         )
     }
-
-    // Federation routes with both contexts
-    const FederationRoutes = () => {
+    
+    const JoinFederationWithNostr = () => {
         return (
-            <WalletManagerProvider>
-                <NostrProvider>
-                    <Routes>
-                        <Route path='/*' element={<Federations />} />
-                    </Routes>
-                </NostrProvider>
-            </WalletManagerProvider>
+            <NostrProvider>
+                <JoinFederation />
+            </NostrProvider>
         )
     }
 
@@ -104,9 +100,8 @@ function App() {
         <LoadingProvider>
             <AppInitializer>
                 <Routes>
-                    <Route path='/' element={<JoinFederation />} />
+                    <Route path='/' element={<JoinFederationWithNostr />} />
                     <Route path='/wallet/*' element={<WalletRoutes />} />
-                    <Route path='/federation/:fedId' element={<FederationRoutes />} />
                 </Routes>
             </AppInitializer>
         </LoadingProvider>

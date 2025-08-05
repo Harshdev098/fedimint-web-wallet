@@ -1,7 +1,7 @@
-import { useState, useContext, useEffect } from 'react';
+import { useState, useContext, useEffect, useCallback } from 'react';
 import QRCode from 'react-qr-code';
-import { useSelector } from 'react-redux'
-import type { RootState } from '../redux/store'
+import { useDispatch, useSelector } from 'react-redux'
+import type { AppDispatch, RootState } from '../redux/store'
 import { useWallet } from '../context/WalletManager';
 import { convertFromMsat } from '../services/BalanceService';
 import LoadingContext from '../context/Loading';
@@ -16,50 +16,56 @@ import '../style/Settings.css'
 import { getMnemonic, getWalletInfo } from '@fedimint/core-web';
 import NostrSettings from '../Components/NostrSettings';
 
-
 export default function Settings() {
+    const dispatch = useDispatch<AppDispatch>()
     const { setLoader } = useContext(LoadingContext);
     const { metaData } = useSelector((state: RootState) => state.federationdetails)
     const { currency } = useSelector((state: RootState) => state.balance)
     const { wallet } = useWallet()
     const [balance, setBalance] = useState(0)
     const [joinDate, setJoinDate] = useState<number | undefined>(undefined)
-    const [mnemonics, setMnemonics] = useState<string[]>([])
+    const [mnemonics, setMnemonics] = useState<string[] | null>([])
     const [lastAccess, setLastAccess] = useState<number | undefined>(undefined)
-    const { federationId, walletId } = useSelector((state: RootState) => state.activeFederation)
+    const { walletId, recoveryState } = useSelector((state: RootState) => state.activeFederation)
     const { error } = useSelector((state: RootState) => state.Alert)
     const [showMnemonics, setShowMnemonics] = useState(false);
 
-
-    const fetchBasicWalletDetails = async () => {
-        try {
-            startProgress()
-            setLoader(true)
-            const result = await wallet.balance.getBalance()
-            const convertedAmount = await convertFromMsat(result, currency)
-            const joinDate = getWalletInfo(walletId)?.createdAt
-            const lastAccess = getWalletInfo(walletId)?.lastAccessedAt
-            const walletMnemonics = await getMnemonic()
-            setBalance(convertedAmount)
-            setMnemonics(walletMnemonics)
-            setJoinDate(joinDate)
-            setLastAccess(lastAccess)
-        } catch (err) {
-            setErrorWithTimeout({ type: 'Balance Error: ', message: err instanceof Error ? err.message : String(err) })
-        } finally {
-            doneProgress()
-            setLoader(false)
-        }
-    }
+    const walletDetails = useCallback(async () => {
+        const joinDate = getWalletInfo(walletId)?.createdAt
+        const lastAccess = getWalletInfo(walletId)?.lastAccessedAt
+        const walletMnemonics = await getMnemonic()
+        setMnemonics(walletMnemonics)
+        setJoinDate(joinDate)
+        setLastAccess(lastAccess)
+    }, [walletId])
 
     useEffect(() => {
-        fetchBasicWalletDetails();
-    }, [balance, currency, federationId, walletId])
+        !recoveryState.status && walletDetails()
+    }, [walletDetails,recoveryState.status])
+
+    useEffect(() => {
+        const fetchBalance = async () => {
+            try {
+                startProgress()
+                setLoader(true)
+                const result = await wallet.balance.getBalance()
+                const convertedAmount = await convertFromMsat(result, currency)
+                setBalance(convertedAmount)
+            } catch (err) {
+                dispatch(setErrorWithTimeout({ type: 'Balance Error: ', message: err instanceof Error ? err.message : String(err) }))
+            } finally {
+                doneProgress()
+                setLoader(false)
+            }
+        }
+        !recoveryState.status && fetchBalance();
+    }, [balance, currency, walletId, recoveryState.status])
+
 
     return (
         <>
-            {error && <Alerts Error={error} Result='' />}
-            <main className='setting-container'>
+            {error && <Alerts Error={error} />}
+            <main className='setting'>
                 <section className='wallet-container'>
                     <section className="wallet-details">
                         <div className="wallet-item">
@@ -81,10 +87,9 @@ export default function Settings() {
                         <div className="wallet-item mnemonic-item">
                             <span className="wallet-label">Wallet Mnemonics:</span>
 
-                            {/* Simple Security Warning */}
                             <div className="simple-warning">
                                 <p><strong>⚠️ Never share your recovery phrase with anyone</strong></p>
-                                <p>Store it safely - this is the ONLY way to recover your wallet, if lost</p>
+                                <p>Store it safely</p>
                             </div>
 
                             <div className="mnemonic-header">
@@ -105,7 +110,7 @@ export default function Settings() {
                                     )}
                                 </button>
 
-                                {mnemonics.length > 0 && showMnemonics && (
+                                {(mnemonics && showMnemonics) && (
                                     <button className="copy-all-btn" onClick={() => navigator.clipboard.writeText(mnemonics.join(' '))}>
                                         <i className="fa-solid fa-copy"></i>
                                     </button>
@@ -113,7 +118,7 @@ export default function Settings() {
                             </div>
 
                             <div className="mnemonic-list">
-                                {mnemonics.map((word, index) => (
+                                {mnemonics?.map((word, index) => (
                                     <span key={index} className="mnemonic-word">
                                         {showMnemonics === true ? `${index + 1}. ${word}` : `••••••`}
                                     </span>
@@ -122,16 +127,16 @@ export default function Settings() {
                         </div>
                     </section>
 
-                    <section className="invite-code">
+                    {metaData?.invite_code && <section className="invite-code">
                         <div className="qr-code-wrapper">
                             <div className='qrCode'>
-                                <QRCode value={`${metaData?.invite_code}`} bgColor='white' fgColor='black' />
+                                <QRCode value={`${metaData.invite_code}`} size={200} bgColor='white' fgColor='black' />
                                 <button onClick={() => { downloadQRCode('inviteCode') }}>Download QR</button>
                             </div>
                             <p className="invite-code-text">Share the code with your friends!</p>
                             <p className="invite-code-value">{`${(metaData?.invite_code)?.slice(0, 18)}...`}</p><i className="fa-solid fa-copy" style={{ cursor: 'pointer', padding: '0px 4px', color: 'rgb(28, 116, 230)' }} onClick={() => navigator.clipboard.writeText(metaData?.invite_code || '')}></i>
                         </div>
-                    </section>
+                    </section>}
                 </section>
                 <section className='modern-settings'>
 

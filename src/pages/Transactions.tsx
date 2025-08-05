@@ -1,26 +1,31 @@
 // import { useEffect, useState, useCallback } from 'react';
 import { useState } from 'react';
 // import { useContext } from 'react';
-// import { useWallet } from '../context/WalletManager';
+import { useWallet } from '../context/WalletManager';
 import Alerts from '../Components/Alerts';
 // import { startProgress,doneProgress } from '../utils/ProgressBar';
-// import LoadingContext from '../context/loader';
+// import LoadingContext from '../context/Loading';
 // import type { EcashTransaction, WalletTransaction, LightningTransaction, Transactions } from '@fedimint/core-web';
 // import type { EpochTime } from '../hooks/Federation.type';
 // import logger from '../utils/logger';
 // import type { Transaction } from '../hooks/wallet.type';
-import { useSelector } from 'react-redux';
-import type { RootState } from '../redux/store';
+import { useDispatch, useSelector } from 'react-redux';
+import type { AppDispatch, RootState } from '../redux/store';
 import { useNavigate } from 'react-router';
-// import { setErrorWithTimeout } from '../redux/slices/Alerts';
+import { setErrorWithTimeout, setResultWithTimeout } from '../redux/slices/Alerts';
+import { doneProgress, startProgress } from '../utils/ProgressBar';
+// import logger from '../utils/logger';
+import { updateBalanceFromMsat } from '../redux/slices/Balance';
 // import { parseBolt11Invoice } from '@fedimint/core-web';
 
 
 export default function Transactions() {
-    // const { wallet } = useWallet();
+    const dispatch = useDispatch<AppDispatch>()
+    // const {id}=useParams()
+    const { wallet } = useWallet();
     const navigate = useNavigate()
     // const { setLoader } = useContext(LoadingContext);
-    // const [query, setQuery] = useState<string>('');
+    // const [query, setQuery] = useState<string>(id || '');
     // const [transactions, setTransactions] = useState<Transaction[]>([]);
     // const [totalSpending, setTotalSpending] = useState<number>(0)
     // const [totalRecieve, setTotalRecieve] = useState<number>(0)
@@ -99,7 +104,7 @@ export default function Transactions() {
     //     setCurrentPage(page);
     // } catch (err) {
     //     logger.error('Error fetching operations:', err);
-    //     setErrorWithTimeout({ type: 'Transaction Error: ', message: err instanceof Error ? err.message : String(err) })
+    //     dispatch(setErrorWithTimeout({ type: 'Transaction Error: ', message: err instanceof Error ? err.message : String(err) }))
     // } finally {
     //     doneProgress();
     //    setLoader(false)
@@ -242,7 +247,7 @@ export default function Transactions() {
     //             setTransactions([mappedTx]);
     //         } catch (err) {
     //             logger.error('Search error:', err);
-    //             setErrorWithTimeout({ type: 'Transaction Error: ', message: err instanceof Error ? err.message : String(err) });
+    //             dispatch(setErrorWithTimeout({ type: 'Transaction Error: ', message: err instanceof Error ? err.message : String(err) });)
     //         } finally {
     //             doneProgress();
     //         }
@@ -276,6 +281,38 @@ export default function Transactions() {
         setExpandedId(prev => (prev === id ? null : id));
     };
 
+    const CancelNotes = async (op: string) => {
+        try {
+            startProgress()
+            await wallet.mint.tryCancelSpendNotes(op)
+            dispatch(setResultWithTimeout('Note Reclaimed'))
+            const msat=await wallet.balance.getBalance()
+            updateBalanceFromMsat(msat)
+        } catch (err) {
+            dispatch(setErrorWithTimeout({ type: 'Cancel Notes: ', message: `${err}` }))
+        } finally {
+            doneProgress()
+        }
+    }
+
+    // const fetchOnchainTxDetail = async (op: string) => {
+    //     try {
+    //         setLoader(true)
+    //         const response = await fetch(`https://mempool.space/api/tx/${op}`, {
+    //             headers: {
+    //                 'Content-Type': 'application/json'
+    //             }
+    //         })
+    //         const result = await response.json()
+    //         return result;
+    //     }catch(err){
+    //         // logger.log('')
+    //         dispatch(setErrorWithTimeout({type:'Onchain Error',message:`${err}`}))
+    //     }finally{
+    //         setLoader(false)
+    //     }
+    // }
+
     return (
         <>
             {error && <Alerts key={Date.now()} Error={error} Result={''} />}
@@ -291,14 +328,13 @@ export default function Transactions() {
 
             <section className="activities-wrapper">
                 <div className="activities-container">
-                    {/* Header Section */}
                     <div className="activities-header">
                         <div className="header-content">
                             <div className="header-icon">
                                 <i className="fa-solid fa-clock-rotate-left"></i>
                             </div>
                             <h1 className="activities-title">Transaction history</h1>
-                            <p className="activities-subtitle">Track and manage your transactions</p>
+                            <p className="subtitle">Track and manage your transactions</p>
                         </div>
                     </div>
 
@@ -321,8 +357,8 @@ export default function Transactions() {
 
                     {/* Transaction List */}
                     <div className="transaction-section">
-                        <div className="transaction-item">
-                            <div className="transaction-main" onClick={() => toggleExpanded('dsfsd')}>
+                        <ul className="transaction-item">
+                            <li className="transaction-main" onClick={() => toggleExpanded('dsfsd')}>
                                 <div className="transaction-left">
                                     <div className="transaction-icon received">
                                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -356,7 +392,7 @@ export default function Transactions() {
                                         </svg>
                                     </button>
                                 </div>
-                            </div>
+                            </li>
 
                             {/* Expanded Details */}
                             {expandedId === 'dsfsd' && (
@@ -389,9 +425,13 @@ export default function Transactions() {
                                             <span className="detail-value hash">sdfsdfs...</span>
                                         </div>
                                     </div>
+                                    <div style={{ padding: '10px' }}>
+                                        <p><i className="fa-solid fa-circle-info"></i> Do not want to spend? Reclaim notes</p>
+                                        <button className='primary-btn' onClick={() => CancelNotes('sdfsd')}><i className="fa-solid fa-recycle"></i> Reclaim Notes</button>
+                                    </div>
                                 </div>
                             )}
-                        </div>
+                        </ul>
                     </div>
                 </div>
             </section>
