@@ -15,6 +15,7 @@ import { setFederationDetails, setFederationMetaData } from "../redux/slices/Fed
 import { startProgress, doneProgress } from "../utils/ProgressBar";
 import LoadingContext from './Loading'
 import { updateBalanceFromMsat } from "../redux/slices/Balance";
+import { fetchTransactions, resetTransactions } from "../redux/slices/TransactionSlice";
 
 interface WalletCache {
     wallet: Wallet;
@@ -32,7 +33,7 @@ interface WalletManagerContextType {
     refreshActiveWallet: () => Promise<void>;
     toggleDebug: () => void;
     loadWalletData: (walletId: string, walletInstance?: Wallet) => Promise<WalletCache | undefined>;
-    getAvailableFederations:()=>void
+    getAvailableFederations: () => void
 }
 
 const WalletManagerContext = createContext<WalletManagerContextType | undefined>(undefined);
@@ -213,14 +214,10 @@ export const WalletManagerProvider: React.FC<{ children: React.ReactNode }> = ({
 
         try {
             logger.log("Refreshing active wallet");
-
-            // Clear cache for this wallet to force fresh data
-            walletCache.current.delete(wallet.id);
-
-            // Reload wallet data with current wallet instance
-            await loadWalletData(wallet.id, wallet);
+            dispatch(resetTransactions());
+            dispatch(fetchTransactions({ limit: 5, wallet }))
             const msat = await wallet.balance.getBalance()
-            dispatch(updateBalanceFromMsat(msat)) // update the balance
+            dispatch(updateBalanceFromMsat(msat))
         } catch (error) {
             logger.error("Failed to refresh wallet:", error);
             dispatch(setErrorWithTimeout({

@@ -3,7 +3,7 @@ import QRCode from 'react-qr-code'
 import { setInvoice, setInvoiceOperationId, setPayInvoiceResult } from '../redux/slices/LightningPayment'
 import { useSelector, useDispatch } from 'react-redux'
 import type { RootState, AppDispatch } from '../redux/store'
-import { CreateInvoice, PayInvoice, subscribeLnPay, subscribeLnReceive } from '../services/LightningPaymentService'
+import { CreateInvoice, PayInvoice, subscribeLnPay, subscribeLnReceive,subscribeInternalPay } from '../services/LightningPaymentService'
 import { startProgress, doneProgress } from '../utils/ProgressBar';
 import { useWallet } from '../context/WalletManager'
 import Alerts from './Alerts'
@@ -31,7 +31,7 @@ export default function LighningPayment() {
     const { error } = useSelector((state: RootState) => state.Alert)
     const { currency } = useSelector((state: RootState) => state.balance)
     const { metaData } = useSelector((state: RootState) => state.federationdetails)
-    const { walletId } = useSelector((state: RootState) => state.activeFederation)
+    const { walletId,recoveryState } = useSelector((state: RootState) => state.activeFederation)
 
 
     const handleCurrencyChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -116,6 +116,8 @@ export default function LighningPayment() {
 
             if (result.payType === 'lightning') {
                 unsubscribe = subscribeLnPay(wallet, result.id, dispatch)
+            } else if(result.payType==='internal'){
+                unsubscribe= subscribeInternalPay(wallet,result.id,dispatch)
             }
 
             setTimeout(() => unsubscribe?.(), 300000);
@@ -222,7 +224,7 @@ export default function LighningPayment() {
                             <div className="invoiceDetailGroupModern">
                                 {/* <div className="invoiceDetailCard"><b>Amount:</b> {invoicePayAmount} sat</div> */}
                                 <div className="invoiceDetailCard"><b>Pay Type:</b> {payInvoiceResult.payType}</div>
-                                <div className="invoiceDetailCard"><b>Fees Paid:</b> {payInvoiceResult.fee} msat</div>
+                                <div className="invoiceDetailCard"><b>Fees Paid:</b> {payInvoiceResult.fee/1000} sat</div>
                                 {/* <div className="invoiceDetailCard"><b>Total Amount:</b> {(invoicePayAmount + payInvoiceResult.fee / 1000)} sat</div> */}
                                 <div className="invoiceDetailCard"><b>Status:</b> {payStatus}</div>
                             </div>
@@ -233,10 +235,10 @@ export default function LighningPayment() {
 
             <div className="BalanceSectionActionsWrapper">
                 <div className="BalanceSectionActions">
-                    <button onClick={() => setOpenRecieveBox(true)}>
+                    <button disabled={recoveryState.status} onClick={() => setOpenRecieveBox(true)}>
                         <i className="fa-solid fa-angles-down"></i> Receive
                     </button>
-                    <button onClick={() => setOpenSendBox(true)}>
+                    <button disabled={recoveryState.status} onClick={() => setOpenSendBox(true)}>
                         <i className="fa-solid fa-angles-up"></i> Send
                     </button>
                 </div>

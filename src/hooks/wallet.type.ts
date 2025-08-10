@@ -90,19 +90,29 @@ export type Nip47Transaction = {
 };
 
 export type Transaction= {
-  amountMsats:string
-  invoice:string
-  gateway:string
+  amountMsats:number
+  fee:number | null
+  invoice:string | null
+  gateway:string | null
   timestamp:string
   operationId:string
+  onchainAddress:string | null
   kind:string
   type:string
-  outcome:string
+  outcome:string | null
 }
-export type onchainTxDetail={
-  txid:string,
-  fee:number,
-  timestamp:number,
-  status:string,
-  height:string
-}
+
+export type OnchainTxDetail = {
+  txid: string;
+  version: number;
+  locktime: number;
+  size: number;
+  weight: number;
+  fee: number;
+  status: {
+    confirmed: boolean;
+    block_height?: number;
+    block_hash?: string;
+    block_time?: number;
+  };
+};

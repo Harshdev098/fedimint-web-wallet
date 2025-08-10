@@ -5,15 +5,15 @@ import type { AppDispatch } from '../redux/store'
 import { createNotification } from '../redux/slices/NotificationSlice'
 import { setPayStatus } from '../redux/slices/LightningPayment'
 import { subscribeBalance } from "./BalanceService";
-import type { LnPayState, LnReceiveState } from "@fedimint/core-web";
+import type { LnInternalPayState, LnPayState, LnReceiveState } from "@fedimint/core-web";
 import type { FederationMetaData } from "../hooks/Federation.type";
 import validate from "bitcoin-address-validation";
 
 
-export const CreateInvoice = async (wallet: Wallet, amount: number, description: string,expiryTime:number): Promise<CreateInvoiceResponse> => {
+export const CreateInvoice = async (wallet: Wallet, amount: number, description: string, expiryTime: number): Promise<CreateInvoiceResponse> => {
     try {
-        logger.log("expiry time is ",expiryTime*60)
-        const result = await wallet?.lightning.createInvoice(amount, description, expiryTime*60)
+        logger.log("expiry time is ", expiryTime * 60)
+        const result = await wallet?.lightning.createInvoice(amount, description, expiryTime * 60)
         logger.log("result", result)
         if (result) {
             return {
@@ -88,26 +88,49 @@ export const subscribeLnPay = (
         },
         (error: any) => {
             console.error("Error in Lightning subscribeLnPay:", error)
-            throw new Error("An error occurred! Payment cancelled")
+            throw new Error("An error occurred fetching state!")
         }
     )
 
     return unsubscribe
 }
 
+export const subscribeInternalPay = (wallet: Wallet, operationId: string, dispatch: AppDispatch) => {
+    const unsubscribe = wallet.lightning.subscribeInternalPayment(operationId,
+        (state: LnInternalPayState) => {
+            const date = new Date().toDateString()
+            const time = new Date().toTimeString()
+            if (typeof state === "object" && 'preimage' in state) {
+                dispatch(createNotification({ type: 'Lightning', data: 'Payment Funded', date, time, OperationId: operationId }))
+                dispatch(setPayStatus('funded'))
+            } else if (typeof state === "object" && 'funding_failed' in state) {
+                dispatch(createNotification({ type: 'Lightning', data: 'Funding failed', date, time, OperationId: operationId }))
+                dispatch(setPayStatus('funded'))
+            } else if (typeof state === 'object' && 'refund_success' in state) {
+                dispatch(createNotification({ type: 'Lightning', data: 'Refund Successfull', date, time, OperationId: operationId }))
+                dispatch(setPayStatus('funded'))
+            }
+        },
+        (error: any) => {
+            throw new Error(`An error occured fetching state! ${error}`)
+        }
+    )
+    return unsubscribe;
+}
+
 export const subscribeLnReceive = (
-    wallet: any,
+    wallet: Wallet,
     operationId: string,
     dispatch: AppDispatch,
-    metaData:FederationMetaData | null
+    metaData: FederationMetaData | null
 ) => {
     const unsubscribe = wallet.lightning.subscribeLnReceive(
         operationId,
-        async (state:LnReceiveState) => {
+        async (state: LnReceiveState) => {
             const date = (new Date()).toDateString()
             const time = (new Date()).toTimeString()
             if (state === "funded") {
-                dispatch(createNotification({ type: 'Payment', data: 'Payment Recieved', date: date, time: time, OperationId: operationId }))
+                dispatch(createNotification({ type: 'Lightning', data: 'Payment Recieved', date: date, time: time, OperationId: operationId }))
                 subscribeBalance(wallet, dispatch)
                 const balance = await wallet.balance.getBalance()
                 let externalAddress = localStorage.getItem('autoWithdrawalValue')
@@ -118,10 +141,10 @@ export const subscribeLnReceive = (
                     }
                 }
             } else if (typeof state === 'object' && 'canceled' in state) {
-                dispatch(createNotification({ type: 'Payment', data: `Payment Canceled ${state.canceled.reason}`, date: date, time: time, OperationId: operationId }))
+                dispatch(createNotification({ type: 'Lightning', data: `Payment Canceled ${state.canceled.reason}`, date: date, time: time, OperationId: operationId }))
             }
         },
-        (error:any) => {
+        (error: any) => {
             logger.error("Error in subscription:", error);
             throw new Error("An error occured! Payment cancelled")
         }

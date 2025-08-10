@@ -45,7 +45,7 @@ export default function Notifications({ isOpen, onClose }: NotificationsProps) {
                                 <div className='notification-data'>
                                     <h4>{notification.data}</h4>
                                     <p><b>Type: </b>{notification.type}</p>
-                                    {notification.OperationId && <Link to={`/wallet/transactions&id=${notification.OperationId}`}>More Details</Link>}
+                                    {notification.OperationId && <Link onClick={()=>onClose()} to={`/wallet/transactions?id=${notification.OperationId}`}>More Details</Link>}
                                 </div>
                                 <div className='notification-time'>
                                     <span>{notification.time}</span>

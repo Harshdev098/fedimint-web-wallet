@@ -23,7 +23,7 @@ export const subscribeBalance = async (wallet: Wallet, dispatch: AppDispatch) =>
         dispatch(updateBalanceFromMsat(mSats));
         setTimeout(() => {
             unsubscribeBalance?.();
-        }, 10000);
+        }, 15000);
     });
 }
 

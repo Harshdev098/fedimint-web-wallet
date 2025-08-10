@@ -10,7 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@fedimint/core-web": "^0.0.0-canary-5fb29a5c5da7822f15f56d422ef835278d47cbf3",
+    "@fedimint/core-web": "^0.0.0-dev-test2-06605f371f7a642a385969642f827d78b84b811c",
+    "@mempool/mempool.js": "^3.0.0",
     "@noble/hashes": "^1.8.0",
     "@nostr-dev-kit/ndk": "^2.14.32",
     "@nostr-dev-kit/ndk-cache-dexie": "^2.6.33",

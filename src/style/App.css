@@ -1,4 +1,4 @@
-html{
+html {
     scrollbar-width: thin;
     scrollbar-color: rgba(0, 0, 0, 0.3);
 }
@@ -11,17 +11,17 @@ body {
 }
 
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+    width: 6px;
+    height: 6px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: rgba(0, 0, 0, 0.3);
-  border-radius: 3px;
+    background-color: rgba(0, 0, 0, 0.3);
+    border-radius: 3px;
 }
 
 ::-webkit-scrollbar-track {
-  background: transparent;
+    background: transparent;
 }
 
 #nprogress .bar {
@@ -140,9 +140,20 @@ body {
 i {
     padding: 0 4px;
 }
-.fed-elements-details{
+
+.fed-elements-details {
     color: white;
 }
+
+button:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+.DarkMode a{
+    color: white;
+}
+
 /* Wallet styling  */
 
 /* navigator styling  */
@@ -159,16 +170,12 @@ i {
     margin-top: auto;
     position: relative;
     flex-shrink: 0;
-    
-    /* Default light mode colors */
     --wave-color-start: #f4f8fa;
     --wave-color-end: #f1f5f7;
 }
 
 .DarkMode.navigation-bar {
     background-color: rgb(17, 24, 39);
-    
-    /* Dark mode colors */
     --wave-color-start: rgb(31, 41, 55);
     --wave-color-end: rgb(31, 41, 55);
 }
@@ -240,13 +247,15 @@ i {
     color: black;
 }
 
-.DarkMode .navigator-label{
-    color:  white;
+.DarkMode .navigator-label {
+    color: white;
 }
+
 .DarkMode {
     background-color: rgb(17, 24, 39) !important;
     color: white !important;
 }
+
 
 @media (max-width: 750px) {
     .wave-bg {
@@ -262,6 +271,10 @@ i {
         padding-bottom: 6px;
         background: #ffffff;
         border-top: 1px solid #ddd;
+    }
+
+    .DarkMode.navigation-bar {
+        background: rgb(31, 41, 55) !important;
     }
 
     .navigator-icon {
@@ -293,89 +306,93 @@ i {
     .active-nav i {
         color: #2176FF !important;
     }
+
+    h2 {
+        font-size: 1.4rem !important;
+    }
 }
 
 /* Main wallet styling */
 
 .recovery-progress {
-  position: fixed;
-  bottom: 140px;
-  right: 10px;
-  background-color: #fff3cd;
-  color: #000;
-  border: 1px solid #ffeeba;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-  z-index: 1000;
-  display: flex;
-  align-items: center;
-  transition: all 0.3s ease;
-  overflow: hidden;
+    position: fixed;
+    bottom: 140px;
+    right: 10px;
+    background-color: #fff3cd;
+    color: #000;
+    border: 1px solid #ffeeba;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    transition: all 0.3s ease;
+    overflow: hidden;
 }
 
 .recovery-progress.expanded {
-  padding: 12px 16px;
-  padding-left: 12px;
+    padding: 12px 16px;
+    padding-left: 12px;
 }
 
 .recovery-progress.collapsed {
-  padding: 12px 8px;
-  right: -10px;
-  border-radius: 8px 0 0 8px;
+    padding: 12px 8px;
+    right: -10px;
+    border-radius: 8px 0 0 8px;
 }
 
 .recovery-content {
-  flex: 1;
-  margin-right: 8px;
+    flex: 1;
+    margin-right: 8px;
 }
 
 .recovery-progress h4 {
-  margin: 0 0 4px 0;
-  font-size: 14px;
+    margin: 0 0 4px 0;
+    font-size: 14px;
 }
 
 .recovery-progress p {
-  margin: 0;
-  font-size: 12px;
+    margin: 0;
+    font-size: 12px;
 }
 
 .recovery-toggle-btn {
-  background: none;
-  border: none;
-  color: #856404;
-  font-size: 14px;
-  cursor: pointer;
-  padding: 4px;
-  border-radius: 3px;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 20px;
-  height: 20px;
+    background: none;
+    border: none;
+    color: #856404;
+    font-size: 14px;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 3px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
 }
 
 .recovery-toggle-btn:hover {
-  background-color: rgba(133, 100, 4, 0.1);
+    background-color: rgba(133, 100, 4, 0.1);
 }
 
 .recovery-progress.collapsed .recovery-toggle-btn {
-  margin-left: 0;
+    margin-left: 0;
 }
 
 .recovery-progress.expanded .recovery-toggle-btn {
-  order: -1;
-  margin-right: 8px;
+    order: -1;
+    margin-right: 8px;
 }
 
 @media (max-width: 750px) {
-  .recovery-progress {
-    bottom: 80px;
-  }
-  
-  .recovery-progress.collapsed {
-    right: -15px;
-  }
+    .recovery-progress {
+        bottom: 80px;
+    }
+
+    .recovery-progress.collapsed {
+        right: -15px;
+    }
 }
 
 .MainWalletContainer {
@@ -675,14 +692,15 @@ i {
     margin-right: 24px;
 }
 
-.DarkMode .walletHeader{
+.DarkMode .walletHeader {
     background-color: rgb(17, 24, 39);
 }
 
-.DarkMode .refreshSection a{
+.DarkMode .refreshSection a {
     color: white;
 }
-.DarkMode .notification-div i{
+
+.DarkMode .notification-div i {
     color: white !important;
 }
 
@@ -727,7 +745,19 @@ i {
     text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-.primary-btn{
+@media (max-width:1000px) {
+    .BalanceSectionValue {
+        font-size: 4rem;
+    }
+}
+
+@media (max-width:750px) {
+    .BalanceSectionValue {
+        font-size: 3.6rem;
+    }
+}
+
+.primary-btn {
     background: #2176FF;
     color: white;
     padding: 0.5rem 1.1rem;
@@ -747,7 +777,8 @@ i {
     font-size: 0.9rem;
     text-align: center;
 }
-.DarkMode .title-span{
+
+.DarkMode .title-span {
     color: #bec7d9;
 }
 
@@ -759,7 +790,7 @@ i {
     margin-bottom: 20px;
 }
 
-.DarkMode .wallet-notes span{
+.DarkMode .wallet-notes span {
     color: #9da5af;
 }
 
@@ -788,7 +819,7 @@ i {
     transition: background 0.5s ease-in-out;
 }
 
-.DarkMode .BalanceSectionValue{
+.DarkMode .BalanceSectionValue {
     color: white;
 }
 
@@ -796,7 +827,8 @@ i {
     background-color: #ece3e3;
     color: black;
 }
-.DarkMode .BalanceSectionActions button:hover{
+
+.DarkMode .BalanceSectionActions button:hover {
     background-color: rgb(213, 222, 242);
 }
 
@@ -841,11 +873,12 @@ i {
     font-weight: bold;
 }
 
-.DarkMode .tab-switcher button{
+.DarkMode .tab-switcher button {
     color: white;
     border-color: white;
 }
-.DarkMode .tab-switcher button:hover{
+
+.DarkMode .tab-switcher button:hover {
     color: rgb(115, 123, 140);
     background: none;
 }
@@ -866,7 +899,7 @@ i {
         padding: 0;
         width: 100%;
     }
-    
+
     .tab-switcher button {
         flex: 1;
         min-width: 0;
@@ -881,11 +914,11 @@ i {
         width: 33.333%;
         border-radius: 0;
     }
-    
+
     .tab-switcher button i {
         font-size: 18px;
     }
-    
+
     .tab-switcher button .btn-text {
         display: none;
     }
@@ -898,7 +931,7 @@ i {
         margin: 20px 0 40px 0;
         padding: 0;
     }
-    
+
     .tab-switcher button {
         padding: 6px 1px;
         margin: 0;
@@ -907,7 +940,7 @@ i {
         width: 33.333%;
         border-radius: 0;
     }
-    
+
     .tab-switcher button i {
         font-size: 16px;
     }
@@ -917,14 +950,14 @@ i {
     .tab-switcher {
         margin: 20px 0 40px 0;
     }
-    
+
     .tab-switcher button {
         padding: 5px 1px;
         margin: 0;
         width: 33.333%;
         border-radius: 0;
     }
-    
+
     .tab-switcher button i {
         font-size: 14px;
     }
@@ -969,8 +1002,10 @@ i {
     z-index: 1000;
     box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
 }
+
 .DarkMode .sticky-header,
 .DarkMode .back-button,
+.DarkMode .back-button:hover,
 .DarkMode .header-title {
     background-color: rgb(31, 41, 55);
     color: white;
@@ -1029,11 +1064,13 @@ i {
     backdrop-filter: blur(10px);
     overflow: hidden;
 }
+
 @media (max-width:1100px) {
-    .activities-container{
+    .activities-container {
         width: 80vw;
     }
 }
+
 /* Header Section */
 .activities-header {
     background: linear-gradient(135deg, #7cacdc 0%, #3a79b7 100%);
@@ -1079,18 +1116,26 @@ i {
     letter-spacing: -0.02em;
 }
 
-/* .subtitle {
-    font-size: 1.1rem;
-    opacity: 0.9;
-    margin: 0;
-    font-weight: 400;
-} */
-
 /* Search Section */
 .search-section {
-    padding: 2rem;
+    padding: 1.4rem;
     background: #f8fafc;
     border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+}
+
+.DarkMode .search-section {
+    background: rgb(31, 41, 55);
+}
+
+.DarkMode .search-input {
+    background-color: rgb(55, 65, 81);
+    border: 1px solid #677389;
+    color: white;
 }
 
 .search-container {
@@ -1185,6 +1230,12 @@ i {
     box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3);
 }
 
+.transaction-icon.sent {
+    background: linear-gradient(135deg, #d0554d 0%, #c22b26 100%);
+    color: white;
+    box-shadow: 0 8px 25px rgba(185, 16, 16, 0.3);
+}
+
 .transaction-icon::after {
     content: '';
     position: absolute;
@@ -1250,10 +1301,15 @@ i {
     color: #059669;
 }
 
+.transaction-amount.positive {
+    color: #961305;
+}
+
 .transaction-status {
     font-size: 0.75rem;
     font-weight: 600;
     padding: 4px 8px;
+    margin: 4px 0;
     border-radius: 20px;
     text-transform: uppercase;
     letter-spacing: 0.05em;
@@ -1263,6 +1319,16 @@ i {
     background: linear-gradient(135deg, #d1fae5, #a7f3d0);
     color: #047857;
     border: 1px solid #a7f3d0;
+}
+
+.transaction-status.failed {
+    background: linear-gradient(135deg, #fad3d1, #f3aba7);
+    color: #780404;
+    border: 1px solid #f3b4a7;
+}
+
+.transaction-amount.negative {
+    color: #d12e28;
 }
 
 .expand-button {
@@ -1302,12 +1368,31 @@ i {
     animation: slideDown 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+.pagination-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 20px;
+}
+
+.pagination-button {
+    padding: 10px 12px;
+    font-size: 1rem;
+    background: rgb(55, 65, 81);
+    border: 1px solid #506386;
+    color: white;
+    margin: 10px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
 @keyframes slideDown {
     from {
         opacity: 0;
         transform: translateY(-20px);
         max-height: 0;
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -1371,72 +1456,90 @@ i {
     cursor: pointer;
 }
 
-.DarkMode .activities-header{
+.DarkMode .activities-header {
     background: linear-gradient(135deg, #395266 0%, #0c1e30 100%);
 }
-.DarkMode .transaction-section{
+
+.DarkMode .transaction-section {
     background-color: rgb(31, 41, 55);
 }
-.DarkMode .activities-container{
+
+.DarkMode .activities-container {
     background-color: rgb(31, 41, 55);
 }
-.DarkMode .activities-footer{
+
+.DarkMode .activities-footer {
     background-color: rgb(31, 41, 55);
 }
-.DarkMode .transaction-main{
+
+.DarkMode .transaction-main {
     background-color: rgb(55, 65, 81);
     border: 1px solid #677389;
     box-shadow: none;
 }
-.DarkMode .transaction-type{
+
+.DarkMode .transaction-type {
     color: #edf1f9;
 }
-.DarkMode .transaction-icon.received{
+
+.DarkMode .transaction-icon.received {
     background: linear-gradient(135deg, #209d73 0%, #155b42 100%);
 }
-.DarkMode .transaction-amount.positive{
+
+.DarkMode .transaction-amount.positive {
     color: #0ade9c;
 }
-.DarkMode .expand-button{
+
+.DarkMode .expand-button {
     background-color: rgb(38 48 69);
 }
-.DarkMode .transaction-details{
+
+.DarkMode .transaction-details {
     background: #2a3445;
     color: white;
 }
-.DarkMode .transaction-details .detail-value{
+
+.DarkMode .transaction-details .detail-value {
     color: white;
 }
-.DarkMode .activities-footer{
+
+.DarkMode .activities-footer {
     background-color: rgb(31, 41, 55);
     border-color: #575e6c;
 }
-@media (max-width: 560px) {
+
+@media (max-width: 650px) {
     .activities-title {
-        font-size: 1.8rem;
+        font-size: 1.4rem;
     }
-    .activities-container{
+
+    .activities-container {
         width: 95%;
     }
-    
+
     .transaction-left {
         gap: 0.75rem;
     }
-    .transaction-item{
+
+    .transaction-item {
         width: 100%;
     }
-    
+
     .transaction-icon {
         width: 48px;
         height: 48px;
     }
-    
+
     .transaction-type {
-        font-size: 1rem;
+        font-size: 0.95rem;
     }
-    
+
     .transaction-amount {
-        font-size: 1.3rem;
+        font-size: 1.1rem;
+    }
+
+    .transaction-status {
+        font-size: 0.7rem;
     }
 }
 
@@ -1501,10 +1604,12 @@ i {
 .DarkMode .federation-field strong {
     color: white;
 }
-.DarkMode .federation-field span{
+
+.DarkMode .federation-field span {
     color: #bec7d9;
 }
-.DarkMode .subtitle{
+
+.DarkMode .subtitle {
     color: #bec7d9 !important;
 }
 
@@ -1535,7 +1640,7 @@ i {
     hyphens: auto;
 }
 
-.center-para{
+.center-para {
     text-align: center;
 }
 
@@ -1875,21 +1980,26 @@ i {
     padding: 24px;
     margin-top: 24px;
 }
-.DarkMode .guardian-section{
+
+.DarkMode .guardian-section {
     background-color: rgb(55, 65, 81);
     border: none;
 }
-.DarkMode .guardian-card{
+
+.DarkMode .guardian-card {
     background-color: rgb(57 69 89);
     border: 1px solid #4f5766;
 }
-.DarkMode .guardian-name{
+
+.DarkMode .guardian-name {
     color: #abd1e3;
 }
+
 .DarkMode .guardian-count,
-.DarkMode .guardian-url{
+.DarkMode .guardian-url {
     color: #bec7d9;
 }
+
 .guardian-header-info {
     display: flex;
     justify-content: space-between;
@@ -2222,34 +2332,34 @@ i {
 .createInvoice::-webkit-scrollbar,
 .payInvoice::-webkit-scrollbar,
 .ecashNotes::-webkit-scrollbar {
-  width: 6px;
+    width: 6px;
 }
 
 .createInvoice::-webkit-scrollbar-thumb,
 .payInvoice::-webkit-scrollbar-thumb,
 .ecashNotes::-webkit-scrollbar-thumb {
-  background-color: rgba(0, 0, 0, 0.3);
-  border-radius: 4px;
+    background-color: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
 }
 
 .createInvoice::-webkit-scrollbar-thumb:hover,
 .payInvoice::-webkit-scrollbar-thumb:hover,
 .ecashNotes::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(0, 0, 0, 0.5);
+    background-color: rgba(0, 0, 0, 0.5);
 }
 
 .createInvoice::-webkit-scrollbar-track,
 .payInvoice::-webkit-scrollbar-track,
 .ecashNotes::-webkit-scrollbar-track {
-  background: transparent;
+    background: transparent;
 }
 
 /* Firefox version */
 .createInvoice,
 .payInvoice,
 .ecashNotes {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(0, 0, 0, 0.3) transparent;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.3) transparent;
 }
 
 
@@ -2268,16 +2378,21 @@ i {
     background-color: rgb(31, 41, 55);
     color: #b3b3b3;
 }
-.DarkMode .amount-input{
+
+.DarkMode .amount-input {
     background-color: rgb(55, 65, 81);
     color: white;
+    border: 1px solid #677389;
 }
-.DarkMode .videoRef{
+
+.DarkMode .videoRef {
     background-color: rgb(31, 41, 55);
 }
-.video{
+
+.video {
     background-color: rgb(55, 65, 81);
 }
+
 @media (max-width:480px) {
 
     .createInvoice,
@@ -2312,17 +2427,21 @@ i {
     flex-wrap: nowrap;
     align-items: stretch;
 }
-.input-group input{
+
+.input-group input {
     margin: 0 2px;
 }
-.DarkMode .input-group input{
+
+.DarkMode .input-group input {
     background-color: rgb(55, 65, 81);
     border: 1px solid #677389;
 }
-.DarkMode .currency-select{
+
+.DarkMode .currency-select {
     background-color: rgb(55, 65, 81) !important;
 }
-.DarkMode .camera-btn{
+
+.DarkMode .camera-btn {
     color: white !important;
 }
 
@@ -2567,7 +2686,7 @@ i {
 
 /* withdraw and deposit page styling  */
 
-.onchainTx{
+.onchainTx {
     margin-bottom: 3rem;
 }
 
@@ -2585,6 +2704,7 @@ i {
     margin: 8px;
     background-color: #cbdce4;
     border-radius: 12px;
+    color: #326278;
     font-family: monospace;
     overflow-wrap: anywhere;
 }
@@ -2631,8 +2751,16 @@ i {
 .pegout-details {
     margin-top: 20px;
     padding: 16px;
+    box-sizing: border-box;
     background: #f8fafc;
     border-radius: 8px;
+}
+
+.DarkMode .pegout-details,
+.DarkMode .pegout-detail,
+.DarkMode .pegout-detail strong {
+    background-color: rgb(55, 65, 81);
+    color: white;
 }
 
 .pegout-details-grid {
@@ -2647,6 +2775,13 @@ i {
     border-radius: 12px;
     font-size: 0.9rem;
     color: #374151;
+    word-break: break-all;
+    white-space: normal;
+}
+
+.pegout-details p {
+    word-break: break-all;
+    white-space: normal;
 }
 
 .pegout-detail strong {
@@ -2655,7 +2790,7 @@ i {
     color: #1f2937;
 }
 
-.mempool-btn{
+.mempool-btn {
     width: 100%;
     margin: 10px auto;
     padding: 0.6rem 1.1rem;
@@ -2667,7 +2802,7 @@ i {
     color: white;
 }
 
-.DarkMode .onchain-container{
+.DarkMode .onchain-container {
     background-color: rgb(31, 41, 55);
 }
 
@@ -2676,12 +2811,14 @@ i {
     background-color: rgb(55, 65, 81);
     border: 1px solid #677389;
 }
+
 .DarkMode .onchain-field h3,
-.DarkMode .federation-field h3{
+.DarkMode .federation-field h3 {
     color: #abd1e3;
 }
+
 .DarkMode .onchain-field p,
-.DarkMode .federation-field p{
+.DarkMode .federation-field p {
     color: #bec7d9;
 }
 
@@ -2801,6 +2938,7 @@ i {
     display: flex;
     flex-direction: column;
 }
+
 .DarkMode .notification-sidebar,
 .DarkMode .notification-header,
 .DarkMode .notifications-info {
@@ -2939,7 +3077,7 @@ i {
 .pagination-btn button {
     padding: 8px 16px;
     /* margin: 10px; */
-    background-color: black;
+    background-color: #2176FF;
     color: white;
     font-size: 17px;
     cursor: pointer;

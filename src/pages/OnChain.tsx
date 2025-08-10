@@ -1,38 +1,37 @@
-import { useRef, useState } from 'react';
-// import { PegIn, PegOut } from '../services/OnChainService';
-// import Wallet from '../context/WalletManager'
-// import { startProgress, doneProgress } from '../utils/ProgressBar';
-// import LoadingContext from '../context/Loading'
+import { useRef, useState, useContext } from 'react';
+import { Deposit, PegOut, subscribeDeposit } from '../services/OnChainService';
+import { startProgress, doneProgress } from '../utils/ProgressBar';
+import LoadingContext from '../context/Loading'
 import Alerts from '../Components/Alerts';
-// import { setErrorWithTimeout } from '../redux/slices/Alerts';
-// import { convertToMsats } from '../services/BalanceService';
-// import logger from '../utils/logger';
+import { setErrorWithTimeout } from '../redux/slices/Alerts';
+import logger from '../utils/logger';
 import { useSelector, useDispatch } from 'react-redux'
 import type { RootState, AppDispatch } from '../redux/store'
 import { setCurrency } from '../redux/slices/Balance';
 import { Link } from 'react-router';
-// import type { onchainTxDetail, PeginResponse } from '../hooks/wallet.type';
+import type { OnchainTxDetail } from '../hooks/wallet.type';
 import type { WalletModule } from '../hooks/Federation.type';
 import Tippy from '@tippyjs/react';
+import { useWallet } from '../context/WalletManager';
+import mempoolJS from '@mempool/mempool.js';
 
 
 export default function OnChain() {
-    // const [onchainType, setOnchainType] = useState(true);
     const amount = useRef<HTMLInputElement | null>(null)
     const { Details } = useSelector((state: RootState) => state.federationdetails);
     const address = useRef<HTMLInputElement | null>(null)
-    // const { wallet } = useContext(WalletContext)
-    // const { setLoader, loader } = useContext(LoadingContext)
+    const { recoveryState } = useSelector((state: RootState) => state.activeFederation)
+    const { wallet } = useWallet()
+    const { setLoader, setLoaderMessage } = useContext(LoadingContext)
     const dispatch = useDispatch<AppDispatch>()
-    // const [pegin, setPegin] = useState<PeginResponse | null>(null)
-    // const [pegout, setPegout] = useState<string | null>(null)
+    const [generatedAddress, setGeneratedAddress] = useState<string | null>(null)
+    const [WithdrawOperationId, setWithdrawOperationId] = useState<string | null>(null)
     const { currency } = useSelector((state: RootState) => state.balance)
     const { error } = useSelector((state: RootState) => state.Alert)
-    // const [convertedAmountInMSat, setConvertedAmountInMSat] = useState<number>(0)
     const [openDepositBox, setOpenDepositBox] = useState<boolean>(false)
     const [openWithdrawBox, setOpenWithdrawBox] = useState<boolean>(false)
-    // const [txDetail, setTxDetail] = useState<onchainTxDetail | null>(null)
-
+    const [txDetail, setTxDetail] = useState<OnchainTxDetail | null>(null)
+    const [depositState, setDepositState] = useState<string | null>(null)
 
     const handleCurrencyChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const selectedCurrency = e.target.value;
@@ -40,61 +39,59 @@ export default function OnChain() {
         localStorage.setItem('walletCurrency', selectedCurrency)
     }
 
-    const handlePeginTransaction = async () => {
-        // try {
-        //     startProgress()
-        //     setLoader(true)
-        //     console.log('handle pegin')
-        //     const result = await PegIn(wallet)
-        //     setPegin(result)
-        // } catch (err) {
-        //     logger.log(`${err}`)
-        // } finally {
-        //     doneProgress()
-        //     setLoader(false)
-        // }
+    const handleGenerateDepositAddress = async () => {
+        try {
+            startProgress()
+            setLoader(true)
+            setLoaderMessage('Generating Address...')
+            const result = await Deposit(wallet)
+            setGeneratedAddress(result.deposit_address)
+            subscribeDeposit(wallet, result.operation_id, dispatch, setDepositState)
+            setOpenDepositBox(true)
+        } catch (err) {
+            logger.log(`${err}`)
+            setErrorWithTimeout({ type: 'Deposit Error: ', message: err instanceof Error ? err.message : String(err) })
+        } finally {
+            doneProgress()
+            setLoader(false)
+        }
     }
 
     const handlePegoutTransaction = async (e: React.FormEvent) => {
         e.preventDefault()
-
-        // if (!(address.current?.value?.trim()) || !(convertedAmountInMSat?.toString().trim())) {
-        //     alert("Please enter both address and amount");
-        //     return;
-        // }
-        // try {
-        //     startProgress()
-        //     console.log("handle pegout")
-        //     const result = await PegOut(wallet, address.current.value.trim(), convertedAmountInMSat);
-        //     if (result) {
-        //         const details = await fetchTxData(result.operation_id)
-        //     } else {
-        //         logger.log('pegout did not return result')
-        //     }
-        // } catch (err) {
-        //     logger.error("PegOut failed:", err);
-        //     dispatch(setErrorWithTimeout({ type: 'Withdrawal Error:', message: `${err}` }))
-        // } finally {
-        //     doneProgress()
-        // }
+        const amountValue = Number(amount.current?.value);
+        if (!(address.current?.value?.trim()) || !(amountValue)) {
+            alert("Please enter both address and amount");
+            return;
+        }
+        try {
+            startProgress()
+            const result = await PegOut(wallet, address.current.value.trim(), amountValue);
+            if (result) {
+                setWithdrawOperationId(result?.operation_id)
+                const details = await fetchTxData(result.operation_id)
+                setTxDetail(details)
+            } else {
+                logger.log('pegout did not return result')
+                setErrorWithTimeout({ type: 'Withdrawal Error: ', message: "Withdrawal didn't give result" })
+            }
+        } catch (err) {
+            logger.error("PegOut failed:", err);
+            dispatch(setErrorWithTimeout({ type: 'Withdrawal Error:', message: err instanceof Error ? err.message : String(err) }))
+        } finally {
+            doneProgress()
+        }
     }
 
+    const fetchTxData = async (txid: string) => {
+        const { bitcoin: { transactions } } = mempoolJS({
+            hostname: 'mempool.space',
+        });
 
-    // const handleConversion = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    //     // const amount = await convertToMsats(Number((e.target.value).trim()), currency)
-    //     // setConvertedAmountInMSat(amount)
-    // }
-
-    // const fetchTxData = async (tx: string) => {
-    //     const response = await fetch(`https://mempool.space/api/tx/${tx}`, {
-    //         headers: {
-    //             'Content-Type': 'application/json'
-    //         }
-    //     })
-    //     const result = await response.json()
-    //     logger.log('onchain tx result is ', result)
-    //     return result;
-    // }
+        const tx = await transactions.getTx({ txid: `${txid}` });
+        console.log(tx);
+        return tx;
+    }
 
 
     return (
@@ -107,9 +104,10 @@ export default function OnChain() {
                     </button>
                     <p className='title-span' style={{ textAlign: 'left', fontSize: '16px' }}><i className="fa-solid fa-info-circle"></i> Use the generated address to deposit funds from external address to federation. It can take time to credit your balance</p>
                     <div className='generatedAddress'>
-                        <span>dsjfksdlfksdfosdfklsdflsdfsdlfsiodfsdflsdflksdf</span>
-                        <button className="copyBtn" onClick={() => navigator.clipboard.writeText('')}><i className="fa-solid fa-copy"></i></button>
+                        <span>{generatedAddress}</span>
+                        <button className="copyBtn" onClick={() => navigator.clipboard.writeText(generatedAddress || '')}><i className="fa-solid fa-copy"></i></button>
                     </div>
+                    <div className="invoiceDetailCard"><b>Status:</b> {depositState}</div>
                 </div>
             </div>}
 
@@ -143,21 +141,36 @@ export default function OnChain() {
                         <input type="text" id='address' className='amount-input' placeholder='Enter the address' ref={address} required />
                         <button type='submit'>Withdraw</button>
                     </form>
-                    {/* {pegout?.operation_id && ( */}
-                    <div className="pegout-details">
-                        <p className='title-span' style={{ textAlign: 'left', fontSize: '16px' }}><i className="fa-solid fa-info-circle"></i> You can view and manage these trasactions at any time in <Link to={'/wallet/transactions'}>transaction</Link> tab</p>
-                        <div className="pegout-details-grid">
-                            <div className="pegout-detail"><strong>TXID:</strong> sdfkjsdfklsdfsdfsdfs</div>
-                            <div className="pegout-detail"><strong>Fee:</strong> sdfkjsdfklsdfsdfsdfs</div>
-                            <div className="pegout-detail"><strong>Lock Time:</strong> sdfkjsdfklsdfsdfsdfs</div>
-                            <div className="pegout-detail"><strong>Status:</strong> sdfkjsdfklsdfsdfsdfs</div>
-                            <div className="pegout-detail"><strong>Block Height:</strong> sdfkjsdfklsdfsdfsdfs</div>
+                    {WithdrawOperationId && (
+                        <div className="pegout-details">
+                            <p className='title-span' style={{ textAlign: 'left', fontSize: '16px' }}><i className="fa-solid fa-info-circle"></i> You can view and manage these trasactions at any time in <Link to={'/wallet/transactions'}>transaction</Link> tab</p>
+                            <p style={{ fontSize: '16px' }}><strong>Tx ID: </strong>{WithdrawOperationId}</p>
+                            {txDetail ? (
+                                <div className="pegout-details-grid">
+                                    <div className="pegout-detail">
+                                        <strong>Onchain Fee:</strong> {txDetail.fee} sats
+                                    </div>
+                                    <div className="pegout-detail">
+                                        <strong>Lock Time:</strong> {txDetail.status.block_time
+                                            ? new Date(txDetail.status.block_time * 1000).toLocaleString()
+                                            : 'N/A'}
+                                    </div>
+                                    <div className="pegout-detail">
+                                        <strong>Status:</strong> {txDetail.status.confirmed ? 'Confirmed' : 'Unconfirmed'}
+                                    </div>
+                                    <div className="pegout-detail">
+                                        <strong>Block Height:</strong> {txDetail.status.block_height ?? 'Pending'}
+                                    </div>
+                                </div>
+                            ) : (
+                                <p>Fetching transaction status</p>
+                            )}
+
+                            <Tippy content='This can led to privacy concerns'>
+                                <button className='mempool-btn' onClick={() => { confirm('This can lead to privacy concerns with your IP address') && window.open(`https://mempool.space/api/tx/`, '_blank') }}>View on Mempool</button>
+                            </Tippy>
                         </div>
-                        <Tippy content='This can led to privacy concerns'>
-                            <button className='mempool-btn' onClick={() => { confirm('This can lead to privacy concerns with your IP address') && window.open(`https://mempool.space/api/tx/`, '_blank') }}>View on Mempool</button>
-                        </Tippy>
-                    </div>
-                    {/* )} */}
+                    )}
                 </div>
             </div>}
 
@@ -207,8 +220,8 @@ export default function OnChain() {
                             </div>
                         </div>
                         <div className='onchain-actions'>
-                            <button onClick={() => { handlePeginTransaction(); setOpenDepositBox(true) }}><i className="fa-solid fa-money-bill-transfer"></i>Deposit</button>
-                            <button onClick={() => setOpenWithdrawBox(true)}><i className="fa-solid fa-money-bill-transfer"></i>Withdraw</button>
+                            <button disabled={recoveryState.status} onClick={() => handleGenerateDepositAddress()}><i className="fa-solid fa-money-bill-transfer"></i>Deposit</button>
+                            <button disabled={recoveryState.status} onClick={() => setOpenWithdrawBox(true)}><i className="fa-solid fa-money-bill-transfer"></i>Withdraw</button>
                         </div>
                     </section>
                     <p className='title-span'>Have doubt? Refer FAQs section in settings or raise a <Link to={'https://github.com/Harshdev098/fedimint-web-wallet'} target='_blank'>ticket</Link> for issue</p>

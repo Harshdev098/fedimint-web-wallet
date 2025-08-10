@@ -25,7 +25,7 @@ export default function JoinFederation() {
     const [openPreviewFederation, setOpenPreviewFederation] = useState<boolean>(false)
     const [showFederations, setShowFederation] = useState<boolean>(false)
     const [previewFederationData, setPreviewFederationData] = useState<PreviewFederationResponse | null>(null)
-    const [recover,setRecover]=useState<boolean>(false)
+    const [recover, setRecover] = useState<boolean>(false)
     const navigate = useNavigate()
     const dispatch = useDispatch<AppDispatch>()
     const { joining } = useSelector((state: RootState) => state.activeFederation)
@@ -43,7 +43,7 @@ export default function JoinFederation() {
             localStorage.setItem('lastUsedWallet', result.id);
             localStorage.setItem('activeWallet', result.id)
             dispatch(setNewJoin(true))
-            navigate('/wallet')
+            navigate('/wallet', { replace: true })
         } catch (err) {
             dispatch(setErrorWithTimeout({ type: 'Join Error:', message: `${err}` }))
         } finally {

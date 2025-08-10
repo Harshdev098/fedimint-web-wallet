@@ -22,6 +22,7 @@ export default function Ecash() {
     const [redeemingEcash, setRedeemingEcash] = useState<boolean>(false)
     const [openVideo, setOpenVideo] = useState<boolean>(false)
     const [convertedAmountInMSat, setConvertedAmountInMSat] = useState<number>(0)
+    const { recoveryState } = useSelector((state: RootState) => state.activeFederation)
     const amount = useRef<HTMLInputElement | null>(null)
     const [notes, setNotes] = useState('')
     const { wallet } = useWallet()
@@ -166,7 +167,7 @@ export default function Ecash() {
                                 </div>
                             </div>
 
-                            <button type="submit" disabled={spendingEcash} className="primary-btn">
+                            <button type="submit" disabled={spendingEcash || recoveryState.status} className="primary-btn">
                                 <i className="fa-solid fa-money-bill-transfer"></i>
                                 <span>Generate & Spend</span>
                             </button>
@@ -175,7 +176,6 @@ export default function Ecash() {
                         {SpendEcashResult && (
                             <div className='spend-result'>
                                 <div className="result-header">
-                                    <h4>Generated Ecash</h4>
                                     <button
                                         type="button"
                                         className="clear-btn"
@@ -214,6 +214,7 @@ export default function Ecash() {
                                     <button
                                         onClick={() => { downloadQRCode('ecash') }}
                                         className="download-btn"
+                                        disabled={recoveryState.status}
                                     >
                                         <i className="fa-solid fa-download"></i>
                                         Download QR
@@ -259,13 +260,13 @@ export default function Ecash() {
                             )}
 
                             <div className="button-group">
-                                <button type="submit" disabled={redeemingEcash} className="primary-btn">
+                                <button type="submit" disabled={redeemingEcash || recoveryState.status} className="primary-btn">
                                     <i className="fa-solid fa-hand-holding-dollar"></i>
                                     <span>Confirm Redeem</span>
                                 </button>
                                 <button
                                     type="button"
-                                    disabled={redeemingEcash}
+                                    disabled={redeemingEcash || recoveryState.status}
                                     onClick={() => { setOpenVideo(true) }}
                                     className="secondary-btn scan-btn"
                                 >

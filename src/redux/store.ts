@@ -8,6 +8,7 @@ import WalletSlice from "./slices/WalletSlice";
 import NotificationSlice from "./slices/NotificationSlice";
 import Mode from "./slices/Mode";
 import AlertSlice from "./slices/Alerts";
+import TransactionsSlice from './slices/TransactionSlice'
 
 
 export const store=configureStore({
@@ -20,7 +21,8 @@ export const store=configureStore({
         wallet:WalletSlice,
         notifications:NotificationSlice,
         Mode:Mode,
-        Alert:AlertSlice
+        Alert:AlertSlice,
+        transaction:TransactionsSlice
     }
 })
 

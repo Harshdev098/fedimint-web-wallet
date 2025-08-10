@@ -1,17 +1,127 @@
-import { useState } from 'react'
-import { useSelector } from 'react-redux';
-import type { RootState } from '../redux/store';
+import { useCallback, useContext, useEffect, useState } from 'react'
+import { useDispatch, useSelector } from 'react-redux';
+import type { AppDispatch, RootState } from '../redux/store';
 import Alerts from './Alerts';
 import { useNavigate } from 'react-router';
+import { setErrorWithTimeout, setResultWithTimeout } from '../redux/slices/Alerts';
+import { startProgress, doneProgress } from '../utils/ProgressBar';
+import { useWallet } from '../context/WalletManager';
+import type { OnchainTxDetail } from '../hooks/wallet.type';
+import { updateBalanceFromMsat } from '../redux/slices/Balance';
+import LoadingContext from '../context/Loading';
+import type { Transaction } from '../hooks/wallet.type';
+import { fetchTransactions, resetTransactions } from '../redux/slices/TransactionSlice';
+import noDataFound from '../assets/no-data-found.png'
+import mempoolJS from '@mempool/mempool.js'
+
 
 export default function Activities() {
+    const dispatch = useDispatch<AppDispatch>()
+    const { setLoader } = useContext(LoadingContext)
     const { error } = useSelector((state: RootState) => state.Alert)
+    const { wallet } = useWallet()
+    const { transactions, isFetching } = useSelector((state: RootState) => state.transaction)
     const [expandedId, setExpandedId] = useState<string | null>(null);
+    const { walletId, recoveryState } = useSelector((state: RootState) => state.activeFederation)
+    const [onchainDetails, setOnchainDetails] = useState<Record<string, OnchainTxDetail>>({});
     const navigate = useNavigate()
 
     const toggleExpanded = (id: string) => {
         setExpandedId(prev => (prev === id ? null : id));
     };
+
+    const CancelNotes = async (op: string) => {
+        try {
+            startProgress()
+            await wallet.mint.tryCancelSpendNotes(op)
+            dispatch(setResultWithTimeout('Note Reclaimed'))
+            const msat = await wallet.balance.getBalance()
+            updateBalanceFromMsat(msat)
+        } catch (err) {
+            dispatch(setErrorWithTimeout({ type: 'Cancel Notes: ', message: `${err}` }))
+        } finally {
+            doneProgress()
+        }
+    }
+
+    const fetchOnchainTxDetail = async (op: string) => {
+        try {
+            setLoader(true);
+            const { bitcoin: { transactions } } = mempoolJS({
+                hostname: 'mempool.space',
+            });
+
+            const result = await transactions.getTx({ txid: `${op}` });
+            console.log(result);
+
+            setOnchainDetails(prev => ({
+                ...prev,
+                [op]: result
+            }));
+        } catch (err) {
+            dispatch(setErrorWithTimeout({ type: 'Onchain Error', message: `${err}` }));
+        } finally {
+            setLoader(false);
+        }
+    }
+
+    const renderManageTx = (tx: Transaction) => {
+        if (tx.kind === 'mint' && tx.type === 'spend_oob' && tx.outcome === 'created') {
+            return (
+                <div style={{ padding: '10px' }}>
+                    <p><i className="fa-solid fa-circle-info"></i> Do not want to spend? Reclaim notes</p>
+                    <button className='primary-btn' onClick={() => CancelNotes(tx.operationId)}>
+                        <i className="fa-solid fa-recycle"></i> Reclaim Notes
+                    </button>
+                </div>
+            );
+        }
+        else if (tx.kind === 'wallet' && tx.type === 'withdraw') {
+            const txDetail = onchainDetails[tx.operationId];
+
+            return (
+                <div style={{ padding: '10px' }}>
+                    <p><i className="fa-solid fa-circle-info"></i> Get More Details</p>
+                    <button
+                        className='primary-btn'
+                        onClick={() => fetchOnchainTxDetail(tx.operationId)}
+                    >
+                        <i className="fa-solid fa-circle-info"></i> Fetch Onchain Details
+                    </button>
+
+                    {txDetail ? (
+                        <div className="pegout-details-grid">
+                            <div className="pegout-detail">
+                                <strong>Actual Fee:</strong> {txDetail.fee} sats
+                            </div>
+                            <div className="pegout-detail">
+                                <strong>Lock Time:</strong> {txDetail.status.block_time
+                                    ? new Date(txDetail.status.block_time * 1000).toLocaleString()
+                                    : 'N/A'}
+                            </div>
+                            <div className="pegout-detail">
+                                <strong>Status:</strong> {txDetail.status.confirmed ? 'Confirmed' : 'Unconfirmed'}
+                            </div>
+                            <div className="pegout-detail">
+                                <strong>Block Height:</strong> {txDetail.status.block_height ?? 'Pending'}
+                            </div>
+                        </div>
+                    ) : (
+                        <p>Fetching transaction status</p>
+                    )}
+                </div>
+            );
+        }
+    };
+
+    const fetchTx = useCallback(() => {
+        !recoveryState.status && dispatch(resetTransactions())
+        !recoveryState.status && dispatch(fetchTransactions({ limit: 5, wallet }))
+    }, [wallet, walletId])
+
+    useEffect(() => {
+        !recoveryState.status && fetchTx()
+    }, [wallet, walletId])
 
     return (
         <div className="activities-wrapper">
@@ -29,82 +139,94 @@ export default function Activities() {
                     </div>
                 </div>
 
-                <div className="transaction-section">
-                    <ul className="transaction-item">
-                        <li className="transaction-main" onClick={() => toggleExpanded('dsfsd')}>
-                            <div className="transaction-left">
-                                <div className="transaction-icon received">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                                        <path d="M12 5v14M5 12l7 7 7-7" />
-                                    </svg>
-                                </div>
-                                <div className="transaction-info">
-                                    <h3 className="transaction-type">Payment Received</h3>
-                                    <p className="transaction-time">2 hours ago</p>
-                                    <span className="transaction-method">Lightning Network</span>
-                                </div>
-                            </div>
-
-                            <div className="transaction-right">
-                                <div className="transaction-amount-section">
-                                    <p className="transaction-amount positive">+2,000 sat</p>
-                                    <span className="transaction-status success">Claimed</span>
-                                </div>
-                                <button className="expand-button">
-                                    <svg
-                                        className={`expand-icon ${expandedId === 'dsfsd' ? 'expanded' : ''}`}
-                                        width="16"
-                                        height="16"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth="2"
-                                    >
-                                        <path d="M6 9l6 6 6-6" />
-                                    </svg>
-                                </button>
-                            </div>
-                        </li>
-
-                        {/* Expanded Details */}
-                        {expandedId === 'dsfsd' && (
-                            <div className="transaction-details">
-                                <div className="details-container">
-                                    <div className="details-row">
-                                        <div className="detail-group">
-                                            <span className="detail-label">Transaction Type</span>
-                                            <span className="detail-value">Lightning Payment</span>
+                {!isFetching ? <div className="transaction-section">
+                    {transactions.length > 0 ? <ul className="transaction-item">
+                        {transactions.map((tx, key) => {
+                            const isPositive = ['receive', 'reissue', 'deposit'].includes(tx.type);
+                            const isNegative = ['send', 'spend_oob', 'withdraw'].includes(tx.type);
+                            return (
+                                <div key={tx.operationId || key}>
+                                    <li className="transaction-main" onClick={() => toggleExpanded(tx.operationId)}>
+                                        <div className="transaction-left">
+                                            <div className={`transaction-icon ${isPositive ? 'received' : 'sent'}`}>
+                                                {isPositive ? <i className="fa-solid fa-arrow-down"></i> : <i className="fa-solid fa-arrow-up"></i>}
+                                            </div>
+                                            <div className="transaction-info">
+                                                <h3 className="transaction-type">{tx.type.toUpperCase()}</h3>
+                                                <p className="transaction-time">{tx.timestamp}</p>
+                                                <span className="transaction-method">{tx.kind === 'mint' ? 'ecash' : tx.kind === 'wallet' ? 'onchain' : 'lightning'}</span>
+                                            </div>
                                         </div>
-                                        <div className="detail-group">
-                                            <span className="detail-label">Operation ID</span>
-                                            <span className="detail-value">sdfsdfsd</span>
-                                        </div>
-                                    </div>
 
-                                    <div className="details-row">
-                                        <div className="detail-group">
-                                            <span className="detail-label">Status</span>
-                                            <span className="detail-value status-success">Claimed</span>
+                                        <div className="transaction-right">
+                                            <div className="transaction-amount-section">
+                                                <p className={`transaction-amount ${isPositive ? 'positive' : isNegative ? 'negative' : ''}`}>
+                                                    {isPositive ? '+' : isNegative ? '-' : ''}{tx.amountMsats} sat
+                                                </p>
+                                                {tx.outcome && <span className={`transaction-status ${(tx.outcome === 'success' || tx.outcome === 'claimed') ? 'success' : 'failed'}`}>{tx.outcome}</span>}
+                                            </div>
+                                            <button className="expand-button">
+                                                <svg
+                                                    className={`expand-icon ${expandedId === tx.operationId ? 'expanded' : ''}`}
+                                                    width="16"
+                                                    height="16"
+                                                    viewBox="0 0 24 24"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    strokeWidth="2"
+                                                >
+                                                    <path d="M6 9l6 6 6-6" />
+                                                </svg>
+                                            </button>
                                         </div>
-                                        <div className="detail-group">
-                                            <span className="detail-label">Network Fees</span>
-                                            <span className="detail-value">23 SAT</span>
-                                        </div>
-                                    </div>
+                                    </li>
 
-                                    <div className="detail-group full-width">
-                                        <span className="detail-label">Invoice Hash</span>
-                                        <span className="detail-value hash">sdfsdfs...truncated</span>
-                                    </div>
+                                    {expandedId === tx.operationId && (
+                                        <div className="transaction-details">
+                                            <div className="details-container">
+                                                <div className="details-row">
+                                                    <div className="detail-group">
+                                                        <span className="detail-label">Transaction Type</span>
+                                                        <span className="detail-value">{tx.kind}</span>
+                                                    </div>
+                                                    <div className="detail-group">
+                                                        <span className="detail-label">Operation ID</span>
+                                                        <span className="detail-value">{tx.operationId}</span>
+                                                    </div>
+                                                </div>
+
+                                                <div className="details-row">
+                                                    <div className="detail-group">
+                                                        <span className="detail-label">Status</span>
+                                                        <span className={`detail-value status-${(tx.outcome === 'success' || tx.outcome === 'claimed') ? 'success' : 'failed'}`}>{tx.outcome}</span>
+                                                    </div>
+                                                    <div className="detail-group">
+                                                        <span className="detail-label">Estimated Network Fees</span>
+                                                        <span className="detail-value">{tx.fee}</span>
+                                                    </div>
+                                                </div>
+                                                <div className="details-row">
+                                                    {tx.onchainAddress && <div className="detail-group">
+                                                        <span className="detail-label">Onchain Address</span>
+                                                        <span className={`detail-value`}>{tx.onchainAddress}</span>
+                                                    </div>}
+                                                    {tx.invoice && <div className="detail-group full-width">
+                                                        <span className="detail-label">Invoice</span>
+                                                        <span className="detail-value hash">{tx.invoice}</span>
+                                                    </div>}
+                                                </div>
+                                            </div>
+                                            {renderManageTx(tx)}
+                                        </div>
+                                    )}
                                 </div>
-                                <div style={{ padding: '10px' }}>
-                                    <p><i className="fa-solid fa-circle-info"></i> Do not want to spend? Reclaim notes</p>
-                                    <button className='primary-btn'><i className="fa-solid fa-recycle"></i> Reclaim Notes</button>
-                                </div>
-                            </div>
-                        )}
-                    </ul>
-                </div>
+                            );
+                        })}
+                    </ul> : <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                        <img src={noDataFound} style={{ width: '30%' }} alt="" />
+                        <p style={{ textAlign: 'center' }}>No Transactions found</p>
+                    </div>}
+                </div> : <p>Fetching transactions...</p>}
 
                 {/* Footer Actions */}
                 <div className="activities-footer">

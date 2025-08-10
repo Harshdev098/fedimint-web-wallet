@@ -8,7 +8,7 @@ import { setCurrency } from '../redux/slices/Balance';
 import { removeWallet } from '@fedimint/core-web'
 import { useNavigate } from "react-router";
 import { startProgress, doneProgress } from "../utils/ProgressBar";
-// import { DownloadTransactionsCSV } from "../services/DownloadQR";
+import { DownloadTransactionsCSV } from "../services/DownloadQR";
 import Alerts from "./Alerts";
 import { setErrorWithTimeout, setResultWithTimeout } from "../redux/slices/Alerts";
 import validate from 'bitcoin-address-validation';
@@ -28,9 +28,9 @@ export default function BasicSettings() {
     const [isValidAddress, setIsValidAddress] = useState(false)
     const [withdrawalBox, setWithdrawalBox] = useState<boolean>(false)
     const [thresholdAmount, setThresholdAmount] = useState<number>(metaData?.max_stable_balance_msats || 0)
-    const { walletId,recovery } = useSelector((state: RootState) => state.activeFederation)
+    const { walletId, recoveryState } = useSelector((state: RootState) => state.activeFederation)
     const { wallet, switchWallet, getAvailableFederations } = useWallet()
-    const [backupRanomData,setBackupRandomData]=useState<string>('')
+    const [backupRanomData, setBackupRandomData] = useState<string>('')
     const [backupBox, setBackupBox] = useState<boolean>(false)
     const navigate = useNavigate()
 
@@ -119,24 +119,24 @@ export default function BasicSettings() {
     }
 
     const handleDownloadTransactions = async () => {
-        // try {
-        //     startProgress()
-        //     const transactions = await wallet.federation.listTransactions()
-        //     if (transactions.length === 0) throw new Error("0 Transactions found")
-        //     DownloadTransactionsCSV(transactions)
-        // } catch (err) {
-        //     logger.log('an error occured')
-        //     dispatch(setErrorWithTimeout({type:'Transaction Error',message:err instanceof Error ? err.message : String(err)}))
-        // } finally {
-        //     doneProgress()
-        // }
+        try {
+            startProgress()
+            const transactions = await wallet.federation.listTransactions()
+            if (transactions.length === 0) throw new Error("0 Transactions found")
+            DownloadTransactionsCSV(transactions)
+        } catch (err) {
+            logger.log('an error occured')
+            dispatch(setErrorWithTimeout({type:'Transaction Error',message:err instanceof Error ? err.message : String(err)}))
+        } finally {
+            doneProgress()
+        }
     }
 
-    const handleBackup = async (e:React.FormEvent) => {
+    const handleBackup = async (e: React.FormEvent) => {
         e.preventDefault()
         try {
             startProgress()
-            const result = await wallet.recovery.backupToFederation({backupRanomData})
+            const result = await wallet.recovery.backupToFederation({ backupRanomData })
             logger.log('backup result is ', result)
             dispatch(setResultWithTimeout('Wallet backup successfully'))
             setBackupBox(false)
@@ -351,10 +351,10 @@ export default function BasicSettings() {
                                 <Tippy content='None of the wallet operation can be performed while recovery'>
                                     <h3>Recovery <i className="fa-solid fa-info-circle"></i></h3>
                                 </Tippy>
-                                {recovery ? <p>Recovery is in progress</p> : <p>No recovery is in progress</p>}
+                                {recoveryState.status ? <p>Recovery is in progress</p> : <p>No recovery is in progress</p>}
                             </div>
                         </div>
-                        <div className="setting-item" style={{cursor:'pointer'}} onClick={()=>setBackupBox(true)}>
+                        <div className="setting-item" style={{ cursor: 'pointer' }} onClick={() => setBackupBox(true)}>
                             <div className="setting-info">
                                 <h3>Backup</h3>
                                 <p>Want to backup your Wallet? Don't worry its all secure and private on federation guardians</p>

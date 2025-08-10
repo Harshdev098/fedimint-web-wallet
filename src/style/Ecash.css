@@ -269,7 +269,7 @@ h2 {
 .form-textarea {
     width: 100%;
     padding: 16px 20px;
-    border: 2px solid #E5E7EB;
+    border: 1px solid #677389;
     border-radius: 12px;
     font-size: 1rem;
     color: #111827;
@@ -284,7 +284,6 @@ h2 {
 .form-textarea:focus {
     outline: none;
     border-color: #2176FF;
-    background-color: #FFFFFF;
     box-shadow: 0 0 0 4px rgba(33, 118, 255, 0.1);
 }
 
@@ -408,7 +407,18 @@ h2 {
     border-radius: 16px;
     border: 1px solid #E5E7EB;
 }
-
+.DarkMode .spend-result{
+    background: rgb(55, 65, 81);
+    color: #abd1e3;
+    border: none;
+}
+.DarkMode .copy-wrapper{
+    background: rgb(63, 74, 93);
+    color: white;
+}
+.DarkMode .notes-text{
+    color: white;
+}
 .result-header {
     display: flex;
     justify-content: space-between;

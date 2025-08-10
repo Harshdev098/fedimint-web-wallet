@@ -3,8 +3,7 @@ import { PayInvoice } from "../services/LightningPaymentService";
 import { getMnemonic, Wallet } from "@fedimint/core-web";
 import { hexToBytes, bytesToHex } from "@noble/hashes/utils";
 import { generateSecretKey, getPublicKey } from "nostr-tools";
-// import type { CreateBolt11Response, LightningTransaction, LnReceiveState, Transactions } from "@fedimint/core-web";
-import type { CreateBolt11Response, LnPayState, LnReceiveState } from "@fedimint/core-web";
+import type { CreateBolt11Response, LightningTransaction, LnReceiveState, Transactions, LnPayState } from "@fedimint/core-web";
 import { handleZapRequest } from "./ZapService";
 import logger from "../utils/logger";
 import type { DiscoveredFederation } from "../hooks/Federation.type";
@@ -15,7 +14,7 @@ import * as bip32 from '@scure/bip32';
 const invoiceStore = new Map<string, string>();
 
 export function deriveNostrSecretKey(mnemonic: string): string {
-    const seed = bip39.mnemonicToSeedSync(mnemonic); // returns Uint8Array, not Buffer
+    const seed = bip39.mnemonicToSeedSync(mnemonic);
     const root = bip32.HDKey.fromMasterSeed(seed);
     const child = root.derive("m/44'/1237'/0'/0/0");
 
@@ -525,66 +524,63 @@ export const handleNostrPayment = async (wallet: Wallet, walletNostrPubKey: stri
     }
 
     const ListTransactions = async () => {
-        // try {
-        //     const rawTransactions: Transactions[] = await wallet.federation.listTransactions();
+        try {
+            const rawTransactions: Transactions[] = await wallet.federation.listTransactions();
 
-        //     const transactions = rawTransactions.map(tx => {
-        //         let state: "settled" | "pending" | "failed" = "pending";
+            let state: "settled" | "pending" | "failed" = "pending";
+            logger.log('state',state)
+            const transactions = rawTransactions.map(tx => {
 
-        //         if (tx.kind === 'ln') {
-        //             if (tx.outcome === "claimed" || tx.outcome === "success") {
-        //                 state = "settled";
-        //             } else if (tx.outcome === 'cancelled' || tx.outcome === 'failed') {
-        //                 state = "failed";
-        //             }
-        //         } else if (tx.kind === 'mint') {
-        //             if (tx.outcome === 'Success') {
-        //                 state = 'settled';
-        //             } else if (
-        //                 tx.outcome === 'UserCanceledProcessing' ||
-        //                 tx.outcome === 'UserCanceledFailure'
-        //             ) {
-        //                 state = 'failed';
-        //             }
-        //         }
+                if (tx.kind === 'ln') {
+                    if (tx.outcome === "claimed" || tx.outcome === "success") {
+                        state = "settled";
+                    } else if (tx.outcome === 'canceled') {
+                        state = "failed";
+                    }
+                } else if (tx.kind === 'mint') {
+                    if (tx.outcome === 'Success') {
+                        state = 'settled';
+                    } else if (
+                        tx.outcome === 'UserCanceledProcessing' ||
+                        tx.outcome === 'UserCanceledFailure'
+                    ) {
+                        state = 'failed';
+                    }
+                }
 
-        //         const created_at = Math.floor(tx.timestamp / 1000);
+                const created_at = Math.floor(tx.timestamp / 1000);
 
-        //         return {
-        //             type: tx.type === 'receive' ? 'incoming' : 'outgoing',
-        //             invoice: tx.kind === 'ln' ? (tx as LightningTransaction).invoice : undefined,
-        //             description: "",
-        //             description_hash: "",
-        //             preimage: "",
-        //             payment_hash: "",
-        //             amount: 0,
-        //             fees_paid: 0,
-        //             created_at,
-        //             expires_at: null,
-        //             settled_at: created_at,
-        //             metadata: {},
-        //         };
-        //     });
+                return {
+                    type: tx.type === 'receive' ? 'incoming' : 'outgoing',
+                    invoice: tx.kind === 'ln' ? (tx as LightningTransaction).invoice : undefined,
+                    description: "",
+                    description_hash: "",
+                    preimage: "",
+                    payment_hash: "",
+                    amount: 0,
+                    fees_paid: 0,
+                    created_at,
+                    expires_at: null,
+                    settled_at: created_at,
+                    metadata: {},
+                };
+            });
 
-        //     return {
-        //         result_type: "list_transactions",
-        //         result: {
-        //             transactions
-        //         }
-        //     };
-        return {
-            result_type: "list_transactions",
-            result: {}
+            return {
+                result_type: "list_transactions",
+                result: {
+                    transactions
+                }
+            };
+        } catch (error: any) {
+            return {
+                result_type: "list_transactions",
+                error: {
+                    code: "list_transactions_error",
+                    message: error?.toString() || "Unknown error"
+                }
+            };
         }
-        // } catch (error: any) {
-        //     return {
-        //         result_type: "list_transactions",
-        //         error: {
-        //             code: "list_transactions_error",
-        //             message: error?.toString() || "Unknown error"
-        //         }
-        //     };
-        // }
     };
 
 

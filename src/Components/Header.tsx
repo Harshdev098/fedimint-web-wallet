@@ -3,7 +3,7 @@ import type { AppDispatch, RootState } from '../redux/store'
 import { Link } from 'react-router'
 import { useState, useEffect, useRef } from 'react'
 import { useWallet } from '../context/WalletManager'
-import { startProgress,doneProgress } from '../utils/ProgressBar'
+import { startProgress, doneProgress } from '../utils/ProgressBar'
 import { setErrorWithTimeout } from '../redux/slices/Alerts'
 import AddFederation from './AddFederation'
 import Notifications from './Notifications'
@@ -15,7 +15,7 @@ export default function Header() {
     const [joinForm, setJoinForm] = useState(false)
     const { wallet, switchWallet, refreshActiveWallet, availableWalletList, isLoadingAvailableFederations } = useWallet()
     const [ActiveFederation, setActiveFederation] = useState<{ name: string | undefined, fedId: string | undefined }>({ name: undefined, fedId: undefined })
-    const { walletId } = useSelector((state: RootState) => state.activeFederation)
+    const { walletId,recoveryState } = useSelector((state: RootState) => state.activeFederation)
     const { metaData, Details } = useSelector((state: RootState) => state.federationdetails)
     const { error } = useSelector((state: RootState) => state.Alert)
     const notifications = useSelector((state: RootState) => state.notifications)
@@ -50,13 +50,15 @@ export default function Header() {
 
 
     const handleRefresh = async () => {
-        try {
-            startProgress()
-            await refreshActiveWallet()
-        } catch (err) {
-            dispatch(setErrorWithTimeout({ type: 'Error: ', message: "An error occured" }))
-        } finally {
-            doneProgress()
+        if (!recoveryState.status) {
+            try {
+                startProgress()
+                await refreshActiveWallet()
+            } catch (err) {
+                dispatch(setErrorWithTimeout({ type: 'Error: ', message: "An error occured" }))
+            } finally {
+                doneProgress()
+            }
         }
     }
 

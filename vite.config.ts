@@ -4,7 +4,7 @@ import wasm from 'vite-plugin-wasm';
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
-    base: '/fedimint-web-wallet/',
+    base: '/fedimint-web-wallet',
     plugins: [
         react(),
         wasm(),

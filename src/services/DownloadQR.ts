@@ -1,4 +1,4 @@
-// import type { EcashTransaction, LightningTransaction, Transactions } from "@fedimint/core-web";
+import type { EcashTransaction, LightningTransaction, Transactions } from "@fedimint/core-web";
 import logger from "../utils/logger";
 
 export const downloadQRCode = (downloadName: string) => {
@@ -30,34 +30,34 @@ export const downloadQRCode = (downloadName: string) => {
 	img.src = "data:image/svg+xml;base64," + btoa(svgString);
 };
 
-// export const DownloadTransactionsCSV = (transactions:Transactions[]) => {
-//     logger.log("transactions are",transactions)
+export const DownloadTransactionsCSV = (transactions:Transactions[]) => {
+    logger.log("transactions are",transactions)
 
-//     const headers = ['TimeStamp', 'PaymentType', 'Type', 'Amount', 'OperationId', 'Outcome', 'Gateway','Invoice'];
-//     const csvRows = [
-//         headers.join(','),
-//         ...transactions.map(tx =>
-//             [
-//                 `"${tx.timestamp}"`,
-//                 tx.kind,
-//                 tx.type,
-//                 (tx as EcashTransaction).amountMsats,
-//                 tx.operationId,
-//                 tx.outcome,
-//                 (tx as LightningTransaction).gateway,
-// 				(tx as LightningTransaction).invoice
-//             ].join(',')
-//         )
-//     ];
+    const headers = ['TimeStamp', 'PaymentType', 'Type', 'Amount', 'OperationId', 'Outcome', 'Gateway','Invoice'];
+    const csvRows = [
+        headers.join(','),
+        ...transactions.map(tx =>
+            [
+                `"${tx.timestamp}"`,
+                tx.kind,
+                tx.type,
+                (tx as EcashTransaction).amountMsats,
+                tx.operationId,
+                tx.outcome,
+                (tx as LightningTransaction).gateway,
+				(tx as LightningTransaction).invoice
+            ].join(',')
+        )
+    ];
 
-//     const csvContent = csvRows.join('\n');
-//     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-//     const url = URL.createObjectURL(blob);
+    const csvContent = csvRows.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
 
-//     const link = document.createElement('a');
-//     link.href = url;
-//     link.setAttribute('download', `transactions_${new Date().toISOString()}.csv`);
-//     document.body.appendChild(link);
-//     link.click();
-//     document.body.removeChild(link);
-// };
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `transactions_${new Date().toISOString()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+};
