@@ -1,17 +1,17 @@
-import { createSlice } from '@reduxjs/toolkit'
-import type { PayloadAction } from '@reduxjs/toolkit'
-import type { MintSpendNotesResponse, NotesByDenomonationResponse } from '../../hooks/wallet.type'
+import { createSlice } from '@reduxjs/toolkit';
+import type { PayloadAction } from '@reduxjs/toolkit';
+import type { MintSpendNotesResponse, NotesByDenomonationResponse } from '../../hooks/wallet.type';
 
 interface MintState {
-    SpendEcashResult: MintSpendNotesResponse | null,
-    ParseEcashResult: string | null,
-    NotesByDenomonation: NotesByDenomonationResponse
+    SpendEcashResult: MintSpendNotesResponse | null;
+    ParseEcashResult: string | null;
+    NotesByDenomonation: NotesByDenomonationResponse;
 }
 const initialState: MintState = {
     SpendEcashResult: null,
     ParseEcashResult: null,
-    NotesByDenomonation: {}
-}
+    NotesByDenomonation: {},
+};
 
 const MintSlice = createSlice({
     name: 'Mint',
@@ -21,14 +21,14 @@ const MintSlice = createSlice({
             state.SpendEcashResult = action.payload;
         },
         setParseEcashResult: (state, action: PayloadAction<string | null>) => {
-            state.ParseEcashResult = action.payload
+            state.ParseEcashResult = action.payload;
         },
         setNotesByDenomination: (state, action: PayloadAction<NotesByDenomonationResponse>) => {
-            state.NotesByDenomonation = action.payload
-        }
-    }
-})
+            state.NotesByDenomonation = action.payload;
+        },
+    },
+});
 
-export const { setSpendResult, setParseEcashResult, setNotesByDenomination } = MintSlice.actions
+export const { setSpendResult, setParseEcashResult, setNotesByDenomination } = MintSlice.actions;
 
 export default MintSlice.reducer;

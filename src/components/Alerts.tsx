@@ -1,6 +1,6 @@
 interface AlertsProps {
     Result?: string | null;
-    Error?: {type: string, message:string} | null;
+    Error?: { type: string; message: string } | null;
     onDismiss?: () => void;
 }
 
@@ -12,7 +12,10 @@ export default function Alerts({ Result, Error, onDismiss }: AlertsProps) {
                     <i className="fa-solid fa-xmark"></i>
                 </button>
             )}
-            <p><b>{Error?.type}</b>{Result || Error?.message}</p>
+            <p>
+                <b>{Error?.type}</b>
+                {Result || Error?.message}
+            </p>
         </div>
     );
 }

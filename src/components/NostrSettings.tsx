@@ -1,14 +1,26 @@
 import { useState, useContext } from 'react';
-import NostrContext from '../context/nostr';
-import '../style/Settings.css'
+import NostrContext from '../context/Nostr';
+import '../style/Settings.css';
 import Tippy from '@tippyjs/react';
 
 export default function NostrSettings() {
-    const [autoPay, setAutoPay] = useState(localStorage.getItem('autoPayNostr') === 'true' ? true : false)
-    const [relayUrl, setRelayURL] = useState('')
-    const { nwcEnabled, nwcURL, generateNWCConnection, connectionStatus, NostrAppName, NostrRelay, updateRelay, setNostrAppName, setNostrRelay } = useContext(NostrContext)
-    const [OpenInvoiceDescription, setOpenInvoiceDescription] = useState<boolean>(false)
-    const [description, setDescription] = useState<string>('')
+    const [autoPay, setAutoPay] = useState(
+        localStorage.getItem('autoPayNostr') === 'true' ? true : false
+    );
+    const [relayUrl, setRelayURL] = useState('');
+    const {
+        nwcEnabled,
+        nwcURL,
+        generateNWCConnection,
+        connectionStatus,
+        NostrAppName,
+        NostrRelay,
+        updateRelay,
+        setNostrAppName,
+        setNostrRelay,
+    } = useContext(NostrContext);
+    const [OpenInvoiceDescription, setOpenInvoiceDescription] = useState<boolean>(false);
+    const [description, setDescription] = useState<string>('');
 
     const isValidRelayUrl = (url: string): boolean => {
         const regex = /^wss?:\/\/[^\s/$.?#].[^\s]*$/i;
@@ -19,20 +31,19 @@ export default function NostrSettings() {
         e.preventDefault();
 
         if (!isValidRelayUrl(relayUrl)) {
-            alert("Invalid WebSocket relay URL format.");
+            alert('Invalid WebSocket relay URL format.');
             return;
         }
 
-        const alreadyExists = connectionStatus.some(cs => cs.relay === relayUrl);
+        const alreadyExists = connectionStatus.some((cs) => cs.relay === relayUrl);
 
         if (relayUrl && !alreadyExists) {
             updateRelay(relayUrl);
             setRelayURL('');
         } else if (alreadyExists) {
-            alert("Relay already exists in your connection list.");
+            alert('Relay already exists in your connection list.');
         }
     };
-
 
     const handleAutoNostrPay = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newValue = e.target.checked;
@@ -41,35 +52,42 @@ export default function NostrSettings() {
     };
 
     const handleSetInvoiceDescription = () => {
-        localStorage.setItem('description', description)
-        setOpenInvoiceDescription(false)
-    }
-
+        localStorage.setItem('description', description);
+        setOpenInvoiceDescription(false);
+    };
 
     return (
         <>
-            {OpenInvoiceDescription && <div className="modalOverlay">
-                <div className='createInvoice'>
-                    <button type='button' className='closeBtn' onClick={() => setOpenInvoiceDescription(false)}>
-                        <i className="fa-solid fa-xmark"></i>
-                    </button>
-                    <h2><i className="fa-solid fa-bolt"></i> Set Invoice Description</h2>
-                    <form onSubmit={handleSetInvoiceDescription}>
-                        <label htmlFor='amountvalue'>Enter invoice description:</label>
-                        <div className="input-group">
-                            <input
-                                type="text"
-                                id='amountvalue'
-                                className="amount-input"
-                                value={localStorage.getItem('description') || description}
-                                onChange={(e) => setDescription(e.target.value)}
-                                required
-                            />
-                        </div>
-                        <button type='submit'>Set</button>
-                    </form>
+            {OpenInvoiceDescription && (
+                <div className="modalOverlay">
+                    <div className="createInvoice">
+                        <button
+                            type="button"
+                            className="closeBtn"
+                            onClick={() => setOpenInvoiceDescription(false)}
+                        >
+                            <i className="fa-solid fa-xmark"></i>
+                        </button>
+                        <h2>
+                            <i className="fa-solid fa-bolt"></i> Set Invoice Description
+                        </h2>
+                        <form onSubmit={handleSetInvoiceDescription}>
+                            <label htmlFor="amountvalue">Enter invoice description:</label>
+                            <div className="input-group">
+                                <input
+                                    type="text"
+                                    id="amountvalue"
+                                    className="amount-input"
+                                    value={localStorage.getItem('description') || description}
+                                    onChange={(e) => setDescription(e.target.value)}
+                                    required
+                                />
+                            </div>
+                            <button type="submit">Set</button>
+                        </form>
+                    </div>
                 </div>
-            </div>}
+            )}
             <div className="settings-container">
                 {/* Nostr Wallet Connect Section */}
                 <div className="settings-section">
@@ -82,20 +100,24 @@ export default function NostrSettings() {
                                 {nwcURL.map((uri, idx) => (
                                     <div key={idx} className="connection-card">
                                         <div className="connection-header">
-                                            <h4 className="app-name" style={{ margin: '4px' }}>{uri.appName}</h4>
+                                            <h4 className="app-name" style={{ margin: '4px' }}>
+                                                {uri.appName}
+                                            </h4>
                                         </div>
                                         <div className="connection-uri">
-                                            <p
-                                                className="uri-text"
-                                            >
-                                                {uri.nwcUri || uri.relay}
-                                            </p>
-                                            {uri.nwcUri && <button
-                                                className="copy-btn"
-                                                onClick={() => navigator.clipboard.writeText(uri.nwcUri || '')}
-                                            >
-                                                <i className="fa-solid fa-copy"></i>
-                                            </button>}
+                                            <p className="uri-text">{uri.nwcUri || uri.relay}</p>
+                                            {uri.nwcUri && (
+                                                <button
+                                                    className="copy-btn"
+                                                    onClick={() =>
+                                                        navigator.clipboard.writeText(
+                                                            uri.nwcUri || ''
+                                                        )
+                                                    }
+                                                >
+                                                    <i className="fa-solid fa-copy"></i>
+                                                </button>
+                                            )}
                                         </div>
                                     </div>
                                 ))}
@@ -112,7 +134,8 @@ export default function NostrSettings() {
                         ) : (
                             <div className="status-message info">
                                 <i className="fa-solid fa-info-circle"></i>
-                                Nostr Wallet Connect will be enabled with Generating and connecting the client app
+                                Nostr Wallet Connect will be enabled with Generating and connecting
+                                the client app
                             </div>
                         )}
                     </div>
@@ -135,7 +158,7 @@ export default function NostrSettings() {
                             <div className="form-group">
                                 <label className="form-label">
                                     Preferred Relay (Optional)
-                                    <Tippy content='Only give a relay which client app is using to handle payments & connection'>
+                                    <Tippy content="Only give a relay which client app is using to handle payments & connection">
                                         <i className="fa-solid fa-info-circle"></i>
                                     </Tippy>
                                 </label>
@@ -149,13 +172,16 @@ export default function NostrSettings() {
                                 />
 
                                 <p className="title-span">
-                                    You can give a preferred relay for the specific app, Fedimint will use a getalby relay as default to generate the URI
+                                    You can give a preferred relay for the specific app, Fedimint
+                                    will use a getalby relay as default to generate the URI
                                 </p>
                             </div>
 
                             <button
                                 className="form-submit-btn"
-                                onClick={() => generateNWCConnection(NostrAppName, NostrRelay ?? undefined)}
+                                onClick={() =>
+                                    generateNWCConnection(NostrAppName, NostrRelay ?? undefined)
+                                }
                             >
                                 <i className="fa-solid fa-link"></i>
                                 Generate Nostr Connection Link
@@ -178,8 +204,12 @@ export default function NostrSettings() {
                                             <i className="fa-solid fa-server"></i>
                                             <span>{relay.relay}</span>
                                         </div>
-                                        <div className={`relay-status ${relay.status === 'connected' ? 'active' : 'inactive'}`}>
-                                            <span className={`status-dot ${relay.status === 'connected' ? 'active' : 'inactive'}`}></span>
+                                        <div
+                                            className={`relay-status ${relay.status === 'connected' ? 'active' : 'inactive'}`}
+                                        >
+                                            <span
+                                                className={`status-dot ${relay.status === 'connected' ? 'active' : 'inactive'}`}
+                                            ></span>
                                             {relay.status}
                                         </div>
                                     </div>
@@ -200,10 +230,7 @@ export default function NostrSettings() {
                                         placeholder="Enter the relay url"
                                         onChange={(e) => setRelayURL(e.target.value)}
                                     />
-                                    <button
-                                        className="add-btn"
-                                        onClick={handleConfigureRelay}
-                                    >
+                                    <button className="add-btn" onClick={handleConfigureRelay}>
                                         <i className="fa-solid fa-plus"></i>
                                         Add
                                     </button>
@@ -233,10 +260,17 @@ export default function NostrSettings() {
                                 </label>
                             </div>
                         </div>
-                        <div className="setting-item" onClick={() => setOpenInvoiceDescription(true)} style={{ cursor: 'pointer' }}>
+                        <div
+                            className="setting-item"
+                            onClick={() => setOpenInvoiceDescription(true)}
+                            style={{ cursor: 'pointer' }}
+                        >
                             <div className="setting-info">
                                 <h3>Set Default Invoice Description</h3>
-                                <p>Your Invoices will use this description by default. You can override it on case-by-case basis</p>
+                                <p>
+                                    Your Invoices will use this description by default. You can
+                                    override it on case-by-case basis
+                                </p>
                             </div>
                         </div>
                     </div>

@@ -1,13 +1,13 @@
-import { Link, useLocation } from "react-router"
-import { useMemo } from "react"
+import { Link, useLocation } from 'react-router';
+import { useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../redux/store';
 
 export default function Sidebar() {
-    const location = useLocation()
-    const { mode } = useSelector((state: RootState) => state.Mode)
-    const currentPath = useMemo(() => location.pathname, [location.pathname])
-    const isActive = (path: string) => currentPath === path
+    const location = useLocation();
+    const { mode } = useSelector((state: RootState) => state.Mode);
+    const currentPath = useMemo(() => location.pathname, [location.pathname]);
+    const isActive = (path: string) => currentPath === path;
 
     return (
         <section className={`navigation-bar ${mode === true ? 'DarkMode' : ''}`}>
@@ -36,8 +36,8 @@ export default function Sidebar() {
             </svg>
             <div className="navigator">
                 <Link
-                    className={`navigator-icon ${isActive("/wallet/federation") ? "active-nav" : ""}`}
-                    to={"/wallet/federation"}
+                    className={`navigator-icon ${isActive('/wallet/federation') ? 'active-nav' : ''}`}
+                    to={'/wallet/federation'}
                 >
                     <i className="fa-solid fa-landmark"></i>
                 </Link>
@@ -45,8 +45,8 @@ export default function Sidebar() {
             </div>
             <div className="navigator">
                 <Link
-                    className={`navigator-icon ${isActive("/wallet") ? "active-nav" : ""}`}
-                    to={"/wallet"}
+                    className={`navigator-icon ${isActive('/wallet') ? 'active-nav' : ''}`}
+                    to={'/wallet'}
                 >
                     <i className="fa-solid fa-house"></i>
                 </Link>
@@ -54,13 +54,13 @@ export default function Sidebar() {
             </div>
             <div className="navigator">
                 <Link
-                    className={`navigator-icon ${isActive("/wallet/settings") ? "active-nav" : ""}`}
-                    to={"/wallet/settings"}
+                    className={`navigator-icon ${isActive('/wallet/settings') ? 'active-nav' : ''}`}
+                    to={'/wallet/settings'}
                 >
                     <i className="fa-solid fa-gear"></i>
                 </Link>
                 <p className="navigator-label">Settings</p>
             </div>
         </section>
-    )
+    );
 }

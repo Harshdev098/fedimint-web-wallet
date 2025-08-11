@@ -5,9 +5,9 @@ import type { Transactions } from '@fedimint/core-web';
 import type { InvoiceState } from '../hooks/wallet.type';
 import { startProgress, doneProgress } from '../utils/ProgressBar';
 import { setInvoiceExpiry } from '../redux/slices/LightningPayment';
-import Alerts from '../Components/Alerts';
-import logger from '../utils/logger';
-import '../style/Invoice.css'
+import Alerts from '../components/Alerts';
+import logger from '../utils/Logger';
+import '../style/Invoice.css';
 import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from '../redux/store';
 import { setErrorWithTimeout } from '../redux/slices/Alerts';
@@ -19,20 +19,19 @@ export default function Invoices() {
         { value: 20, option: '20 min' },
         { value: 30, option: '30 min' },
         { value: 40, option: '40 min' },
-        { value: 60, option: '60 min' }
-    ]
+        { value: 60, option: '60 min' },
+    ];
     const [invoiceStateList, setInvoiceStateList] = useState<InvoiceState[]>([]);
-    const [invoicePendingList, setInvoicePendingList] = useState<InvoiceState[]>([])
-    const [stateFilter, setStateFilter] = useState<string>('all')
-    const { walletId, recoveryState } = useSelector((state: RootState) => state.activeFederation)
-    const { invoiceExpiry } = useSelector((state: RootState) => state.Lightning)
-    const { mode } = useSelector((state: RootState) => state.Mode)
-    const { wallet } = useWallet()
-    const dispatch = useDispatch<AppDispatch>()
-    const { error } = useSelector((state: RootState) => state.Alert)
-    const [currentPage, setCurrentPage] = useState(1)
-    const pageLimint = 5
-
+    const [invoicePendingList, setInvoicePendingList] = useState<InvoiceState[]>([]);
+    const [stateFilter, setStateFilter] = useState<string>('all');
+    const { walletId, recoveryState } = useSelector((state: RootState) => state.activeFederation);
+    const { invoiceExpiry } = useSelector((state: RootState) => state.Lightning);
+    const { mode } = useSelector((state: RootState) => state.Mode);
+    const { wallet } = useWallet();
+    const dispatch = useDispatch<AppDispatch>();
+    const { error } = useSelector((state: RootState) => state.Alert);
+    const [currentPage, setCurrentPage] = useState(1);
+    const pageLimint = 5;
 
     const handleInvoiceExpiry = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const value = e.target.value;
@@ -42,8 +41,14 @@ export default function Invoices() {
         localStorage.setItem('InvoiceExpiryTime', numericValue);
     };
 
-    const handleState = (prev: InvoiceState[], currentState: string, invoice: string, operationId: string, timeStamp: string) => {
-        const existingInvoice = prev.find((inv) => inv.invoiceId === invoice)
+    const handleState = (
+        prev: InvoiceState[],
+        currentState: string,
+        invoice: string,
+        operationId: string,
+        timeStamp: string
+    ) => {
+        const existingInvoice = prev.find((inv) => inv.invoiceId === invoice);
         let location: { latitude: number; longitude: number } | null = null;
 
         if (localStorage.getItem('locationAccess') === 'true') {
@@ -62,9 +67,7 @@ export default function Invoices() {
 
         if (existingInvoice) {
             return prev.map((inv) =>
-                inv.invoiceId === invoice
-                    ? { ...inv, status: currentState }
-                    : inv
+                inv.invoiceId === invoice ? { ...inv, status: currentState } : inv
             );
         } else {
             const newInvoice: InvoiceState = {
@@ -72,50 +75,63 @@ export default function Invoices() {
                 timestamp: timeStamp,
                 operationId: operationId,
                 status: currentState,
-                location: location
+                location: location,
             };
             return [...prev, newInvoice];
         }
-    }
+    };
 
     const handleInvoice = async () => {
-        startProgress()
+        startProgress();
         try {
-            let currentState: string
+            let currentState: string;
             const tx = await wallet.federation.listTransactions();
             if (tx.length > 0) {
-                logger.log("transactions ", tx);
+                logger.log('transactions ', tx);
                 tx.forEach((transaction: Transactions) => {
-                    if (transaction.kind === 'ln' && transaction.type === "receive") {
-                        const { invoice, operationId, timestamp } = transaction
+                    if (transaction.kind === 'ln' && transaction.type === 'receive') {
+                        const { invoice, operationId, timestamp } = transaction;
 
-                        const unsubscribe = wallet.lightning.subscribeLnReceive(transaction.operationId,
+                        const unsubscribe = wallet.lightning.subscribeLnReceive(
+                            transaction.operationId,
                             async (state) => {
                                 if (state === 'funded' || state === 'claimed') {
-                                    currentState = state
-                                } else if (typeof state === 'object' && 'waiting_for_payment' in state) {
+                                    currentState = state;
+                                } else if (
+                                    typeof state === 'object' &&
+                                    'waiting_for_payment' in state
+                                ) {
                                     currentState = 'waiting_for_payment';
                                 } else if (typeof state === 'object' && 'canceled' in state) {
                                     currentState = 'canceled';
                                 }
                                 if (currentState) {
                                     setInvoiceStateList((prev) =>
-                                        handleState(prev, currentState, invoice, operationId, new Date(timestamp).toLocaleString())
+                                        handleState(
+                                            prev,
+                                            currentState,
+                                            invoice,
+                                            operationId,
+                                            new Date(timestamp).toLocaleString()
+                                        )
                                     );
                                 }
-                            }, (error) => {
-                                logger.log("an error occured", error)
-                            })
+                            },
+                            (error) => {
+                                logger.log('an error occured', error);
+                            }
+                        );
                         setTimeout(() => {
                             unsubscribe?.();
                         }, 600000);
-                    } else if (transaction.kind === 'ln' && transaction.type === "send") {
-                        const { invoice, operationId, timestamp } = transaction
+                    } else if (transaction.kind === 'ln' && transaction.type === 'send') {
+                        const { invoice, operationId, timestamp } = transaction;
 
-                        const unsubscribe = wallet.lightning.subscribeLnPay(transaction.operationId,
+                        const unsubscribe = wallet.lightning.subscribeLnPay(
+                            transaction.operationId,
                             async (state) => {
                                 if (state === 'created' || state === 'awaiting_change') {
-                                    currentState = state
+                                    currentState = state;
                                 } else if (typeof state === 'object' && 'success' in state) {
                                     currentState = 'success';
                                 } else if (typeof state === 'object' && 'canceled' in state) {
@@ -123,12 +139,20 @@ export default function Invoices() {
                                 }
                                 if (currentState) {
                                     setInvoicePendingList((prev) =>
-                                        handleState(prev, currentState, invoice, operationId, new Date(timestamp).toLocaleString())
+                                        handleState(
+                                            prev,
+                                            currentState,
+                                            invoice,
+                                            operationId,
+                                            new Date(timestamp).toLocaleString()
+                                        )
                                     );
                                 }
-                            }, (error) => {
-                                logger.log("an error occured", error)
-                            })
+                            },
+                            (error) => {
+                                logger.log('an error occured', error);
+                            }
+                        );
                         setTimeout(() => {
                             unsubscribe?.();
                         }, 600000);
@@ -136,28 +160,36 @@ export default function Invoices() {
                 });
             }
         } catch (err) {
-            logger.log("an error occured")
-            dispatch(setErrorWithTimeout({ type: 'Invoice Error: ', message: String(err) }))
+            logger.log('an error occured');
+            dispatch(setErrorWithTimeout({ type: 'Invoice Error: ', message: String(err) }));
         } finally {
-            doneProgress()
+            doneProgress();
         }
-    }
+    };
 
     const handleFilter = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        setStateFilter(e.target.value)
-    }
+        setStateFilter(e.target.value);
+    };
 
     useEffect(() => {
-        !recoveryState.status && handleInvoice()
-    }, [walletId, wallet])
-
+        if (!recoveryState.status) {
+            handleInvoice();
+        }
+    }, [walletId, wallet]);
 
     return (
         <>
             {error && <Alerts Error={error} />}
             <header className="sticky-header">
                 <button className="back-button" onClick={() => window.history.back()}>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <svg
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                    >
                         <path d="M19 12H5M12 19l-7-7 7-7" />
                     </svg>
                 </button>
@@ -177,9 +209,15 @@ export default function Invoices() {
                     <div className="search-section">
                         <div className="expiry-select">
                             <label htmlFor="expiry">Invoice Expiry:</label>
-                            <select id="expiry" value={invoiceExpiry} onChange={handleInvoiceExpiry}>
+                            <select
+                                id="expiry"
+                                value={invoiceExpiry}
+                                onChange={handleInvoiceExpiry}
+                            >
                                 {invoiceExpiryOptions.map((option, index) => (
-                                    <option key={index} value={option.value}>{option.option}</option>
+                                    <option key={index} value={option.value}>
+                                        {option.option}
+                                    </option>
                                 ))}
                             </select>
                         </div>
@@ -208,38 +246,55 @@ export default function Invoices() {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {invoiceStateList.length > 0 ? invoiceStateList.filter(inv => {
-                                        if (stateFilter === 'all') return true;
-                                        if (stateFilter === 'pending') {
-                                            return (
-                                                inv.status === 'waiting_for_payment' ||
-                                                inv.status === 'awaiting_funds'
-                                            );
-                                        }
-                                        return inv.status === stateFilter;
-                                    }).slice((currentPage - 1) * pageLimint, currentPage * pageLimint)
-                                        .map((inv, id) => (
-                                            <tr key={pageLimint * (currentPage - 1) + id + 1}>
-                                                <td>{pageLimint * (currentPage - 1) + id + 1}</td>
-                                                <td>{inv.timestamp}</td>
-                                                <td>{inv.invoiceId.slice(0, 60)}...</td>
-                                                <td>{inv.operationId}</td>
-                                                <td><span className="status active">{inv.status}</span></td>
-                                            </tr>
-                                        )) : <tr style={{ padding: '4px' }}>No invoices found</tr>}
+                                    {invoiceStateList.length > 0 ? (
+                                        invoiceStateList
+                                            .filter((inv) => {
+                                                if (stateFilter === 'all') return true;
+                                                if (stateFilter === 'pending') {
+                                                    return (
+                                                        inv.status === 'waiting_for_payment' ||
+                                                        inv.status === 'awaiting_funds'
+                                                    );
+                                                }
+                                                return inv.status === stateFilter;
+                                            })
+                                            .slice(
+                                                (currentPage - 1) * pageLimint,
+                                                currentPage * pageLimint
+                                            )
+                                            .map((inv, id) => (
+                                                <tr key={pageLimint * (currentPage - 1) + id + 1}>
+                                                    <td>
+                                                        {pageLimint * (currentPage - 1) + id + 1}
+                                                    </td>
+                                                    <td>{inv.timestamp}</td>
+                                                    <td>{inv.invoiceId.slice(0, 60)}...</td>
+                                                    <td>{inv.operationId}</td>
+                                                    <td>
+                                                        <span className="status active">
+                                                            {inv.status}
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            ))
+                                    ) : (
+                                        <tr style={{ padding: '4px' }}>No invoices found</tr>
+                                    )}
                                 </tbody>
                             </table>
                         </div>
                         <div className="pagination-btn">
-                            <button className="pagination-button"
+                            <button
+                                className="pagination-button"
                                 disabled={currentPage === 1}
                                 onClick={() => setCurrentPage(currentPage - 1)}
                             >
                                 Prev
                             </button>
                             <span className="pagination-info">Page {currentPage}</span>
-                            <button className="pagination-button"
-                                disabled={(currentPage * pageLimint) >= invoiceStateList.length}
+                            <button
+                                className="pagination-button"
+                                disabled={currentPage * pageLimint >= invoiceStateList.length}
                                 onClick={() => setCurrentPage(currentPage + 1)}
                             >
                                 Next
@@ -247,7 +302,7 @@ export default function Invoices() {
                         </div>
                     </div>
                 </div>
-            </section >
+            </section>
 
             <section className="activities-wrapper">
                 <div className="activities-container">
@@ -271,40 +326,66 @@ export default function Invoices() {
                                         <th>Invoice ID</th>
                                         <th>Operation ID</th>
                                         <th>Status</th>
-                                        {localStorage.getItem('locationAccess') === 'true' && <th>Location</th>}
+                                        {localStorage.getItem('locationAccess') === 'true' && (
+                                            <th>Location</th>
+                                        )}
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {invoicePendingList.length > 0 ? invoicePendingList.slice((currentPage - 1) * pageLimint, currentPage * pageLimint)
-                                        .map((inv, id) => (
-                                            <tr key={pageLimint * (currentPage - 1) + id + 1}>
-                                                <td>{pageLimint * (currentPage - 1) + id + 1}</td>
-                                                <td>{inv.timestamp}</td>
-                                                <td>{inv.invoiceId.slice(0, 60)}...</td>
-                                                <td>{inv.operationId}</td>
-                                                <td><span className="status active">{inv.status}</span></td>
-                                                {localStorage.getItem('locationAccess') === 'true' && (
+                                    {invoicePendingList.length > 0 ? (
+                                        invoicePendingList
+                                            .slice(
+                                                (currentPage - 1) * pageLimint,
+                                                currentPage * pageLimint
+                                            )
+                                            .map((inv, id) => (
+                                                <tr key={pageLimint * (currentPage - 1) + id + 1}>
                                                     <td>
-                                                        {inv.location
-                                                            ? <Link to={`https://www.google.com/maps/place/${inv.location.latitude},${inv.location.longitude}`} target='_blank'>See on GMap</Link>
-                                                            : 'N/A'}
+                                                        {pageLimint * (currentPage - 1) + id + 1}
                                                     </td>
-                                                )}
-                                            </tr>
-                                        )) : <tr>No invoices found</tr>}
+                                                    <td>{inv.timestamp}</td>
+                                                    <td>{inv.invoiceId.slice(0, 60)}...</td>
+                                                    <td>{inv.operationId}</td>
+                                                    <td>
+                                                        <span className="status active">
+                                                            {inv.status}
+                                                        </span>
+                                                    </td>
+                                                    {localStorage.getItem('locationAccess') ===
+                                                        'true' && (
+                                                        <td>
+                                                            {inv.location ? (
+                                                                <Link
+                                                                    to={`https://www.google.com/maps/place/${inv.location.latitude},${inv.location.longitude}`}
+                                                                    target="_blank"
+                                                                >
+                                                                    See on GMap
+                                                                </Link>
+                                                            ) : (
+                                                                'N/A'
+                                                            )}
+                                                        </td>
+                                                    )}
+                                                </tr>
+                                            ))
+                                    ) : (
+                                        <tr>No invoices found</tr>
+                                    )}
                                 </tbody>
                             </table>
                         </div>
                         <div className="pagination-btn">
-                            <button className="pagination-button"
+                            <button
+                                className="pagination-button"
                                 disabled={currentPage === 1}
                                 onClick={() => setCurrentPage(currentPage - 1)}
                             >
                                 Prev
                             </button>
                             <span className="pagination-info">Page {currentPage}</span>
-                            <button className="pagination-button"
-                                disabled={(currentPage * pageLimint) >= invoiceStateList.length}
+                            <button
+                                className="pagination-button"
+                                disabled={currentPage * pageLimint >= invoiceStateList.length}
                                 onClick={() => setCurrentPage(currentPage + 1)}
                             >
                                 Next
@@ -312,12 +393,13 @@ export default function Invoices() {
                         </div>
                     </div>
                 </div>
-            </section >
+            </section>
         </>
     );
 }
 
-{/* <table className="invoice-table">
+{
+    /* <table className="invoice-table">
                         <thead>
                             <tr>
                                 <th>S.No</th>
@@ -348,10 +430,11 @@ export default function Invoices() {
                                     </tr>
                                 ))}
                         </tbody>
-                    </table> */}
+                    </table> */
+}
 
-
-{/* <table className="invoice-table">
+{
+    /* <table className="invoice-table">
                         <thead>
                             <tr>
                                 <th>S.No</th>
@@ -381,4 +464,5 @@ export default function Invoices() {
                                     </tr>
                                 ))}
                         </tbody>
-                    </table> */}
+                    </table> */
+}

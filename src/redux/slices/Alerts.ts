@@ -32,31 +32,27 @@ export const AlertSlice = createSlice({
 
 // to auto clear the errors from UI
 export const setErrorWithTimeout =
-    (payload: { type: string; message: string }) =>
-        (dispatch: AppDispatch) => {
-            dispatch(setError(payload));
-            setTimeout(() => {
-                dispatch(setError(null));
-            }, 4000);
-        };
+    (payload: { type: string; message: string }) => (dispatch: AppDispatch) => {
+        dispatch(setError(payload));
+        setTimeout(() => {
+            dispatch(setError(null));
+        }, 4000);
+    };
 
 export const setWarnWithTimeout =
-    (payload: { type: string; message: string }) =>
-        (dispatch: AppDispatch) => {
-            dispatch(setWarn(payload));
-            setTimeout(() => {
-                dispatch(setWarn(null));
-            }, 4000);
-        };
+    (payload: { type: string; message: string }) => (dispatch: AppDispatch) => {
+        dispatch(setWarn(payload));
+        setTimeout(() => {
+            dispatch(setWarn(null));
+        }, 4000);
+    };
 
-export const setResultWithTimeout =
-    (payload: string) =>
-        (dispatch: AppDispatch) => {
-            dispatch(setResult(payload));
-            setTimeout(() => {
-                dispatch(setResult(null));
-            }, 4000);
-        };
+export const setResultWithTimeout = (payload: string) => (dispatch: AppDispatch) => {
+    dispatch(setResult(payload));
+    setTimeout(() => {
+        dispatch(setResult(null));
+    }, 4000);
+};
 
 export const { setError, setResult, setWarn } = AlertSlice.actions;
 

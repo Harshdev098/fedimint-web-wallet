@@ -1,136 +1,170 @@
-import { useEffect, useRef, useState, useCallback } from 'react'
-import QRCode from 'react-qr-code'
-import { useWallet } from '../context/WalletManager'
-import '../style/Ecash.css'
-import { SpendEcash, RedeemEcash, ParseEcashNotes, subscribeSpend } from '../services/MintService'
-import { useSelector, useDispatch } from 'react-redux'
-import type { RootState, AppDispatch } from '../redux/store'
-import { setSpendResult, setParseEcashResult } from '../redux/slices/Mint'
-import { startProgress, doneProgress } from "../utils/ProgressBar";
-import Alerts from './Alerts'
+import { useEffect, useRef, useState, useCallback } from 'react';
+import QRCode from 'react-qr-code';
+import { useWallet } from '../context/WalletManager';
+import '../style/Ecash.css';
+import { SpendEcash, RedeemEcash, ParseEcashNotes, subscribeSpend } from '../services/MintService';
+import { useSelector, useDispatch } from 'react-redux';
+import type { RootState, AppDispatch } from '../redux/store';
+import { setSpendResult, setParseEcashResult } from '../redux/slices/Mint';
+import { startProgress, doneProgress } from '../utils/ProgressBar';
+import Alerts from '../components/Alerts';
 import { downloadQRCode } from '../services/DownloadQR';
-import { convertToMsats, subscribeBalance } from "../services/BalanceService";
-import logger from "../utils/logger";
-import { setErrorWithTimeout, setResultWithTimeout } from "../redux/slices/Alerts";
+import { convertToMsats, subscribeBalance } from '../services/BalanceService';
+import logger from '../utils/Logger';
+import { setErrorWithTimeout, setResultWithTimeout } from '../redux/slices/Alerts';
 import { setCurrency } from '../redux/slices/Balance';
-import { Link } from "react-router";
-import QRScanner from "./QrScanner";
-
+import { Link } from 'react-router';
+import QRScanner from '../components/QrScanner';
 
 export default function Ecash() {
-    const [spendingEcash, setSpendingEcash] = useState<boolean>(false)
-    const [redeemingEcash, setRedeemingEcash] = useState<boolean>(false)
-    const [openVideo, setOpenVideo] = useState<boolean>(false)
-    const [convertedAmountInMSat, setConvertedAmountInMSat] = useState<number>(0)
-    const { recoveryState } = useSelector((state: RootState) => state.activeFederation)
-    const amount = useRef<HTMLInputElement | null>(null)
-    const [notes, setNotes] = useState('')
-    const { wallet } = useWallet()
-    const { SpendEcashResult, ParseEcashResult } = useSelector((state: RootState) => state.mint)
-    const dispatch = useDispatch<AppDispatch>()
-    const { currency } = useSelector((state: RootState) => state.balance)
-    const { error, result } = useSelector((state: RootState) => state.Alert)
+    const [spendingEcash, setSpendingEcash] = useState<boolean>(false);
+    const [redeemingEcash, setRedeemingEcash] = useState<boolean>(false);
+    const [openVideo, setOpenVideo] = useState<boolean>(false);
+    const [convertedAmountInMSat, setConvertedAmountInMSat] = useState<number>(0);
+    const { recoveryState } = useSelector((state: RootState) => state.activeFederation);
+    const amount = useRef<HTMLInputElement | null>(null);
+    const [notes, setNotes] = useState('');
+    const { wallet } = useWallet();
+    const { SpendEcashResult, ParseEcashResult } = useSelector((state: RootState) => state.mint);
+    const dispatch = useDispatch<AppDispatch>();
+    const { currency } = useSelector((state: RootState) => state.balance);
+    const { error, result } = useSelector((state: RootState) => state.Alert);
 
     const handleCurrencyChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const selectedCurrency = e.target.value;
         dispatch(setCurrency(selectedCurrency));
-        localStorage.setItem('walletCurrency', selectedCurrency)
-    }
+        localStorage.setItem('walletCurrency', selectedCurrency);
+    };
 
     const handleSpendEcash = async (e: React.FormEvent) => {
-        e.preventDefault()
-        startProgress()
+        e.preventDefault();
+        startProgress();
         try {
-            setSpendingEcash(true)
+            setSpendingEcash(true);
 
             if (convertedAmountInMSat && Number(convertedAmountInMSat) <= 0) {
-                throw new Error("Spend amount should be greater than 0")
+                throw new Error('Spend amount should be greater than 0');
             }
 
-            const result = await SpendEcash(wallet, convertedAmountInMSat)
-            dispatch(setSpendResult(result))
-            const unsubscribe = subscribeSpend(wallet, result.operationId, dispatch)
+            const result = await SpendEcash(wallet, convertedAmountInMSat);
+            dispatch(setSpendResult(result));
+            const unsubscribe = subscribeSpend(wallet, result.operationId, dispatch);
             setTimeout(() => {
-                unsubscribe?.()
+                unsubscribe?.();
             }, 300000);
         } catch (err) {
-            dispatch(setErrorWithTimeout({ type: 'Spend Error: ', message: err instanceof Error ? err.message : String(err) }))
+            dispatch(
+                setErrorWithTimeout({
+                    type: 'Spend Error: ',
+                    message: err instanceof Error ? err.message : String(err),
+                })
+            );
         } finally {
-            doneProgress()
-            setSpendingEcash(false)
+            doneProgress();
+            setSpendingEcash(false);
             if (amount.current) {
                 amount.current.value = '';
-                setConvertedAmountInMSat(0)
+                setConvertedAmountInMSat(0);
             }
         }
-    }
+    };
 
     const handleRedeemEcash = async (e: React.FormEvent) => {
-        e.preventDefault()
-        startProgress()
+        e.preventDefault();
+        startProgress();
         try {
             if (!notes) {
-                throw new Error("Notes value is required");
+                throw new Error('Notes value is required');
             }
-            setRedeemingEcash(true)
+            setRedeemingEcash(true);
 
             const result = await RedeemEcash(wallet, notes);
-            dispatch(setResultWithTimeout(result))
-            subscribeBalance(wallet, dispatch)
+            dispatch(setResultWithTimeout(result));
+            subscribeBalance(wallet, dispatch);
         } catch (err) {
-            logger.log(`An error occured ${err}`)
-            dispatch(setErrorWithTimeout({ type: 'Redeem Error: ', message: err instanceof Error ? err.message : String(err) }))
+            logger.log(`An error occured ${err}`);
+            dispatch(
+                setErrorWithTimeout({
+                    type: 'Redeem Error: ',
+                    message: err instanceof Error ? err.message : String(err),
+                })
+            );
         } finally {
-            doneProgress()
-            setRedeemingEcash(false)
-            setNotes('')
-            dispatch(setParseEcashResult(null))
+            doneProgress();
+            setRedeemingEcash(false);
+            setNotes('');
+            dispatch(setParseEcashResult(null));
         }
-    }
+    };
 
-    const memoizedParseNotes = useCallback(async (notesValue: string) => {
-        const result = await ParseEcashNotes(wallet, notesValue);
-        if (result !== undefined) {
-            dispatch(setParseEcashResult(`Parsed Notes: ${result / 1000}sat (${result}msat)`));
-        }
-    }, [wallet, dispatch]);
+    const memoizedParseNotes = useCallback(
+        async (notesValue: string) => {
+            const result = await ParseEcashNotes(wallet, notesValue);
+            if (result !== undefined) {
+                dispatch(setParseEcashResult(`Parsed Notes: ${result / 1000}sat (${result}msat)`));
+            }
+        },
+        [wallet, dispatch]
+    );
 
     useEffect(() => {
         const trimmedNotes = notes.trim();
         if (trimmedNotes !== '') {
-            startProgress()
+            startProgress();
             memoizedParseNotes(trimmedNotes);
-            doneProgress()
+            doneProgress();
         }
     }, [notes, memoizedParseNotes]);
 
-    const handleRedeemEcashWithQR = async(data:string) => {
-        const parseValue = await ParseEcashNotes(wallet, data)
+    const handleRedeemEcashWithQR = async (data: string) => {
+        const parseValue = await ParseEcashNotes(wallet, data);
         if (parseValue !== undefined) {
-            dispatch(setParseEcashResult(`Parsed Notes: ${parseValue / 1000}sat (${parseValue}msat)`));
-            setNotes(data)
+            dispatch(
+                setParseEcashResult(`Parsed Notes: ${parseValue / 1000}sat (${parseValue}msat)`)
+            );
+            setNotes(data);
         } else {
-            logger.error("Parsed value is undefined");
-            dispatch(setErrorWithTimeout({ type: 'Parse Error: ', message: 'Parsed value is undefined' }))
-            setOpenVideo(false)
+            logger.error('Parsed value is undefined');
+            dispatch(
+                setErrorWithTimeout({ type: 'Parse Error: ', message: 'Parsed value is undefined' })
+            );
+            setOpenVideo(false);
         }
-        setOpenVideo(false)
-    }
+        setOpenVideo(false);
+    };
 
     const handleConversion = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const amount = await convertToMsats(Number((e.target.value).trim()), currency)
-        setConvertedAmountInMSat(amount)
-    }
+        const amount = await convertToMsats(Number(e.target.value.trim()), currency);
+        setConvertedAmountInMSat(amount);
+    };
 
     return (
         <>
             {(error || result) && <Alerts key={Date.now()} Error={error} Result={result} />}
-            <QRScanner open={openVideo} onClose={() => setOpenVideo(false)} onError={(err) => dispatch(setErrorWithTimeout(err))} onResult={(data) => handleRedeemEcashWithQR(data)} />
+            <QRScanner
+                open={openVideo}
+                onClose={() => setOpenVideo(false)}
+                onError={(err) =>
+                    dispatch(
+                        setErrorWithTimeout({
+                            type: 'Scanning failed: ',
+                            message: err instanceof Error ? err.message : String(err),
+                        })
+                    )
+                }
+                onResult={(data) => handleRedeemEcashWithQR(data)}
+            />
 
             <section className="ecash-section">
                 <h2 className="title">Transact Ecashes</h2>
-                <p className="title-span">Spend & Receive the Ecashes notes offline instead of Lightning or bitcoin network</p>
-                <p className="title-span">You can manage your ecash transaction in <Link to={'/wallet/transactions'}>transaction</Link> tab</p>
+                <p className="title-span">
+                    Spend & Receive the Ecashes notes offline instead of Lightning or bitcoin
+                    network
+                </p>
+                <p className="title-span">
+                    You can manage your ecash transaction in{' '}
+                    <Link to={'/wallet/transactions'}>transaction</Link> tab
+                </p>
                 <div className="ecash-container">
                     <div className="ecash-card spend-card">
                         <div className="card-header">
@@ -153,12 +187,16 @@ export default function Ecash() {
                                         id="Ecashamount"
                                         className="amount-input"
                                         placeholder={`Enter amount in ${currency}`}
-                                        inputMode='decimal'
+                                        inputMode="decimal"
                                         ref={amount}
                                         onChange={handleConversion}
                                         required
                                     />
-                                    <select className="currency-select" value={currency} onChange={handleCurrencyChange}>
+                                    <select
+                                        className="currency-select"
+                                        value={currency}
+                                        onChange={handleCurrencyChange}
+                                    >
                                         <option value={'msat'}>msat</option>
                                         <option value={'sat'}>sat</option>
                                         <option value={'usd'}>USD</option>
@@ -167,34 +205,45 @@ export default function Ecash() {
                                 </div>
                             </div>
 
-                            <button type="submit" disabled={spendingEcash || recoveryState.status} className="primary-btn">
+                            <button
+                                type="submit"
+                                disabled={spendingEcash || recoveryState.status}
+                                className="primary-btn"
+                            >
                                 <i className="fa-solid fa-money-bill-transfer"></i>
                                 <span>Generate & Spend</span>
                             </button>
                         </form>
 
                         {SpendEcashResult && (
-                            <div className='spend-result'>
+                            <div className="spend-result">
                                 <div className="result-header">
                                     <button
                                         type="button"
                                         className="clear-btn"
-                                        onClick={() => { dispatch(setSpendResult(null)) }}
+                                        onClick={() => {
+                                            dispatch(setSpendResult(null));
+                                        }}
                                     >
                                         Clear
                                     </button>
                                 </div>
 
-                                <div className='copy-section'>
+                                <div className="copy-section">
                                     <div className="copy-wrapper">
-                                        <p><i className="fa-solid fa-circle-info"></i> These notes are only valid for 1 day</p>
+                                        <p>
+                                            <i className="fa-solid fa-circle-info"></i> These notes
+                                            are only valid for 1 day
+                                        </p>
                                         <p id="spendNotesResult" className="notes-text">
                                             {SpendEcashResult.notes}
                                         </p>
                                         <button
                                             className="copy-btn"
                                             onClick={() => {
-                                                navigator.clipboard.writeText(SpendEcashResult.notes);
+                                                navigator.clipboard.writeText(
+                                                    SpendEcashResult.notes
+                                                );
                                             }}
                                         >
                                             <i className="fa-regular fa-copy"></i>
@@ -202,17 +251,19 @@ export default function Ecash() {
                                     </div>
                                 </div>
 
-                                <div className='qr-section'>
+                                <div className="qr-section">
                                     <div className="qr-container">
                                         <QRCode
                                             value={SpendEcashResult.notes}
                                             size={150}
-                                            bgColor='white'
-                                            fgColor='black'
+                                            bgColor="white"
+                                            fgColor="black"
                                         />
                                     </div>
                                     <button
-                                        onClick={() => { downloadQRCode('ecash') }}
+                                        onClick={() => {
+                                            downloadQRCode('ecash');
+                                        }}
                                         className="download-btn"
                                         disabled={recoveryState.status}
                                     >
@@ -244,7 +295,9 @@ export default function Ecash() {
                                         id="notesvalue"
                                         placeholder="Enter the notes"
                                         value={notes}
-                                        onChange={(e) => { setNotes(e.target.value) }}
+                                        onChange={(e) => {
+                                            setNotes(e.target.value);
+                                        }}
                                         className="form-textarea"
                                     />
                                 </div>
@@ -260,14 +313,20 @@ export default function Ecash() {
                             )}
 
                             <div className="button-group">
-                                <button type="submit" disabled={redeemingEcash || recoveryState.status} className="primary-btn">
+                                <button
+                                    type="submit"
+                                    disabled={redeemingEcash || recoveryState.status}
+                                    className="primary-btn"
+                                >
                                     <i className="fa-solid fa-hand-holding-dollar"></i>
                                     <span>Confirm Redeem</span>
                                 </button>
                                 <button
                                     type="button"
                                     disabled={redeemingEcash || recoveryState.status}
-                                    onClick={() => { setOpenVideo(true) }}
+                                    onClick={() => {
+                                        setOpenVideo(true);
+                                    }}
                                     className="secondary-btn scan-btn"
                                 >
                                     <i className="fa-solid fa-qrcode"></i>
@@ -277,7 +336,16 @@ export default function Ecash() {
                         </form>
                     </div>
                 </div>
-                <p className='title-span'>Have doubt? Refer FAQs section in settings or raise a <Link to={'https://github.com/Harshdev098/fedimint-web-wallet'} target='_blank'>ticket</Link> for issue</p>
+                <p className="title-span">
+                    Have doubt? Refer FAQs section in settings or raise a{' '}
+                    <Link
+                        to={'https://github.com/Harshdev098/fedimint-web-wallet/issues'}
+                        target="_blank"
+                    >
+                        ticket
+                    </Link>{' '}
+                    for issue
+                </p>
             </section>
         </>
     );

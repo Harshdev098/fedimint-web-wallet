@@ -3,45 +3,54 @@ import type { RootState } from '../redux/store';
 import Guardians from './Guardian';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
-import type { FederationModule, LNModule, MintModule, WalletModule, MetaModule } from '../hooks/Federation.type';
+import type {
+    FederationModule,
+    LNModule,
+    MintModule,
+    WalletModule,
+    MetaModule,
+} from '../hooks/Federation.type';
 
 export default function FederationDetails() {
-    const { Details, metaData, GuardianStatus } = useSelector((state: RootState) => state.federationdetails);
+    const { Details, metaData, GuardianStatus } = useSelector(
+        (state: RootState) => state.federationdetails
+    );
     const [showGuardians, setShowGuardians] = useState<boolean>(false);
     const [expandedModules, setExpandedModules] = useState<string | null>(null);
-    const [healthStatus, setHealthStatus] = useState<'Healthy' | 'Reachable' | 'Degraded' | 'Unreachable'>('Healthy')
-    const { mode } = useSelector((state: RootState) => state.Mode)
+    const [healthStatus, setHealthStatus] = useState<
+        'Healthy' | 'Reachable' | 'Degraded' | 'Unreachable'
+    >('Healthy');
+    const { mode } = useSelector((state: RootState) => state.Mode);
     const navigate = useNavigate();
 
     const toggleDetails = (id: string) => {
         setExpandedModules((prev) => (prev === id ? null : id));
     };
-
+    // eslint-disable-next-line
     const guardians = Object.keys(Details?.api_endpoints ?? {}).map((key: any, _) => ({
         id: key,
         name: Details?.api_endpoints[key].name,
         url: Details?.api_endpoints[key].url,
         pubKey: Details?.broadcast_public_keys[key],
-        status: GuardianStatus.status[Number(key)] || 'checking'
+        status: GuardianStatus.status[Number(key)] || 'checking',
     }));
 
-    const onlineGuardians = guardians.filter(g => g.status === 'online').length;
+    const onlineGuardians = guardians.filter((g) => g.status === 'online').length;
     const totalGuardians = guardians.length;
 
     useEffect(() => {
-
         const onlinePercentage = (onlineGuardians / totalGuardians) * 100;
 
         if (onlinePercentage >= 66) {
-            setHealthStatus('Healthy')
+            setHealthStatus('Healthy');
         } else if (onlinePercentage >= 33) {
-            setHealthStatus('Reachable')
+            setHealthStatus('Reachable');
         } else if (onlinePercentage >= 20) {
-            setHealthStatus('Degraded')
+            setHealthStatus('Degraded');
         } else {
-            setHealthStatus('Unreachable')
+            setHealthStatus('Unreachable');
         }
-    }, [onlineGuardians])
+    }, [onlineGuardians]);
 
     const AdvancedDetail = (mod: FederationModule) => {
         switch (mod.kind) {
@@ -89,7 +98,6 @@ export default function FederationDetails() {
         }
     };
 
-
     return (
         <section className="federation">
             <div className="federation-glass-card">
@@ -101,7 +109,7 @@ export default function FederationDetails() {
                     />
                     <div>
                         <h2 className="federation-title">{metaData?.federation_name}</h2>
-                        <p className="subtitle" style={{color:'#4B5563'}}>
+                        <p className="subtitle" style={{ color: '#4B5563' }}>
                             {metaData?.federation_name} works on the consensus version v
                             {Details?.consensus_version.major}.{Details?.consensus_version.minor}
                         </p>
@@ -110,12 +118,34 @@ export default function FederationDetails() {
 
                 <div className="federation-grid">
                     <div className="federation-field">
-                        <h3><i className="fa-solid fa-heart-pulse"></i> Health</h3>
-                        {healthStatus==='Healthy' && <span>Federation is Healthy</span>}
-                        {healthStatus==='Degraded' && <span>Many guardians are offline, transactions may be slower</span>}
-                        {healthStatus==='Reachable' && <span>Some guardians are offline, but the federation is still functional.</span>}
-                        {healthStatus==='Unreachable' && <span>Not found guardians online</span>}
-                        <p><strong style={{fontSize:'1.4rem',color:(healthStatus === 'Healthy' || healthStatus === 'Reachable') ? 'green' : healthStatus === 'Degraded' ? '#909048' : 'red'}}>{healthStatus}</strong></p>
+                        <h3>
+                            <i className="fa-solid fa-heart-pulse"></i> Health
+                        </h3>
+                        {healthStatus === 'Healthy' && <span>Federation is Healthy</span>}
+                        {healthStatus === 'Degraded' && (
+                            <span>Many guardians are offline, transactions may be slower</span>
+                        )}
+                        {healthStatus === 'Reachable' && (
+                            <span>
+                                Some guardians are offline, but the federation is still functional.
+                            </span>
+                        )}
+                        {healthStatus === 'Unreachable' && <span>Not found guardians online</span>}
+                        <p>
+                            <strong
+                                style={{
+                                    fontSize: '1.4rem',
+                                    color:
+                                        healthStatus === 'Healthy' || healthStatus === 'Reachable'
+                                            ? 'green'
+                                            : healthStatus === 'Degraded'
+                                              ? '#909048'
+                                              : 'red',
+                                }}
+                            >
+                                {healthStatus}
+                            </strong>
+                        </p>
                     </div>
                     <div className="federation-field">
                         <h3>💰 On-chain Deposit</h3>
@@ -124,8 +154,8 @@ export default function FederationDetails() {
                             {metaData?.onchain_deposits_disabled === 'false'
                                 ? 'Enabled'
                                 : metaData?.onchain_deposits_disabled === 'true'
-                                    ? 'Disabled'
-                                    : 'N/A'}
+                                  ? 'Disabled'
+                                  : 'N/A'}
                         </p>
                     </div>
                     <div className="federation-field">
@@ -148,31 +178,37 @@ export default function FederationDetails() {
                         <div className="federation-field">
                             <h3>💵 Max Stable Balance</h3>
                             <span>Max stable Balance a federation can hold</span>
-                            <p>{metaData?.max_stable_balance_msats/1000} sat</p>
+                            <p>{metaData?.max_stable_balance_msats / 1000} sat</p>
                         </div>
                     )}
                 </div>
 
                 <div className="modules-section">
                     <h2 className="modules-title">
-                        <i className="fa-solid fa-file-invoice-dollar"></i> Available Federation Services
+                        <i className="fa-solid fa-file-invoice-dollar"></i> Available Federation
+                        Services
                     </h2>
                     <div className="modules-grid">
-                        {Object.entries(Details?.modules ?? {}).map(([_, mod]) => {
+                        {Object.entries(Details?.modules ?? {}).map(([, mod]) => {
                             const module = mod as FederationModule;
 
                             return (
                                 <div className="module-card" key={module.id}>
                                     <i
                                         className="fa-solid fa-box-open"
-                                        style={{ fontSize: '2rem', padding: '6px', color: '#2176FF' }}
+                                        style={{
+                                            fontSize: '2rem',
+                                            padding: '6px',
+                                            color: '#2176FF',
+                                        }}
                                     ></i>
                                     <h4>
                                         {module.kind === 'ln'
                                             ? 'Lightning'
                                             : module.kind === 'mint'
-                                                ? 'Minting'
-                                                : module.kind.charAt(0).toUpperCase() + module.kind.slice(1)}
+                                              ? 'Minting'
+                                              : module.kind.charAt(0).toUpperCase() +
+                                                module.kind.slice(1)}
                                     </h4>
                                     {module.version && (
                                         <p>
@@ -182,17 +218,22 @@ export default function FederationDetails() {
 
                                     <p
                                         onClick={() => toggleDetails(module.kind)}
-                                        style={{ cursor: 'pointer', color: mode ? 'white' : 'blue' }}
+                                        style={{
+                                            cursor: 'pointer',
+                                            color: mode ? 'white' : 'blue',
+                                        }}
                                     >
-                                        {expandedModules === module.kind ? 'Hide' : 'Show'} advanced details
+                                        {expandedModules === module.kind ? 'Hide' : 'Show'} advanced
+                                        details
                                         <i className="fa-solid fa-angle-down"></i>
                                     </p>
-
 
                                     {expandedModules === module.kind && (
                                         <div className="module-details">
                                             {module.network && <p>Network: {module.network}</p>}
-                                            {module.finality_delay && <p>Finality Delay: {module.finality_delay}</p>}
+                                            {module.finality_delay && (
+                                                <p>Finality Delay: {module.finality_delay}</p>
+                                            )}
                                             {AdvancedDetail(module)}
                                         </div>
                                     )}
@@ -203,14 +244,23 @@ export default function FederationDetails() {
                 </div>
 
                 <div className="federation-footer">
-                    {metaData?.invite_code && <button onClick={() => navigator.clipboard.writeText(metaData?.invite_code || '')} >🔗 Copy Invite Code</button>}
+                    {metaData?.invite_code && (
+                        <button
+                            onClick={() =>
+                                navigator.clipboard.writeText(metaData?.invite_code || '')
+                            }
+                        >
+                            🔗 Copy Invite Code
+                        </button>
+                    )}
                     <button
                         onClick={() => {
                             setShowGuardians(!showGuardians);
                             navigate('/wallet/federation#guardians');
                         }}
                     >
-                        <i className="fa-solid fa-shield"></i> {showGuardians ? 'Hide' : 'View'} Guardians
+                        <i className="fa-solid fa-shield"></i> {showGuardians ? 'Hide' : 'View'}{' '}
+                        Guardians
                     </button>
                 </div>
 

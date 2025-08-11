@@ -1,21 +1,28 @@
-
 export default function Faq() {
     return (
         <div className="settings-section">
             <h2 className="section-title">Frequently Asked Questions</h2>
-            
+
             <div className="settings-grid">
                 <div className="setting-item">
                     <div className="setting-info">
                         <h3>What is Fedimint?</h3>
-                        <p>Fedimint is a federated protocol that enables community-based custody and management of Bitcoin, providing privacy and scalability through a trusted group of guardians.</p>
+                        <p>
+                            Fedimint is a federated protocol that enables community-based custody
+                            and management of Bitcoin, providing privacy and scalability through a
+                            trusted group of guardians.
+                        </p>
                     </div>
                 </div>
 
                 <div className="setting-item">
                     <div className="setting-info">
                         <h3>What happens if guardians go offline?</h3>
-                        <p>Fedimint is designed to be fault-tolerant. As long as a threshold number of guardians remain online, the federation can continue to operate normally.</p>
+                        <p>
+                            Fedimint is designed to be fault-tolerant. As long as a threshold number
+                            of guardians remain online, the federation can continue to operate
+                            normally.
+                        </p>
                     </div>
                 </div>
             </div>

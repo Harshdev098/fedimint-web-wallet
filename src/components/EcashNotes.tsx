@@ -8,9 +8,9 @@ import { setUTXOSet } from '../redux/slices/WalletSlice';
 import { getUTXOSet } from '../services/WalletService';
 import { setErrorWithTimeout } from '../redux/slices/Alerts';
 import { startProgress, doneProgress } from '../utils/ProgressBar';
-import Alerts from '../Components/Alerts';
-import logger from '../utils/logger';
-import '../style/Ecash.css'
+import Alerts from './Alerts';
+import logger from '../utils/Logger';
+import '../style/Ecash.css';
 
 interface EcashNotesProps {
     isOpen: boolean;
@@ -21,12 +21,10 @@ export default function EcashNotes({ isOpen, onClose }: EcashNotesProps) {
     const { wallet } = useWallet();
     const dispatch = useDispatch<AppDispatch>();
     const { NotesByDenomonation } = useSelector((state: RootState) => state.mint);
-    const { walletId,recoveryState } = useSelector((state: RootState) => state.activeFederation);
+    const { walletId, recoveryState } = useSelector((state: RootState) => state.activeFederation);
     // const { UTXOSet } = useSelector((state: RootState) => state.wallet);
-    const { error } = useSelector((state: RootState) => state.Alert)
-    const [resultStatus, setResultStatus] = useState<boolean>(false)
-
-    if (!isOpen) return null;
+    const { error } = useSelector((state: RootState) => state.Alert);
+    const [resultStatus, setResultStatus] = useState<boolean>(false);
 
     useEffect(() => {
         const handleNoteCount = async () => {
@@ -34,7 +32,7 @@ export default function EcashNotes({ isOpen, onClose }: EcashNotesProps) {
                 const result = await NoteCountByDenomination(wallet);
                 dispatch(setNotesByDenomination(result));
             } catch (err) {
-                logger.error("Error fetching notes:", err);
+                logger.error('Error fetching notes:', err);
             }
         };
 
@@ -43,22 +41,30 @@ export default function EcashNotes({ isOpen, onClose }: EcashNotesProps) {
                 const result = await getUTXOSet(wallet);
                 dispatch(setUTXOSet(result));
             } catch (err) {
-                dispatch(setErrorWithTimeout({ type: 'UTXO Error: ', message: err instanceof Error ? err.message : String(err) }));
+                dispatch(
+                    setErrorWithTimeout({
+                        type: 'UTXO Error: ',
+                        message: err instanceof Error ? err.message : String(err),
+                    })
+                );
             }
         };
-        setResultStatus(true)
+
+        if (!isOpen) return;
+        setResultStatus(true);
         startProgress();
-        !recoveryState.status && handleNoteCount();
-        !recoveryState.status && handleUTXOSet();
+        if (!recoveryState.status) {
+            handleNoteCount();
+            handleUTXOSet();
+        }
         doneProgress();
-        setResultStatus(false)
-    }, [wallet, dispatch, walletId,recoveryState.status]);
+        setResultStatus(false);
+    }, [wallet, dispatch, walletId, recoveryState.status]);
 
     const renderNoteCount = () => {
-        if(resultStatus){
-            <p>Fetching Notes Denomination</p>
-        }
-        else if (Object.keys(NotesByDenomonation).length === 0) {
+        if (resultStatus) {
+            <p>Fetching Notes Denomination</p>;
+        } else if (Object.keys(NotesByDenomonation).length === 0) {
             return (
                 <div className="note-card">
                     <div className="note-value">No Notes</div>
@@ -69,7 +75,9 @@ export default function EcashNotes({ isOpen, onClose }: EcashNotesProps) {
         return Object.entries(NotesByDenomonation).map(([denomination, count]) => (
             <div className="note-card" key={denomination}>
                 <div className="note-value">{denomination}</div>
-                <div className="note-count">{count} note{Number(count) !== 1 ? 's' : ''}</div>
+                <div className="note-count">
+                    {count} note{Number(count) !== 1 ? 's' : ''}
+                </div>
             </div>
         ));
     };
@@ -84,19 +92,19 @@ export default function EcashNotes({ isOpen, onClose }: EcashNotesProps) {
     return (
         <>
             {error && <Alerts Error={error} Result="" />}
-            <div className='modalOverlay'>
-                <div className='ecashNotes'>
-                    <button type='button' className='closeBtn' onClick={() => onClose()} >
+            <div className="modalOverlay">
+                <div className="ecashNotes">
+                    <button type="button" className="closeBtn" onClick={() => onClose()}>
                         <i className="fa-solid fa-xmark"></i>
                     </button>
                     <div className="section-header">
                         <h2>Ecash Notes</h2>
                         <div className="divider"></div>
-                        <span className='title-span'>The Ecash Notes the wallet is holding of the balance</span>
+                        <span className="title-span">
+                            The notes for the balance the wallet is holding
+                        </span>
                     </div>
-                    <div className="note-grid">
-                        {renderNoteCount()}
-                    </div>
+                    <div className="note-grid">{renderNoteCount()}</div>
                 </div>
             </div>
 

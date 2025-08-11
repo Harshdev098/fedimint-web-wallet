@@ -1,19 +1,14 @@
-import { useEffect, useRef } from "react";
-import QrScanner from "qr-scanner";
+import { useEffect, useRef } from 'react';
+import QrScanner from 'qr-scanner';
 
 interface QRScannerProps {
     open: boolean;
     onResult: (data: string) => void;
-    onError?: (err: any) => void;
+    onError?: (err: Error) => void;
     onClose: () => void;
 }
 
-export default function QRScanner({
-    open,
-    onResult,
-    onError,
-    onClose
-}: QRScannerProps) {
+export default function QRScanner({ open, onResult, onError, onClose }: QRScannerProps) {
     const videoRef = useRef<HTMLVideoElement | null>(null);
     const scannerRef = useRef<QrScanner | null>(null);
 
@@ -23,7 +18,7 @@ export default function QRScanner({
                 videoRef.current,
                 async (result) => {
                     if (result.data) {
-                        console.log('data from qr is ',result.data)
+                        console.log('data from qr is ', result.data);
                         onResult(result.data);
                         scannerRef.current?.stop();
                         scannerRef.current?.destroy();

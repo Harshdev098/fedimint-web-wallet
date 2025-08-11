@@ -151,7 +151,7 @@ button:disabled {
 }
 
 .DarkMode a{
-    color: white;
+    color: rgb(192, 209, 237);
 }
 
 /* Wallet styling  */
@@ -164,15 +164,17 @@ button:disabled {
     align-items: flex-end;
     height: 12vh;
     width: 100%;
-    background-color: transparent;
+    background-color: #e4eef3;
     z-index: 999;
     padding-bottom: 20px;
-    margin-top: auto;
-    position: relative;
+    position: fixed;
+    bottom: 0;
+    left: 0;
     flex-shrink: 0;
     --wave-color-start: #f4f8fa;
     --wave-color-end: #f1f5f7;
 }
+
 
 .DarkMode.navigation-bar {
     background-color: rgb(17, 24, 39);
@@ -410,6 +412,13 @@ button:disabled {
     overflow-y: auto;
     display: flex;
     flex-direction: column;
+    padding-bottom: 12vh;
+}
+
+@media (max-width:750px) {
+    .WalletContentSection{
+        padding-bottom: 70px;
+    }
 }
 
 /* wallet header styling  */
@@ -1080,15 +1089,7 @@ button:disabled {
     position: relative;
 }
 
-.activities-header::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    opacity: 0.3;
-}
+
 
 .tx-header-content {
     position: relative;
@@ -1301,7 +1302,7 @@ button:disabled {
     color: #059669;
 }
 
-.transaction-amount.positive {
+.transaction-amount.negative {
     color: #961305;
 }
 
@@ -2363,7 +2364,7 @@ button:disabled {
 }
 
 
-@media (max-width:500px) {
+@media (max-width:600px) {
 
     .createInvoice,
     .payInvoice,
@@ -2424,7 +2425,6 @@ button:disabled {
 /* Input Group for Amount and Currency */
 .input-group {
     display: flex;
-    flex-wrap: nowrap;
     align-items: stretch;
 }
 
@@ -2509,6 +2509,7 @@ button:disabled {
 @media (max-width: 480px) {
     .input-group {
         flex-wrap: wrap;
+        margin: 12px 0;
     }
 
     .input-group .amount-input {
@@ -2516,13 +2517,19 @@ button:disabled {
         border-right: 1px solid #ccc;
     }
 
+    .DarkMode .input-group .amount-input {
+        border-right: 1px solid #555;
+    }
+}
+
+@media (max-width:396px) {
     .input-group .currency-select {
         border-radius: 6px;
         min-width: unset;
+        margin: 6px 0;
     }
-
-    .DarkMode .input-group .amount-input {
-        border-right: 1px solid #555;
+    .input-group{
+        margin: 0;
     }
 }
 
