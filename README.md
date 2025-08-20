@@ -76,7 +76,7 @@ fedimint-web-wallet/
 │   ├── Wallet.tsx
  ```
 
-- **Appp.tsx:** Root application component
+- **App.tsx:** Root application component
 - **Wallet.tsx:** Core wallet UI logic
 - **Components:** The component folder contains all of the UI components(Activities,AddFederation,Header...)
 - **Pages:** The Pages folder contains all the of the pages and tabs of the main wallet(JoinFederation,Ecash,Settings...)
